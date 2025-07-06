@@ -13,30 +13,21 @@ class CheckoutLog {
     this.db = new DatabaseManager();
   }
 
-  static fromFormResponse(event) {
-    const sheet = event.source.getActiveSheet();
-    const responses = event.getItemResponses();
-    console.log('Form responses:', responses);
-    return new CheckoutLog({
-      timestamp: event.getTimestamp(),
-      emailAddress: responses[0].getResponse(),
-      bikeCode: responses[1].getResponse(),
-      confirmBikeCode: responses[2].getResponse(),
-      keyAvailableCheck: responses[3].getResponse(),
-      conditionConfirmation: responses[4].getResponse()
-    });
-  }
+  static fromFormResponse(e) {
+    const sheet = e.source.getActiveSheet();
+    const range = e.range;
+    //  Get the last row with data in the edited sheet
+    const lastRowId = sheet.getLastRow();
 
-  save() {
-    const values = [
-      this.timestamp,
-      this.emailAddress,
-      this.bikeCode,
-      this.confirmBikeCode,
-      this.keyAvailableCheck,
-      this.conditionConfirmation
-    ];
-    this.db.appendRow(CONFIG.SHEETS.CHECKOUT_LOGS, values);
+    const responses = sheet.getRange(lastRowId, 1, 1, sheet.getLastColumn()).getValues()[0];
+    return new CheckoutLog({
+      timestamp: responses[0],
+      emailAddress: responses[1],
+      bikeCode: responses[2],
+      confirmBikeCode: responses[3],
+      keyAvailableCheck: responses[4],
+      conditionConfirmation: responses[5]
+    });
   }
 
   validate() {
