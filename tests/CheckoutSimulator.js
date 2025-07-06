@@ -23,18 +23,15 @@ class CheckoutSimulator {
       CONDITION_OK: 1671678893
     };
   }
-  simulateCheckout(responseData = null) {
-    // Default response data
-    const defaultResponse = {
-      userEmail: 'test003@amherst.edu',
-      bikeCode: 'King',
-      confirmBikeCode: 'King',
+  simulateCheckout(userEmail,bikeName) {
+    // Form response data
+    const formData = {
+      userEmail: userEmail || 'test003@amherst.edu',
+      bikeCode: bikeName || 'King',
+      confirmBikeCode: bikeName || 'King',
       keyAvailable: 'Yes',
       conditionOk: ['I consent']
     };
-
-    // Use provided data or default
-    const formData = responseData || defaultResponse;
 
     try {
       // Open the checkout form
@@ -80,11 +77,11 @@ class CheckoutSimulator {
     }
   }
 
-  createCustomCheckout(userEmail, bikeCode, keyAvailable = 'Yes', conditionOk = ['I consent']) {
+  createCustomCheckout(userEmail, bikeCode,confirmCode, keyAvailable = 'Yes', conditionOk = ['I consent']) {
     const customData = {
       userEmail: userEmail,
       bikeCode: bikeCode,
-      confirmBikeCode: bikeCode, // Auto-match confirmation
+      confirmBikeCode: confirmCode,
       keyAvailable: keyAvailable,
       conditionOk: conditionOk
     };
@@ -101,7 +98,7 @@ class CheckoutSimulator {
       let bikeName = isRandom ? CONFIG.BIKE_NAMES[randomNumber] : defaultBike
 
       console.log(`\n----Email:${emailAddress}-------Bike:${bikeName}--------`)
-      results.push(this.createCustomCheckout(emailAddress,bikeName))
+      results.push(this.createCustomCheckout(emailAddress,bikeName,bikeName))
        // Small delay between submissions
       Utilities.sleep(500);
     }
@@ -151,6 +148,6 @@ class CheckoutSimulator {
 
 function simulateCheckout() {
   const simulator = new CheckoutSimulator();
-  return simulator.createCustomCheckout('test111@amherst.edu','Moore');
+  return simulator.createCustomCheckout('test111@amherst.edu','Moore','King');
   // return simulator.simulateMultipleCheckouts(2)
 }
