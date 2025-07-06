@@ -10,7 +10,7 @@
  * [4] [Id=1671678893] Confirm that this bike's condition is okay for you to ride before you submit this request. (MULTIPLE_CHOICE)
  */
 class CheckoutSimulator {
-  simulateCheckout(responseData = null) {
+  constructor(){
     // Default form ID from configuration
     this.formId = CONFIG.FORMS.CHECKOUT_FORM_ID;
     
@@ -22,6 +22,8 @@ class CheckoutSimulator {
       KEY_AVAILABLE: 998220660,
       CONDITION_OK: 1671678893
     };
+  }
+  simulateCheckout(responseData = null) {
     // Default response data
     const defaultResponse = {
       userEmail: 'test003@amherst.edu',
@@ -149,6 +151,6 @@ class CheckoutSimulator {
 
 function simulateCheckout() {
   const simulator = new CheckoutSimulator();
-  // return simulator.createCustomCheckout('test001@amherst.edu','Moore');
-  return simulator.simulateMultipleCheckouts(10)
+  return simulator.createCustomCheckout('test111@amherst.edu','Moore');
+  // return simulator.simulateMultipleCheckouts(2)
 }
