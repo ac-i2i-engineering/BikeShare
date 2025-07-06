@@ -20,15 +20,15 @@ class CheckoutLog {
 
   validate() {
     let response = {
-      status:true,
+      success:true,
       message:[]
     }
     if (this.bikeCode !== this.confirmBikeCode) {
-      response.status = false;
+      response.success = false;
       response.message.push('Bike code confirmation does not match');
     }
     if (this.keyAvailableCheck !== 'Yes') {
-      response.status = false;
+      response.success = false;
       response.message.push('User did not confirm key availability');
     }
     return response
