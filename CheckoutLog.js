@@ -19,17 +19,19 @@ class CheckoutLog {
   }
 
   validate() {
-    let status = true;
-    let message = [];
+    let response = {
+      status:true,
+      message:[]
+    }
     if (this.bikeCode !== this.confirmBikeCode) {
-      status = false;
-      message.push('Bike code confirmation does not match');
+      response.status = false;
+      response.message.push('Bike code confirmation does not match');
     }
     if (this.keyAvailableCheck !== 'Yes') {
-      status = false;
-      message.push('User did not confirm key availability');
+      response.status = false;
+      response.message.push('User did not confirm key availability');
     }
-    return { status: status, message: message };
+    return response
   }
 }
 // ===============================================================================
