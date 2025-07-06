@@ -9,7 +9,10 @@
  * [3] [Id=998220660] Did you check if this bike's key is available at the front desk before you check it out? (MULTIPLE_CHOICE)
  * [4] [Id=1671678893] Confirm that this bike's condition is okay for you to ride before you submit this request. (MULTIPLE_CHOICE)
  */
-class CheckoutSimulator {
+// ===========================================================================
+// Create the form responses and submit to trigger the onCheckoutFormSubmit function
+// =============================================================================
+class CheckoutFullSimulator {
   constructor(){
     // Default form ID from configuration
     this.formId = CONFIG.FORMS.CHECKOUT_FORM_ID;
@@ -149,8 +152,42 @@ class CheckoutSimulator {
   }
 }
 
-function simulateCheckout() {
-  const simulator = new CheckoutSimulator();
-  // return simulator.createCustomCheckout('test111@amherst.edu','Moore','Moore','No');
-  return simulator.simulateMultipleCheckouts(5)
+// ===========================================================================
+// Simulate checkout by creating a spreadsheet entry then, call form submission functions manually
+// ===========================================================================
+class CheckoutVirtualSimulator{
+    // add a new row to the checkout logs sheet
+    constructor() {
+      this.db = new DatabaseManager();
+      this.checkoutSheet = CONFIG.SHEETS.CHECKOUT_LOGS;
+    }
+
+    createCheckoutEntry(email, bikeCode, confirmCode, keyAvailable = 'Yes', conditionOk = ['I consent']) {
+        const entry = [
+          new Date(),
+          email,
+          bikeCode,
+          confirmCode,
+          keyAvailable,
+          conditionOk.toString()
+        ];
+
+        // Append the entry to the checkout logs sheet
+        this.db.appendRow(this.checkoutSheet, entry);
+
+        // Return the entry
+        return entry;
+    }
+}
+
+function simulateFullCheckout() {
+  const simulator = new CheckoutFullSimulator();
+  return simulator.createCustomCheckout('test111@amherst.edu','Moore','Moore','No');
+  // return simulator.simulateMultipleCheckouts(5);
+}
+
+function simulateVirtualCheckout() {
+  const simulator = new CheckoutVirtualSimulator();
+  simulator.createCheckoutEntry('test312@amherst.edu','Moore','Moore');  
+  onFormSubmit(CONFIG.SHEETS.CHECKOUT_LOGS, debugging = true)
 }
