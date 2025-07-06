@@ -23,15 +23,18 @@ class CheckoutSimulator {
       CONDITION_OK: 1671678893
     };
   }
-  simulateCheckout(userEmail,bikeName) {
-    // Form response data
-    const formData = {
-      userEmail: userEmail || 'test003@amherst.edu',
-      bikeCode: bikeName || 'King',
-      confirmBikeCode: bikeName || 'King',
+  simulateCheckout(responseData = null) {
+    // Default response data
+    const defaultResponse = {
+      userEmail: 'test003@amherst.edu',
+      bikeCode: 'King',
+      confirmBikeCode: 'King',
       keyAvailable: 'Yes',
       conditionOk: ['I consent']
     };
+
+    // Use provided data or default
+    const formData = responseData || defaultResponse;
 
     try {
       // Open the checkout form
@@ -81,7 +84,7 @@ class CheckoutSimulator {
     const customData = {
       userEmail: userEmail,
       bikeCode: bikeCode,
-      confirmBikeCode: confirmCode,
+      confirmBikeCode: confirmCode || bikeCode, //Auto-confirm when no confirm code given
       keyAvailable: keyAvailable,
       conditionOk: conditionOk
     };
@@ -95,10 +98,10 @@ class CheckoutSimulator {
       let finalPart = i < 10 ? '00'+i : i < 100 ? '0'+i : i
       let emailAddress = root + finalPart+'@amherst.edu'
       let randomNumber = getRandomInteger(0, 9);
-      let bikeName = isRandom ? CONFIG.BIKE_NAMES[randomNumber] : defaultBike
+      let bikeCode = isRandom ? CONFIG.BIKE_NAMES[randomNumber] : defaultBike
 
-      console.log(`\n----Email:${emailAddress}-------Bike:${bikeName}--------`)
-      results.push(this.createCustomCheckout(emailAddress,bikeName,bikeName))
+      console.log(`\n-----Email:${emailAddress}-------Bike:${bikeCode}--------`)
+      results.push(this.createCustomCheckout(emailAddress,bikeCode))
        // Small delay between submissions
       Utilities.sleep(500);
     }
@@ -148,6 +151,6 @@ class CheckoutSimulator {
 
 function simulateCheckout() {
   const simulator = new CheckoutSimulator();
-  return simulator.createCustomCheckout('test111@amherst.edu','Moore','King');
-  // return simulator.simulateMultipleCheckouts(2)
+  // return simulator.createCustomCheckout('test111@amherst.edu','Moore','Moore','No');
+  return simulator.simulateMultipleCheckouts(5)
 }
