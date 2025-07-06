@@ -6,17 +6,22 @@
 // =============================================================================
 // FORM TRIGGER FUNCTIONS
 // =============================================================================
-function onFormSubmit(e) {
+function onFormSubmit(e, debugging = false) {
+  //object structure during during debugging
+  // e = "sheetName"
   const service = new BikeShareService();
-  // Get the active sheet and the edited range
-  const sheetName = e.source.getActiveSheet().getName();
+
+  const sheet = !debugging ? e.source.getActiveSheet() : service.db.getSheet(e);
+  const lastRowId = sheet.getLastRow();
+  const sheetName = sheet.getName();
+  const responses = sheet.getRange(lastRowId, 1, 1, sheet.getLastColumn()).getValues()[0];
   // Check if the edit is in the 'Checkout Logs' or 'Return Logs' sheet
   if (sheetName === CONFIG.SHEETS.CHECKOUT_LOGS) {
-    const result = service.processCheckout(e);
-    Logger.log('Checkout processed:', result);
+    const result = service.processCheckout(responses);
+    Logger.log('Checkout processed:', result.message);
   } else if (sheetName === CONFIG.SHEETS.RETURN_LOGS) {
-    const result = service.processReturn(e);
-    Logger.log('Return processed:', result);
+    const result = service.processReturn(responses);
+    Logger.log('Return processed:', result.message);
   }
 }
 
