@@ -2,20 +2,26 @@
 // CHECKOUT LOG CLASS
 // ===============================================================================
 class CheckoutLog {
-  constructor(e) {
-    const sheet = e.source.getActiveSheet();
-    //  Get the last row with data in the edited sheet
-    const lastRowId = sheet.getLastRow();
+  constructor() {
+    this.timestamp = null;
+    this.emailAddress = null;
+    this.bikeCode = null;
+    this.confirmBikeCode = null;
+    this.keyAvailableCheck = null;
+    this.conditionConfirmation = null;
+    this.db = null;
+  }
 
-    const responses = sheet.getRange(lastRowId, 1, 1, sheet.getLastColumn()).getValues()[0];
-    
-    this.timestamp = responses[0];
-    this.emailAddress = responses[1];
-    this.bikeCode = responses[2];
-    this.confirmBikeCode = responses[3];
-    this.keyAvailableCheck = responses[4];
-    this.conditionConfirmation = responses[5];
-    this.db = new DatabaseManager();
+  static fromFormResponse(responses) {
+    const log = new CheckoutLog();
+    log.timestamp = responses[0];
+    log.emailAddress = responses[1];
+    log.bikeCode = responses[2];
+    log.confirmBikeCode = responses[3];
+    log.keyAvailableCheck = responses[4];
+    log.conditionConfirmation = responses[5];
+    log.db = new DatabaseManager();
+    return log;
   }
 
   validate() {
