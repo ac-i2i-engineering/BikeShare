@@ -18,13 +18,7 @@ class CheckoutFullSimulator {
     this.formId = CONFIG.FORMS.CHECKOUT_FORM_ID;
     
     // Form field IDs based on your checkout form structure
-    this.CHECKOUT_FIELD_IDS = {
-      EMAIL: 1337405542,
-      BIKE_CODE: 697424273,
-      CONFIRM_BIKE_CODE: 1288559812,
-      KEY_AVAILABLE: 998220660,
-      CONDITION_OK: 1671678893
-    };
+    this.FIELD_IDS = CONFIG.FORMS.CHECKOUT_FIELD_IDS;
   }
   simulateCheckout(responseData = null) {
     // Default response data
@@ -47,19 +41,19 @@ class CheckoutFullSimulator {
       const formResponse = form.createResponse();
       
       // Set value for each form item using IDs
-      const userEmailItem = form.getItemById(this.CHECKOUT_FIELD_IDS.EMAIL).asTextItem();
+      const userEmailItem = form.getItemById(this.FIELD_IDS.EMAIL).asTextItem();
       formResponse.withItemResponse(userEmailItem.createResponse(formData.userEmail));
 
-      const bikeCodeItem = form.getItemById(this.CHECKOUT_FIELD_IDS.BIKE_CODE).asTextItem();
+      const bikeCodeItem = form.getItemById(this.FIELD_IDS.BIKE_CODE).asTextItem();
       formResponse.withItemResponse(bikeCodeItem.createResponse(formData.bikeCode));
 
-      const confirmBikeCodeItem = form.getItemById(this.CHECKOUT_FIELD_IDS.CONFIRM_BIKE_CODE).asTextItem();
+      const confirmBikeCodeItem = form.getItemById(this.FIELD_IDS.CONFIRM_BIKE_CODE).asTextItem();
       formResponse.withItemResponse(confirmBikeCodeItem.createResponse(formData.confirmBikeCode));
 
-      const keyAvailableCheckItem = form.getItemById(this.CHECKOUT_FIELD_IDS.KEY_AVAILABLE).asMultipleChoiceItem();
+      const keyAvailableCheckItem = form.getItemById(this.FIELD_IDS.KEY_AVAILABLE).asMultipleChoiceItem();
       formResponse.withItemResponse(keyAvailableCheckItem.createResponse(formData.keyAvailable));
 
-      const conditionConfirmationItem = form.getItemById(this.CHECKOUT_FIELD_IDS.CONDITION_OK).asCheckboxItem();
+      const conditionConfirmationItem = form.getItemById(this.FIELD_IDS.CONDITION_OK).asCheckboxItem();
       formResponse.withItemResponse(conditionConfirmationItem.createResponse(formData.conditionOk));
 
       // Submit the form response
