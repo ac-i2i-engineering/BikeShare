@@ -7,8 +7,7 @@
 // FORM TRIGGER FUNCTIONS
 // =============================================================================
 function onFormSubmit(e, debugging = false) {
-  //object structure during during debugging
-  // e = "sheetName"
+  // During debugging: e = "sheetName"
   const service = new BikeShareService();
 
   const sheet = !debugging ? e.source.getActiveSheet() : service.db.getSheet(e);
