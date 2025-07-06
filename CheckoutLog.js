@@ -1,11 +1,9 @@
-
 // ===============================================================================
 // CHECKOUT LOG CLASS
 // ===============================================================================
 class CheckoutLog {
   constructor(e) {
     const sheet = e.source.getActiveSheet();
-    const range = e.range;
     //  Get the last row with data in the edited sheet
     const lastRowId = sheet.getLastRow();
 
@@ -21,14 +19,17 @@ class CheckoutLog {
   }
 
   validate() {
+    let status = true;
+    let message = [];
     if (this.bikeCode !== this.confirmBikeCode) {
-      Logger.log('Bike code confirmation does not match')
-      throw new Error('Bike code confirmation does not match');
+      status = false;
+      message.push('Bike code confirmation does not match');
     }
     if (this.keyAvailableCheck !== 'Yes') {
-      Logger.log('User did not confirm key availability')
-      throw new Error('User did not confirm key availability');
+      status = false;
+      message.push('User did not confirm key availability');
     }
+    return { status: status, message: message };
   }
 }
 // ===============================================================================
