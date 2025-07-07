@@ -30,6 +30,7 @@ Fields:
 - **# of mismatches**
 - **# of usage hours**
 - **# of overdue returns**
+- **# first usage date**
 
 ### Checkout Logs
 Fields:
