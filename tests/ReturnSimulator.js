@@ -16,7 +16,7 @@
 // ===========================================================================
 // Create the form responses and submit to trigger the onReturnFormSubmit function
 // =============================================================================
-class ReturnSimulator {
+class ReturnFullSimulator {
   constructor() {
     this.formId = CONFIG.FORMS.RETURN_FORM_ID;
     this.FIELD_IDS = CONFIG.FORMS.RETURN_FIELD_IDS;
@@ -125,7 +125,7 @@ class ReturnSimulator {
             bikeCode,
             bikeCode,
             'Yes',
-            '', 
+            [], 
             'No',
             '', 
             '' 
@@ -183,9 +183,65 @@ class ReturnSimulator {
   }
 }
 
-// Legacy function for backward compatibility
-function simulateReturn() {
-  const simulator = new ReturnSimulator();
+// ===========================================================================
+// Simulate checkout by creating a spreadsheet entry then, call form submission functions manually
+// ===========================================================================
+
+class ReturnVirtualSimulator {
+    constructor() {
+        this.db = new DatabaseManager();
+        this.returnSheet = CONFIG.SHEETS.RETURN_LOGS;
+    }
+
+    createReturnEntry(
+        email, 
+        bikeCode,
+        confirmCode, 
+        assureRodeBike = 'Yes', 
+        mismatchExplanation = [], 
+        returningForFriend = 'No',
+        friendEmail = '', 
+        issuesConcerns = ''
+    ) {
+        const entry = [
+            new Date(),
+            email, 
+            bikeCode,
+            confirmCode, 
+            assureRodeBike, 
+            mismatchExplanation.toString(), 
+            returningForFriend,
+            friendEmail, 
+            issuesConcerns
+        ];
+
+        // Append the entry to the return logs sheet
+        this.db.appendRow(this.returnSheet, entry);
+
+        // Return the entry
+        return entry;
+    }
+
+}
+
+function simulateFullReturn() {
+  const simulator = new ReturnFullSimulator();
   // return simulator.simulateReturn();
-  return simulator.createCustomReturn('test103@amherst.edu','King','Moore','Yes',['🔁 I swapped bikes with a friend during use'],'Yes','friend103@amherst.edu','Wheel was loose')
+  // return simulator.createCustomReturn('test103@amherst.edu','King','Moore','Yes',['🔁 I swapped bikes with a friend during use'],'Yes','friend103@amherst.edu','Wheel was loose')
+  return simulator.simulateMultipleReturns(num=5);
+}
+
+function simulateVirtualReturn() {
+  const simulator = new ReturnVirtualSimulator();
+  simulator.createReturnEntry(
+    'test504@amherst.edu',
+    'King',
+    'King',
+    'Yes',
+    [],
+    'No',
+    '',
+    ''
+  );
+  onFormSubmit(CONFIG.SHEETS.RETURN_LOGS, debugging = true);
 }
