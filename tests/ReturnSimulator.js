@@ -29,7 +29,7 @@ class ReturnSimulator {
       bikeCode: 'King',
       confirmBikeCode: 'King',
       assureRodeBike: 'Yes',
-      mismatchExplanation: '',
+      mismatchExplanation: [],
       returningForFriend: 'No',
       friendEmail: '',
       issuesConcerns: ''
@@ -88,26 +88,30 @@ class ReturnSimulator {
     }
   }
 
-  createCustomReturn(userEmail, bikeCode, correctBikeRidden = 'Yes', explanation = '', returningForFriend = 'No', friendDetails = '', issuesConcerns = '') {
+  createCustomReturn(
+    userEmail, 
+    bikeCode,
+    confirmBikeCode, 
+    assureRodeBike = 'Yes', 
+    mismatchExplanation = [], 
+    returningForFriend = 'No', 
+    friendEmail = '', 
+    issuesConcerns = ''
+    ) {
     const customData = {
       userEmail: userEmail,
       bikeCode: bikeCode,
-      confirmBikeCode: bikeCode, // Auto-match confirmation
-      correctBikeRidden: correctBikeRidden,
-      explanation: explanation,
+      confirmBikeCode: confirmBikeCode || bikeCode,
+      assureRodeBike: assureRodeBike,
+      mismatchExplanation: mismatchExplanation,
       returningForFriend: returningForFriend,
-      friendDetails: friendDetails,
+      friendEmail: friendEmail,
       issuesConcerns: issuesConcerns
     };
 
     return this.simulateReturn(customData);
   }
 
-  /**
-   * Simulates multiple return scenarios for batch testing
-   * @param {Array} scenarios - Array of return scenarios
-   * @returns {Array} Array of simulation results
-   */
   simulateMultipleReturns(num=2,isRandom=true,root="test",defaultBike="King") {
     const results = [];
     for (let i = 0; i < num; i++) {
@@ -118,6 +122,7 @@ class ReturnSimulator {
         console.log(`\n-----Email:${emailAddress}-------Bike:${bikeCode}--------`);
         results.push(this.createCustomReturn(
             emailAddress,
+            bikeCode,
             bikeCode,
             'Yes',
             '', 
@@ -134,56 +139,46 @@ class ReturnSimulator {
 
   getTestScenarios() {
     return [
-      {
-        userEmail: 'student1@amherst.edu',
-        bikeCode: 'Bike001',
-        confirmBikeCode: 'Bike001',
-        correctBikeRidden: 'Yes',
-        explanation: '',
-        returningForFriend: 'No',
-        friendDetails: '',
-        issuesConcerns: ''
-      },
-      {
-        userEmail: 'student2@amherst.edu',
-        bikeCode: 'Bike002',
-        confirmBikeCode: 'Bike002',
-        correctBikeRidden: 'No', // Bike mismatch
-        explanation: 'I accidentally took a different bike',
-        returningForFriend: 'No',
-        friendDetails: '',
-        issuesConcerns: ''
-      },
-      {
-        userEmail: 'student3@amherst.edu',
-        bikeCode: 'Bike003',
-        confirmBikeCode: 'Bike004', // Confirmation mismatch
-        correctBikeRidden: 'Yes',
-        explanation: '',
-        returningForFriend: 'No',
-        friendDetails: '',
-        issuesConcerns: ''
-      },
-      {
-        userEmail: 'student4@amherst.edu',
-        bikeCode: 'Bike004',
-        confirmBikeCode: 'Bike004',
-        correctBikeRidden: 'Yes',
-        explanation: '',
-        returningForFriend: 'Yes', // Returning for friend
-        friendDetails: 'John Smith - john.smith@amherst.edu',
-        issuesConcerns: ''
-      },
-      {
-        userEmail: 'student5@amherst.edu',
-        bikeCode: 'Bike005',
-        confirmBikeCode: 'Bike005',
-        correctBikeRidden: 'Yes',
-        explanation: '',
-        returningForFriend: 'No',
-        friendDetails: '',
-        issuesConcerns: 'Chain was making noise during ride' // Issues reported
-      }
+        { // Example scenario with correct data
+            userEmail:'test001@amherst.edu', 
+            bikeCode: 'Bike001',
+            confirmBikeCode: 'Bike001',
+            assureRodeBike: 'Yes',
+            mismatchExplanation: [],
+            returningForFriend: 'No',
+            friendEmail: '',
+            issuesConcerns: ''
+        },
+        {  // Example scenario with mismatch
+            userEmail: 'test002@amherst.edu',
+            bikeCode: 'Bike002',
+            confirmBikeCode: 'Bike102',
+            assureRodeBike: 'Yes',
+            mismatchExplanation: [],
+            returningForFriend: 'No',
+            friendEmail: '',
+            issuesConcerns: ''
+        },
+        {  // Example scenario with returning for a friend
+            userEmail: 'test003@amherst.edu',
+            bikeCode: 'Bike003',
+            confirmBikeCode: 'Bike003',
+            assureRodeBike: 'Yes',
+            mismatchExplanation: [],
+            returningForFriend: 'Yes',
+            friendEmail: 'friend003@amherst.edu',
+            issuesConcerns: ''
+        },
+        { // Example scenario with not sure about the bike ridden
+            userEmail: 'test004@amherst.edu',
+            bikeCode: 'Bike004',
+            confirmBikeCode: 'Bike005',
+            assureRodeBike: 'Yes',
+            mismatchExplanation: ['🧾 I filled out the wrong ID during checkout'],
+            returningForFriend: 'No',
+            friendEmail: '',
+            issuesConcerns: ''
+        }
     ];
   }
 }
