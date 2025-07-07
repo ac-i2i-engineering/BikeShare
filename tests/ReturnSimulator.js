@@ -1,0 +1,214 @@
+/**
+ * BikeShare Return Form Simulator Class
+ * Handles simulation of return form submissions for testing
+ * 
+ * Form Structure:
+ * [0] [Id=1224208618] Email
+ * [1] [Id=1916897857] Enter Bike Name/Code
+ * [2] [Id=1814237596] Confirm Bike Name/Code
+ * [3] [Id=788338430] Did you ride the bike with the actual code/name you checked out?
+ * [4] [Id=993479484] If you did not or are not sure you rode the bike with the actual ID you checked out, please explain why.
+ * [5] [Id=2017212460] Are you returning on behalf of a friend?
+ * [6] [Id=552890597] If you are returning on behalf of a friend, what is their email?
+ * [7] [Id=71285803] Are there any errors/issues/concerns you'd like us to know about?
+ */
+
+// ===========================================================================
+// Create the form responses and submit to trigger the onReturnFormSubmit function
+// =============================================================================
+class ReturnSimulator {
+  constructor() {
+    this.formId = CONFIG.FORMS.RETURN_FORM_ID;
+    this.FIELD_IDS = CONFIG.FORMS.RETURN_FIELD_IDS;
+  }
+
+  simulateReturn(responseData = null) {
+    // Default response data
+    const defaultResponse = {
+      userEmail: 'test002@amherst.edu',
+      bikeCode: 'King',
+      confirmBikeCode: 'King',
+      correctBikeRidden: 'Yes',
+      explanation: '',
+      returningForFriend: 'No',
+      friendDetails: '',
+      issuesConcerns: ''
+    };
+
+    // Use provided data or default
+    const formData = responseData || defaultResponse;
+
+    try {
+      // Open the return form
+      const form = FormApp.openById(this.formId);
+      
+      // Create a new form response
+      const formResponse = form.createResponse();
+      
+      // Set value for each form item using IDs (when IDs are available)
+      if (this.FIELD_IDS.EMAIL) {
+        const userEmailItem = form.getItemById(this.FIELD_IDS.EMAIL).asTextItem();
+        formResponse.withItemResponse(userEmailItem.createResponse(formData.userEmail));
+      }
+
+      if (this.FIELD_IDS.BIKE_CODE) {
+        const bikeCodeItem = form.getItemById(this.FIELD_IDS.BIKE_CODE).asTextItem();
+        formResponse.withItemResponse(bikeCodeItem.createResponse(formData.bikeCode));
+      }
+
+      if (this.FIELD_IDS.CONFIRM_BIKE_CODE) {
+        const confirmBikeCodeItem = form.getItemById(this.FIELD_IDS.CONFIRM_BIKE_CODE).asTextItem();
+        formResponse.withItemResponse(confirmBikeCodeItem.createResponse(formData.confirmBikeCode));
+      }
+
+      if (this.FIELD_IDS.CORRECT_BIKE_RIDDEN) {
+        const correctBikeItem = form.getItemById(this.FIELD_IDS.CORRECT_BIKE_RIDDEN).asMultipleChoiceItem();
+        formResponse.withItemResponse(correctBikeItem.createResponse(formData.correctBikeRidden));
+      }
+
+      if (this.FIELD_IDS.EXPLANATION && formData.explanation) {
+        const explanationItem = form.getItemById(this.FIELD_IDS.EXPLANATION).asTextItem();
+        formResponse.withItemResponse(explanationItem.createResponse(formData.explanation));
+      }
+
+      if (this.FIELD_IDS.RETURNING_FOR_FRIEND) {
+        const friendReturnItem = form.getItemById(this.FIELD_IDS.RETURNING_FOR_FRIEND).asMultipleChoiceItem();
+        formResponse.withItemResponse(friendReturnItem.createResponse(formData.returningForFriend));
+      }
+
+      if (this.FIELD_IDS.FRIEND_DETAILS && formData.friendDetails) {
+        const friendDetailsItem = form.getItemById(this.FIELD_IDS.FRIEND_DETAILS).asTextItem();
+        formResponse.withItemResponse(friendDetailsItem.createResponse(formData.friendDetails));
+      }
+
+      if (this.FIELD_IDS.ISSUES_CONCERNS && formData.issuesConcerns) {
+        const issuesItem = form.getItemById(this.FIELD_IDS.ISSUES_CONCERNS).asTextItem();
+        formResponse.withItemResponse(issuesItem.createResponse(formData.issuesConcerns));
+      }
+
+      // Submit the form response
+      const submittedResponse = formResponse.submit();
+
+      return {
+        success: true,
+        responseId: submittedResponse.getId(),
+        timestamp: submittedResponse.getTimestamp(),
+        formData: formData,
+        message: 'Return simulation completed successfully'
+      };
+      
+    } catch (error) {
+      console.error('Error simulating return:', error);
+      return {
+        success: false,
+        error: error.message,
+        formData: formData
+      };
+    }
+  }
+
+  createCustomReturn(userEmail, bikeCode, correctBikeRidden = 'Yes', explanation = '', returningForFriend = 'No', friendDetails = '', issuesConcerns = '') {
+    const customData = {
+      userEmail: userEmail,
+      bikeCode: bikeCode,
+      confirmBikeCode: bikeCode, // Auto-match confirmation
+      correctBikeRidden: correctBikeRidden,
+      explanation: explanation,
+      returningForFriend: returningForFriend,
+      friendDetails: friendDetails,
+      issuesConcerns: issuesConcerns
+    };
+
+    return this.simulateReturn(customData);
+  }
+
+  /**
+   * Simulates multiple return scenarios for batch testing
+   * @param {Array} scenarios - Array of return scenarios
+   * @returns {Array} Array of simulation results
+   */
+  simulateMultipleReturns(num=2,isRandom=true,root="test",defaultBike="King") {
+    const results = [];
+    for (let i = 0; i < num; i++) {
+        let finalPart = i < 10 ? '00' + i : i < 100 ? '0' + i : i;
+        let emailAddress = root + finalPart + '@amherst.edu';
+        const randomIndex = Math.floor(Math.random() * CONFIG.BIKE_NAMES.length);
+        const bikeCode = isRandom ? CONFIG.BIKE_NAMES[randomIndex] : defaultBike;
+        console.log(`\n-----Email:${emailAddress}-------Bike:${bikeCode}--------`);
+        results.push(this.createCustomReturn(
+            emailAddress,
+            bikeCode,
+            'Yes',
+            '', 
+            'No',
+            '', 
+            '' 
+        ));
+        // Small delay between submissions
+        Utilities.sleep(500);
+    }
+    
+    return results;
+  }
+
+  getTestScenarios() {
+    return [
+      {
+        userEmail: 'student1@amherst.edu',
+        bikeCode: 'Bike001',
+        confirmBikeCode: 'Bike001',
+        correctBikeRidden: 'Yes',
+        explanation: '',
+        returningForFriend: 'No',
+        friendDetails: '',
+        issuesConcerns: ''
+      },
+      {
+        userEmail: 'student2@amherst.edu',
+        bikeCode: 'Bike002',
+        confirmBikeCode: 'Bike002',
+        correctBikeRidden: 'No', // Bike mismatch
+        explanation: 'I accidentally took a different bike',
+        returningForFriend: 'No',
+        friendDetails: '',
+        issuesConcerns: ''
+      },
+      {
+        userEmail: 'student3@amherst.edu',
+        bikeCode: 'Bike003',
+        confirmBikeCode: 'Bike004', // Confirmation mismatch
+        correctBikeRidden: 'Yes',
+        explanation: '',
+        returningForFriend: 'No',
+        friendDetails: '',
+        issuesConcerns: ''
+      },
+      {
+        userEmail: 'student4@amherst.edu',
+        bikeCode: 'Bike004',
+        confirmBikeCode: 'Bike004',
+        correctBikeRidden: 'Yes',
+        explanation: '',
+        returningForFriend: 'Yes', // Returning for friend
+        friendDetails: 'John Smith - john.smith@amherst.edu',
+        issuesConcerns: ''
+      },
+      {
+        userEmail: 'student5@amherst.edu',
+        bikeCode: 'Bike005',
+        confirmBikeCode: 'Bike005',
+        correctBikeRidden: 'Yes',
+        explanation: '',
+        returningForFriend: 'No',
+        friendDetails: '',
+        issuesConcerns: 'Chain was making noise during ride' // Issues reported
+      }
+    ];
+  }
+}
+
+// Legacy function for backward compatibility
+function simulateReturn() {
+  const simulator = new ReturnSimulator();
+  return simulator.simulateReturn();
+}

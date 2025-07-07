@@ -14,10 +14,7 @@
 // =============================================================================
 class CheckoutFullSimulator {
   constructor(){
-    // Default form ID from configuration
     this.formId = CONFIG.FORMS.CHECKOUT_FORM_ID;
-    
-    // Form field IDs based on your checkout form structure
     this.FIELD_IDS = CONFIG.FORMS.CHECKOUT_FIELD_IDS;
   }
   simulateCheckout(responseData = null) {
@@ -94,19 +91,13 @@ class CheckoutFullSimulator {
     for(let i=0;i<num;i++){
       let finalPart = i < 10 ? '00'+i : i < 100 ? '0'+i : i
       let emailAddress = root + finalPart+'@amherst.edu'
-      let randomNumber = getRandomInteger(0, 9);
-      let bikeCode = isRandom ? CONFIG.BIKE_NAMES[randomNumber] : defaultBike
+      let randomIndex = Math.floor(Math.random() * CONFIG.BIKE_NAMES.length);
+      let bikeCode = isRandom ? CONFIG.BIKE_NAMES[randomIndex] : defaultBike;
 
       console.log(`\n-----Email:${emailAddress}-------Bike:${bikeCode}--------`)
       results.push(this.createCustomCheckout(emailAddress,bikeCode))
        // Small delay between submissions
       Utilities.sleep(500);
-    }
-
-    function getRandomInteger(min, max) {
-      min = Math.ceil(min); // Ensure minimum is an integer
-      max = Math.floor(max); // Ensure maximum is an integer
-      return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
     return results;
