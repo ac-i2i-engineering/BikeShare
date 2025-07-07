@@ -28,10 +28,10 @@ class ReturnSimulator {
       userEmail: 'test002@amherst.edu',
       bikeCode: 'King',
       confirmBikeCode: 'King',
-      correctBikeRidden: 'Yes',
-      explanation: '',
+      assureRodeBike: 'Yes',
+      mismatchExplanation: '',
       returningForFriend: 'No',
-      friendDetails: '',
+      friendEmail: '',
       issuesConcerns: ''
     };
 
@@ -39,52 +39,33 @@ class ReturnSimulator {
     const formData = responseData || defaultResponse;
 
     try {
-      // Open the return form
       const form = FormApp.openById(this.formId);
-      
-      // Create a new form response
       const formResponse = form.createResponse();
       
       // Set value for each form item using IDs (when IDs are available)
-      if (this.FIELD_IDS.EMAIL) {
-        const userEmailItem = form.getItemById(this.FIELD_IDS.EMAIL).asTextItem();
-        formResponse.withItemResponse(userEmailItem.createResponse(formData.userEmail));
-      }
+      const userEmailItem = form.getItemById(this.FIELD_IDS.EMAIL).asTextItem();
+      formResponse.withItemResponse(userEmailItem.createResponse(formData.userEmail));
 
-      if (this.FIELD_IDS.BIKE_CODE) {
-        const bikeCodeItem = form.getItemById(this.FIELD_IDS.BIKE_CODE).asTextItem();
-        formResponse.withItemResponse(bikeCodeItem.createResponse(formData.bikeCode));
-      }
+      const bikeCodeItem = form.getItemById(this.FIELD_IDS.BIKE_CODE).asTextItem();
+      formResponse.withItemResponse(bikeCodeItem.createResponse(formData.bikeCode));
 
-      if (this.FIELD_IDS.CONFIRM_BIKE_CODE) {
-        const confirmBikeCodeItem = form.getItemById(this.FIELD_IDS.CONFIRM_BIKE_CODE).asTextItem();
-        formResponse.withItemResponse(confirmBikeCodeItem.createResponse(formData.confirmBikeCode));
-      }
+      const confirmBikeCodeItem = form.getItemById(this.FIELD_IDS.CONFIRM_BIKE_CODE).asTextItem();
+      formResponse.withItemResponse(confirmBikeCodeItem.createResponse(formData.confirmBikeCode));
 
-      if (this.FIELD_IDS.CORRECT_BIKE_RIDDEN) {
-        const correctBikeItem = form.getItemById(this.FIELD_IDS.CORRECT_BIKE_RIDDEN).asMultipleChoiceItem();
-        formResponse.withItemResponse(correctBikeItem.createResponse(formData.correctBikeRidden));
-      }
+      const assureRodeBikeItem = form.getItemById(this.FIELD_IDS.ASSURE_RODE_BIKE).asMultipleChoiceItem();
+      formResponse.withItemResponse(assureRodeBikeItem.createResponse(formData.assureRodeBike));
 
-      if (this.FIELD_IDS.EXPLANATION && formData.explanation) {
-        const explanationItem = form.getItemById(this.FIELD_IDS.EXPLANATION).asTextItem();
-        formResponse.withItemResponse(explanationItem.createResponse(formData.explanation));
-      }
+      const mismatchExplanationItem = form.getItemById(this.FIELD_IDS.BIKE_MISMATCH_EXPLANATION).asTextItem();
+      formResponse.withItemResponse(mismatchExplanationItem.createResponse(formData.mismatchExplanation));
 
-      if (this.FIELD_IDS.RETURNING_FOR_FRIEND) {
-        const friendReturnItem = form.getItemById(this.FIELD_IDS.RETURNING_FOR_FRIEND).asMultipleChoiceItem();
-        formResponse.withItemResponse(friendReturnItem.createResponse(formData.returningForFriend));
-      }
+      const friendReturnItem = form.getItemById(this.FIELD_IDS.RETURNING_FOR_FRIEND).asMultipleChoiceItem();
+      formResponse.withItemResponse(friendReturnItem.createResponse(formData.returningForFriend));
 
-      if (this.FIELD_IDS.FRIEND_DETAILS && formData.friendDetails) {
-        const friendDetailsItem = form.getItemById(this.FIELD_IDS.FRIEND_DETAILS).asTextItem();
-        formResponse.withItemResponse(friendDetailsItem.createResponse(formData.friendDetails));
-      }
+      const friendEmailItem = form.getItemById(this.FIELD_IDS.FRIEND_EMAIL).asTextItem();
+      formResponse.withItemResponse(friendEmailItem.createResponse(formData.friendEmail));
 
-      if (this.FIELD_IDS.ISSUES_CONCERNS && formData.issuesConcerns) {
-        const issuesItem = form.getItemById(this.FIELD_IDS.ISSUES_CONCERNS).asTextItem();
-        formResponse.withItemResponse(issuesItem.createResponse(formData.issuesConcerns));
-      }
+      const issuesItem = form.getItemById(this.FIELD_IDS.ISSUES_CONCERNS).asTextItem();
+      formResponse.withItemResponse(issuesItem.createResponse(formData.issuesConcerns));
 
       // Submit the form response
       const submittedResponse = formResponse.submit();

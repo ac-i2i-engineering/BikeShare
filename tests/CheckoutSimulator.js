@@ -31,10 +31,7 @@ class CheckoutFullSimulator {
     const formData = responseData || defaultResponse;
 
     try {
-      // Open the checkout form
       const form = FormApp.openById(this.formId);
-      
-      // Create a new form response
       const formResponse = form.createResponse();
       
       // Set value for each form item using IDs
