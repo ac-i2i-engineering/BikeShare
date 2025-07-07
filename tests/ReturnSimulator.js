@@ -55,7 +55,7 @@ class ReturnSimulator {
       const assureRodeBikeItem = form.getItemById(this.FIELD_IDS.ASSURE_RODE_BIKE).asMultipleChoiceItem();
       formResponse.withItemResponse(assureRodeBikeItem.createResponse(formData.assureRodeBike));
 
-      const mismatchExplanationItem = form.getItemById(this.FIELD_IDS.BIKE_MISMATCH_EXPLANATION).asTextItem();
+      const mismatchExplanationItem = form.getItemById(this.FIELD_IDS.BIKE_MISMATCH_EXPLANATION).asCheckboxItem();
       formResponse.withItemResponse(mismatchExplanationItem.createResponse(formData.mismatchExplanation));
 
       const friendReturnItem = form.getItemById(this.FIELD_IDS.RETURNING_FOR_FRIEND).asMultipleChoiceItem();
@@ -64,7 +64,7 @@ class ReturnSimulator {
       const friendEmailItem = form.getItemById(this.FIELD_IDS.FRIEND_EMAIL).asTextItem();
       formResponse.withItemResponse(friendEmailItem.createResponse(formData.friendEmail));
 
-      const issuesItem = form.getItemById(this.FIELD_IDS.ISSUES_CONCERNS).asTextItem();
+      const issuesItem = form.getItemById(this.FIELD_IDS.ISSUES_CONCERNS).asParagraphTextItem();
       formResponse.withItemResponse(issuesItem.createResponse(formData.issuesConcerns));
 
       // Submit the form response
@@ -186,5 +186,6 @@ class ReturnSimulator {
 // Legacy function for backward compatibility
 function simulateReturn() {
   const simulator = new ReturnSimulator();
-  return simulator.simulateReturn();
+  // return simulator.simulateReturn();
+  return simulator.createCustomReturn('test103@amherst.edu','King','Moore','Yes',['🔁 I swapped bikes with a friend during use'],'Yes','friend103@amherst.edu','Wheel was loose')
 }
