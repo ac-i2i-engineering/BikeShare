@@ -6,32 +6,32 @@ class BikeShareService {
     this.db = new DatabaseManager();
   }
 
-  processCheckout(e) {
-    try {
-      const checkoutLog = CheckoutLog.fromFormResponse(e);
-      checkoutLog.validate();
-      checkoutLog.save();
-
-      const user = User.findByEmail(checkoutLog.emailAddress);
-      const bike = user.checkoutBike(checkoutLog.bikeCode);
-
-      this.sendCheckoutConfirmation(user.email, bike.bikeId);
-      return { success: true, message: `Bike ${bike.bikeId} checked out successfully` };
-    } catch (error) {
-      this.sendErrorNotification(e.getRespondentEmail(), error.message);
-      return { success: false, error: error.message };
+  processCheckout(formResponse) {
+    const checkoutLog = CheckoutLog.fromFormResponse(formResponse);
+    const validation = checkoutLog.validate();
+    if (!validation.success) {
+      // this.sendErrorNotification(checkoutLog.emailAddress, validation.message.join(', '));
+      // return { success: false, message: validation.message };
+      throw new Error(validation.message.join(', '));
     }
+    const user = User.findByEmail(checkoutLog.emailAddress);
+    const bike = user.checkoutBike(checkoutLog.bikeCode);
+    // this.sendCheckoutConfirmation(user.email, bike.bikeId);
+    return { success: true, message: `Bike ${bike.bikeId} checked out successfully` };
   }
 
   processReturn(formResponse) {
     try {
       const returnLog = ReturnLog.fromFormResponse(formResponse);
-      returnLog.validate();
-      returnLog.save();
+      const validation = returnLog.validate();
+
+      if (!validation.success) {
+        throw new Error(validation.message.join(', '));
+      }
 
       const user = User.findByEmail(returnLog.emailAddress);
-      const usageHours = this.calculateUsageHours(returnLog.bikeName);
-      const bike = user.returnBike(returnLog.bikeName, usageHours);
+      const usageHours = this.calculateUsageHours(returnLog.bikeCode);
+      const bike = user.returnBike(returnLog.bikeCode, usageHours);
 
       if (returnLog.hasMismatch()) {
         user.recordMismatch();
