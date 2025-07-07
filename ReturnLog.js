@@ -2,60 +2,47 @@
 // RETURN LOG CLASS
 //==================================================================================
 class ReturnLog {
-  constructor(data) {
-    this.timestamp = data.timestamp || new Date();
-    this.emailAddress = data.emailAddress;
-    this.studentId = data.studentId;
-    this.bikeName = data.bikeName;
-    this.confirmBikeName = data.confirmBikeName;
-    this.correctBikeRidden = data.correctBikeRidden;
-    this.explanation = data.explanation || '';
-    this.returningForFriend = data.returningForFriend;
-    this.friendDetails = data.friendDetails || '';
-    this.issues = data.issues || '';
+  constructor() {
+    this.timestamp = null;
+    this.emailAddress = null;
+    this.bikeCode = null;
+    this.confirmBikeCode = null;
+    this.assureRodeBike = null;
+    this.mismatchExplanation = null;
+    this.returningForFriend = null;
+    this.friendEmail = null;
+    this.issuesConcerns = null;
     this.db = new DatabaseManager();
   }
 
-  static fromFormResponse(formResponse) {
-    const responses = formResponse.getItemResponses();
-    return new ReturnLog({
-      timestamp: formResponse.getTimestamp(),
-      emailAddress: formResponse.getRespondentEmail(),
-      studentId: responses[0].getResponse(),
-      bikeName: responses[1].getResponse(),
-      confirmBikeName: responses[2].getResponse(),
-      correctBikeRidden: responses[3].getResponse(),
-      explanation: responses[4] ? responses[4].getResponse() : '',
-      returningForFriend: responses[5].getResponse(),
-      friendDetails: responses[6] ? responses[6].getResponse() : '',
-      issues: responses[7] ? responses[7].getResponse() : ''
-    });
-  }
-
-  save() {
-    const values = [
-      this.timestamp,
-      this.emailAddress,
-      this.studentId,
-      this.bikeName,
-      this.confirmBikeName,
-      this.correctBikeRidden,
-      this.explanation,
-      this.returningForFriend,
-      this.friendDetails,
-      this.issues
-    ];
-    this.db.appendRow(CONFIG.SHEETS.RETURN_LOGS, values);
+  static fromFormResponse(responses) {
+    const log = new ReturnLog();
+    log.timestamp = responses[0];
+    log.emailAddress = responses[1];
+    log.bikeCode = responses[2];
+    log.confirmBikeCode = responses[3];
+    log.assureRodeBike = responses[4];
+    log.mismatchExplanation = responses[5];
+    log.returningForFriend = responses[6];
+    log.friendEmail = responses[7];
+    log.issuesConcerns = responses[8];
+    return log;
   }
 
   validate() {
-    if (this.bikeName !== this.confirmBikeName) {
-      throw new Error('Bike name confirmation does not match');
+    let response = {
+      success:true,
+      message:[]
     }
-  }
-
-  hasMismatch() {
-    return this.correctBikeRidden !== 'Yes';
+    if (this.bikeCode !== this.confirmBikeCode) {
+      response.success = false;
+      response.message.push('Bike code confirmation does not match');
+    }
+    if (this.assureRodeBike !== 'Yes') {
+      response.success = false;
+      response.message.push(`User does not assure riding the bike\nReason: ${this.mismatchExplanation}`);
+    }
+    return response;
   }
 }
 // =============================================================================
