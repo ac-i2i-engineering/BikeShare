@@ -66,8 +66,8 @@ class User {
     }
   }
 
-  checkoutBike(bikeId) {
-    if (this.hasUnreturnedBike) {
+  checkoutBike(bikeId, timestamp) {
+    if (this.hasUnreturnedBike && !CONFIG.REGULATIONS.CAN_CHECKOUT_WITH_UNRETURNED_BIKE) {
       throw new Error('User already has an unreturned bike');
     }
 
@@ -76,10 +76,15 @@ class User {
       throw new Error('Bike not found');
     }
 
-    bike.checkout(this.email);
+    bike.checkout(this.email, timestamp);
+
+    // Update user usage records
+    if (this.isFirstUsage) {
+      this.firstUsageDate = timestamp;
+    }
     this.hasUnreturnedBike = true;
     this.lastCheckoutId = bikeId;
-    this.lastCheckoutDate = new Date();
+    this.lastCheckoutDate = timestamp;
     this.numberOfCheckouts++;
     this.save();
 

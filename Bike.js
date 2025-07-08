@@ -2,8 +2,9 @@
 // BIKE CLASS
 // =============================================================================
 class Bike {
-  constructor(bikeId, maintenanceStatus = 'Good', availability = 'Available') {
+  constructor(bikeId, size, maintenanceStatus = 'Good', availability = 'Available') {
     this.bikeId = bikeId;
+    this.size = size;
     this.maintenanceStatus = maintenanceStatus;
     this.availability = availability;
     this.lastCheckoutDate = null;
@@ -18,15 +19,15 @@ class Bike {
   }
 
   static fromSheetRow(rowData) {
-    const bike = new Bike(rowData[0], rowData[1], rowData[2]);
-    bike.lastCheckoutDate = rowData[3];
-    bike.lastReturnDate = rowData[4];
-    bike.currentUsageTimer = rowData[5] || 0;
-    bike.totalUsageHours = rowData[6] || 0;
-    bike.mostRecentUser = rowData[7] || '';
-    bike.secondRecentUser = rowData[8] || '';
-    bike.thirdRecentUser = rowData[9] || '';
-    bike.tempRecent = rowData[10] || '';
+    const bike = new Bike(rowData[0], rowData[1], rowData[2], rowData[3]);
+    bike.lastCheckoutDate = rowData[4];
+    bike.lastReturnDate = rowData[5];
+    bike.currentUsageTimer = rowData[6] || 0;
+    bike.totalUsageHours = rowData[7] || 0;
+    bike.mostRecentUser = rowData[8] || '';
+    bike.secondRecentUser = rowData[9] || '';
+    bike.thirdRecentUser = rowData[10] || '';
+    bike.tempRecent = rowData[11] || '';
     return bike;
   }
 
@@ -39,6 +40,7 @@ class Bike {
   save() {
     const values = [
       this.bikeId,
+      this.size,
       this.maintenanceStatus,
       this.availability,
       this.lastCheckoutDate,
@@ -59,13 +61,13 @@ class Bike {
     }
   }
 
-  checkout(userEmail) {
-    if (this.availability !== 'Available') {
+  checkout(userEmail,timestamp) {
+    if (this.availability !== 'Available' && !CONFIG.REGULATIONS.CAN_CHECKOUT_UNAVAILABLE_BIKE) {
       throw new Error(`Bike ${this.bikeId} is not available for checkout`);
     }
 
     this.availability = 'Checked Out';
-    this.lastCheckoutDate = new Date();
+    this.lastCheckoutDate = timestamp;
     this.updateRecentUsers(userEmail);
     this.save();
   }

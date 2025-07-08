@@ -2,6 +2,7 @@
 // CONFIGURATION AND CONSTANTS
 // =============================================================================
 const CONFIG = {
+  DEBUG_MODE: true,
   SHEETS: {
     BIKES_STATUS: 'Bikes Status',
     USER_STATUS: 'User Status', 
@@ -30,5 +31,11 @@ const CONFIG = {
       ISSUES_CONCERNS: 71285803
     },
   },
-  BIKE_NAMES:['Gates','Harris','Hitchcock','Humphrey','Meiklejohn','Moore','Olds','Seelye','Stearns']
+  BIKE_NAMES:['Gates','Harris','Hitchcock','Humphrey','Meiklejohn','Moore','Olds','Seelye','Stearns'],
+  REGULATIONS:{
+    CAN_CHECKOUT_WITH_UNRETURNED_BIKE: true,
+    CAN_CHECKOUT_UNAVAILABLE_BIKE: true,
+    NEED_USER_CONFIRM_KEY_ACCESS: false,
+    MAX_CHECKOUT_HOURS: 24,
+  }
 };

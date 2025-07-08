@@ -10,23 +10,12 @@ class BikeShareService {
     const checkoutLog = CheckoutLog.fromFormResponse(formResponse);
     const validation = checkoutLog.validate();
     // Validate the checkout log
-    if (!validation.success) {
+    if (!validation.success && CONFIG.REGULATIONS.NEED_USER_CONFIRM_KEY_ACCESS) {
       throw new Error(validation.message.join(', '));
     }
 
-    // update user usage records
     const user = User.findByEmail(checkoutLog.emailAddress);
-    if (user.isFirstUsage) {
-      user.firstUsageDate = checkoutLog.timestamp;
-    }
-    user.hasUnreturnedBike = true;
-    user.lastCheckoutId = checkoutLog.bikeCode;
-    user.lastCheckoutDate = checkoutLog.timestamp;
-    user.numberOfCheckouts++;
-    user.save();
-
-    // update bike status
-    const bike = user.checkoutBike(checkoutLog.bikeCode);
+    const bike = user.checkoutBike(checkoutLog.bikeCode, checkoutLog.timestamp);
     return { success: true, message: `Bike ${bike.bikeId} checked out successfully` };
   }
 
