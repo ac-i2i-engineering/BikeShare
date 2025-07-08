@@ -8,6 +8,7 @@ The database in relational model.
 ### Bikes Status
 Fields:
 - **Bike ID**
+- **Size**
 - **Maintenance status**
 - **Availability**
 - **Last checkout date**

@@ -14,12 +14,14 @@ class User {
     this.numberOfMismatches = 0;
     this.usageHours = 0;
     this.overdueReturns = 0;
+    this.firstUsageDate = null;
+    this.isFirstUsage = this.firstUsageDate === null; 
     this.db = new DatabaseManager();
   }
 
   static fromSheetRow(rowData) {
     const user = new User(rowData[0]);
-    user.hasUnreturnedBike = rowData[1] || false;
+    user.hasUnreturnedBike = rowData[1] === 'Yes';
     user.lastCheckoutId = rowData[2] || '';
     user.lastCheckoutDate = rowData[3];
     user.lastReturnId = rowData[4] || '';
@@ -29,19 +31,21 @@ class User {
     user.numberOfMismatches = rowData[8] || 0;
     user.usageHours = rowData[9] || 0;
     user.overdueReturns = rowData[10] || 0;
+    user.firstUsageDate = rowData[11] || null;
+    user.isFirstUsage = user.firstUsageDate === null;
     return user;
   }
 
   static findByEmail(email) {
     const db = new DatabaseManager();
-    const result = db.findRowByColumn(CONFIG.SHEETS.USER_STATUS, 0, email);
-    return result ? User.fromSheetRow(result.data) : new User(email);
+    const userRecord = db.findRowByColumn(CONFIG.SHEETS.USER_STATUS, 0, email);
+    return userRecord ? User.fromSheetRow(userRecord.data) : new User(email);
   }
 
   save() {
     const values = [
       this.email,
-      this.hasUnreturnedBike,
+      this.hasUnreturnedBike ? 'Yes' : 'No',
       this.lastCheckoutId,
       this.lastCheckoutDate,
       this.lastReturnId,
@@ -50,7 +54,8 @@ class User {
       this.numberOfReturns,
       this.numberOfMismatches,
       this.usageHours,
-      this.overdueReturns
+      this.overdueReturns,
+      this.firstUsageDate
     ];
 
     const existing = this.db.findRowByColumn(CONFIG.SHEETS.USER_STATUS, 0, this.email);
