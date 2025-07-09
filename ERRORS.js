@@ -4,4 +4,5 @@ let ERRORS = {
     REPORT: [],
     NOTIFICATION: [],
     SYSTEM: [],
+    TEST: []
 }
