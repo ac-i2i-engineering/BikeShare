@@ -88,29 +88,21 @@ coming soon
 6. **Report** - Generates system snapshots and analytics
 7. **BikeShareService** - Main service layer that orchestrates all operations
 
-**Encapsulation:**
-- Each class encapsulates its data and related operations
-- Private methods handle internal logic while public methods provide clean interfaces
-- Database operations are abstracted through the DatabaseManager class
+## Bike Names to Hash Spreadsheet Formula
+To convert bike names to hash values, use the following formula in Google Sheets:
+```excel
+=UPPER(CONCAT(DEC2HEX(MOD(SUM(CODE(MID(A10,ROW(INDIRECT("1:"&LEN(A10))),1)))*13, 4096),3), DEC2HEX(MOD(SUM(CODE(MID(A10,ROW(INDIRECT("1:"&LEN(A10))),1)))*LEN(A10)*7, 4096),3)))
+```
+## Pre-fill link creation for Google Forms
+To create pre-filled links for Google Forms, use the following format:
+```excel
+="https://docs.google.com/forms/d/e/FORM_ID/viewform?usp=pp_url&entry.FIELD_ID=" & A1
+```
+Replace `FORM_ID` with your form's ID and `FIELD_ID` with the specific field ID you want to pre-fill. The value in cell `A1` will be automatically filled in the form.
 
-**Inheritance & Composition:**
-- All model classes use DatabaseManager for data persistence
-- Log classes inherit common functionality while implementing specific validation
-
-**Polymorphism:**
-- Static factory methods (fromSheetRow, fromFormResponse) create objects from different data sources
-- Uniform interfaces for save() operations across all model classes
-
-**Single Responsibility:**
-- Bike class handles bike-specific operations (checkout, return, maintenance)
-- User class manages user-specific data and operations
-- Service class orchestrates business logic without knowing database details
-- Log classes handle form processing and validation
-
-#### Implementation Benefits:
-
-1. **Maintainability:** Clear class boundaries make code easier to update and debug
-2. **Reusability:** Classes can be easily extended for new features
-3. **Testing:** Each class can be unit tested independently
-4. **Scalability:** New bike types or user roles can be added through inheritance
-5. **Error Handling:** Centralized error handling with proper exception propagation
+## Generate QR Codes for URLS
+To generate QR codes for URLs, you can use the following Google Sheets formula:
+```excel
+=IMAGE("https://quickchart.io/qr?text="&ENCODEURL(N2))
+```
+Replace `N2` with the cell containing the URL you want to convert into a QR code. This will generate a QR code image that can be scanned to access the URL directly.
