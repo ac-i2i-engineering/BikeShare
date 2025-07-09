@@ -1,12 +1,12 @@
 // ===============================================================================
 // CHECKOUT LOG CLASS
+// Deserializes form responses into a structured log object
 // ===============================================================================
 class CheckoutLog {
   constructor() {
     this.timestamp = null;
     this.emailAddress = null;
-    this.bikeCode = null;
-    this.confirmBikeCode = null;
+    this.bikeHash = null;
     this.keyAvailableCheck = null;
     this.conditionConfirmation = null;
     this.db = null;
@@ -16,10 +16,9 @@ class CheckoutLog {
     const log = new CheckoutLog();
     log.timestamp = responses[0];
     log.emailAddress = responses[1];
-    log.bikeCode = responses[2];
-    log.confirmBikeCode = responses[3];
-    log.keyAvailableCheck = responses[4];
-    log.conditionConfirmation = responses[5];
+    log.bikeHash = responses[2];
+    log.keyAvailableCheck = responses[3];
+    log.conditionConfirmation = responses[4];
     log.db = new DatabaseManager();
     return log;
   }
@@ -28,10 +27,6 @@ class CheckoutLog {
     let response = {
       success:true,
       message:[]
-    }
-    if (this.bikeCode !== this.confirmBikeCode) {
-      response.success = false;
-      response.message.push('Bike code confirmation does not match');
     }
     if (this.keyAvailableCheck !== 'Yes') {
       response.success = false;
