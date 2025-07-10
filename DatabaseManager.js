@@ -35,6 +35,35 @@ class DatabaseManager {
   appendRow(sheetName, values) {
     const sheet = this.getSheet(sheetName);
     sheet.appendRow(values);
+    this.orderByColumn(sheet, sheetName);
+  }
+
+  // orders the the sheet by a specific column
+  orderByColumn(sheet=null,sheetName=null) {
+    if (!sheet && !sheetName) {
+      throw new Error("Either 'sheet' or 'sheetName' must be provided.");
+    }
+
+    if (!sheet) {
+      sheet = this.getSheet(sheetName);
+    }
+
+    if (!sheet) {
+      throw new Error(`Sheet with name ${sheetName} not found.`);
+    }
+
+    if(!sheetName){
+      sheetName = sheet.getSheetName();
+    }
+
+    const columnIndex = CONFIG.SHEETS[sheetName].SORT_COLUMN;
+    const asc = CONFIG.SHEETS[sheetName].SORT_ORDER;
+    const lastRow = sheet.getLastRow();
+    const lastColumn = sheet.getLastColumn();
+    // Define range excluding the header row (assumes header is in row 1)
+    const range = sheet.getRange(2, 1, lastRow - 1, lastColumn);
+    // Sort by desired column in false = (Z → A) or true = (A-Z)
+    range.sort({ column: columnIndex+1, ascending: (asc === 'asc' || asc === true) }) //use columnIndex + 1 because sort method is 1-based index
   }
 }
 // =============================================================================
