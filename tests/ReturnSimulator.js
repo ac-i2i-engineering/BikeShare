@@ -26,8 +26,8 @@ class ReturnFullSimulator {
     // Default response data
     const defaultResponse = {
       userEmail: 'test002@amherst.edu',
-      bikeCode: 'King',
-      confirmBikeCode: 'King',
+      bikeName: 'King',
+      confirmBikeName: 'King',
       assureRodeBike: 'Yes',
       mismatchExplanation: [],
       returningForFriend: 'No',
@@ -46,11 +46,11 @@ class ReturnFullSimulator {
       const userEmailItem = form.getItemById(this.FIELD_IDS.EMAIL).asTextItem();
       formResponse.withItemResponse(userEmailItem.createResponse(formData.userEmail));
 
-      const bikeCodeItem = form.getItemById(this.FIELD_IDS.BIKE_NAME).asTextItem();
-      formResponse.withItemResponse(bikeCodeItem.createResponse(formData.bikeCode));
+      const bikeNameItem = form.getItemById(this.FIELD_IDS.BIKE_NAME).asTextItem();
+      formResponse.withItemResponse(bikeNameItem.createResponse(formData.bikeName));
 
-      const confirmBikeCodeItem = form.getItemById(this.FIELD_IDS.CONFIRM_BIKE_NAME).asTextItem();
-      formResponse.withItemResponse(confirmBikeCodeItem.createResponse(formData.confirmBikeCode));
+      const confirmBikeNameItem = form.getItemById(this.FIELD_IDS.CONFIRM_BIKE_NAME).asTextItem();
+      formResponse.withItemResponse(confirmBikeNameItem.createResponse(formData.confirmBikeName));
 
       const assureRodeBikeItem = form.getItemById(this.FIELD_IDS.ASSURE_RODE_BIKE).asMultipleChoiceItem();
       formResponse.withItemResponse(assureRodeBikeItem.createResponse(formData.assureRodeBike));
@@ -90,8 +90,8 @@ class ReturnFullSimulator {
 
   createCustomReturn(
     userEmail, 
-    bikeCode,
-    confirmBikeCode, 
+    bikeName,
+    confirmBikeName, 
     assureRodeBike = 'Yes', 
     mismatchExplanation = [], 
     returningForFriend = 'No', 
@@ -100,8 +100,8 @@ class ReturnFullSimulator {
     ) {
     const customData = {
       userEmail: userEmail,
-      bikeCode: bikeCode,
-      confirmBikeCode: confirmBikeCode || bikeCode,
+      bikeName: bikeName,
+      confirmBikeName: confirmBikeName || bikeName,
       assureRodeBike: assureRodeBike,
       mismatchExplanation: mismatchExplanation,
       returningForFriend: returningForFriend,
@@ -118,12 +118,12 @@ class ReturnFullSimulator {
         let finalPart = i < 10 ? '00' + i : i < 100 ? '0' + i : i;
         let emailAddress = root + finalPart + '@amherst.edu';
         const randomIndex = Math.floor(Math.random() * CONFIG.BIKE_NAMES.length);
-        const bikeCode = isRandom ? CONFIG.BIKE_NAMES[randomIndex] : defaultBike;
-        console.log(`\n-----Email:${emailAddress}-------Bike:${bikeCode}--------`);
+        const bikeName = isRandom ? CONFIG.BIKE_NAMES[randomIndex] : defaultBike;
+        console.log(`\n-----Email:${emailAddress}-------Bike:${bikeName}--------`);
         results.push(this.createCustomReturn(
             emailAddress,
-            bikeCode,
-            bikeCode,
+            bikeName,
+            bikeName,
             'Yes',
             [], 
             'No',
@@ -135,51 +135,6 @@ class ReturnFullSimulator {
     }
     
     return results;
-  }
-
-  getTestScenarios() {
-    return [
-        { // Example scenario with correct data
-            userEmail:'test001@amherst.edu', 
-            bikeCode: 'Bike001',
-            confirmBikeCode: 'Bike001',
-            assureRodeBike: 'Yes',
-            mismatchExplanation: [],
-            returningForFriend: 'No',
-            friendEmail: '',
-            issuesConcerns: ''
-        },
-        {  // Example scenario with mismatch
-            userEmail: 'test002@amherst.edu',
-            bikeCode: 'Bike002',
-            confirmBikeCode: 'Bike102',
-            assureRodeBike: 'Yes',
-            mismatchExplanation: [],
-            returningForFriend: 'No',
-            friendEmail: '',
-            issuesConcerns: ''
-        },
-        {  // Example scenario with returning for a friend
-            userEmail: 'test003@amherst.edu',
-            bikeCode: 'Bike003',
-            confirmBikeCode: 'Bike003',
-            assureRodeBike: 'Yes',
-            mismatchExplanation: [],
-            returningForFriend: 'Yes',
-            friendEmail: 'friend003@amherst.edu',
-            issuesConcerns: ''
-        },
-        { // Example scenario with not sure about the bike ridden
-            userEmail: 'test004@amherst.edu',
-            bikeCode: 'Bike004',
-            confirmBikeCode: 'Bike005',
-            assureRodeBike: 'Yes',
-            mismatchExplanation: ['🧾 I filled out the wrong ID during checkout'],
-            returningForFriend: 'No',
-            friendEmail: '',
-            issuesConcerns: ''
-        }
-    ];
   }
 }
 
@@ -195,7 +150,7 @@ class ReturnVirtualSimulator {
 
     createReturnEntry(
         email, 
-        bikeCode,
+        bikeName,
         confirmCode, 
         assureRodeBike = 'Yes', 
         mismatchExplanation = [], 
@@ -206,7 +161,7 @@ class ReturnVirtualSimulator {
         const entry = [
             new Date(),
             email, 
-            bikeCode,
+            bikeName,
             confirmCode, 
             assureRodeBike, 
             mismatchExplanation.toString(), 
@@ -233,7 +188,7 @@ function simulateFullReturn() {
 
 function simulateVirtualReturn() {
   const simulator = new ReturnVirtualSimulator();
-  simulator.createReturnEntry(
+  const response = simulator.createReturnEntry(
     'test504@amherst.edu',
     'King',
     'King',
@@ -243,5 +198,5 @@ function simulateVirtualReturn() {
     '',
     ''
   );
-  simulateHandleOnFormSubmit(CONFIG.SHEETS.RETURN_LOGS.NAME, debugging = true);
+  simulateHandleOnFormSubmit(CONFIG.SHEETS.RETURN_LOGS.NAME, response);
 }
