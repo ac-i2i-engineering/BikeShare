@@ -35,11 +35,7 @@ class BikeShareService {
 
       const user = User.findByEmail(returnLog.emailAddress);
       const usageHours = this.calculateUsageHours(returnLog.bikeName);
-      const bike = user.returnBike(returnLog.bikeName, usageHours);
-
-      if (returnLog.hasMismatch()) {
-        user.recordMismatch();
-      }
+      const bike = user.returnBike(returnLog.bikeName, returnLog.timestamp, usageHours);
 
       // this.sendReturnConfirmation(returnLog.emailAddress, bike.bikeName);
       return { success: true, message: `Bike ${bike.bikeName} returned successfully` };
@@ -70,8 +66,8 @@ class BikeShareService {
       .filter(bike => bike.isOverdue());
   }
 
-  calculateUsageHours(bikeId) {
-    const bike = Bike.findByName(bikeId);
+  calculateUsageHours(bikeName) {
+    const bike = Bike.findByName(bikeName);
     if (!bike || !bike.lastCheckoutDate) return 0;
     
     const now = new Date();
@@ -79,15 +75,15 @@ class BikeShareService {
     return Math.round((now - checkoutTime) / (1000 * 60 * 60) * 100) / 100;
   }
 
-  sendCheckoutConfirmation(email, bikeId) {
-    const subject = `Bike Checkout Confirmation - ${bikeId}`;
-    const body = `Your checkout of bike ${bikeId} has been confirmed. Please return it within 24 hours.`;
+  sendCheckoutConfirmation(email, bikeName) {
+    const subject = `Bike Checkout Confirmation - ${bikeName}`;
+    const body = `You'll pick a key with name ${bikeName}.`;
     GmailApp.sendEmail(email, subject, body);
   }
 
-  sendReturnConfirmation(email, bikeId) {
-    const subject = `Bike Return Confirmation - ${bikeId}`;
-    const body = `Your return of bike ${bikeId} has been confirmed. Thank you for using BikeShare!`;
+  sendReturnConfirmation(email, bikeName) {
+    const subject = `Bike Return Confirmation - ${bikeName}`;
+    const body = `Your return of bike ${bikeName} has been confirmed. Thank you for using BikeShare!`;
     GmailApp.sendEmail(email, subject, body);
   }
 
@@ -101,8 +97,8 @@ class BikeShareService {
     const overdues = this.getOverdueBikes();
     overdues.forEach(bike => {
       if (bike.mostRecentUser) {
-        const subject = `Overdue Bike Return - ${bike.bikeId}`;
-        const body = `Your bike ${bike.bikeId} is overdue. Please return it immediately.`;
+        const subject = `Overdue Bike Return - ${bike.bikeName}`;
+        const body = `Your bike ${bike.bikeName} is overdue. Please return it immediately.`;
         GmailApp.sendEmail(bike.mostRecentUser, subject, body);
       }
     });

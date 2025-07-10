@@ -7,7 +7,7 @@ class User {
     this.hasUnreturnedBike = false;
     this.lastCheckoutId = '';
     this.lastCheckoutDate = null;
-    this.lastReturnId = '';
+    this.lastReturnName = '';
     this.lastReturnDate = null;
     this.numberOfCheckouts = 0;
     this.numberOfReturns = 0;
@@ -24,7 +24,7 @@ class User {
     user.hasUnreturnedBike = rowData[1] === 'Yes';
     user.lastCheckoutId = rowData[2] || '';
     user.lastCheckoutDate = rowData[3];
-    user.lastReturnId = rowData[4] || '';
+    user.lastReturnName = rowData[4] || '';
     user.lastReturnDate = rowData[5];
     user.numberOfCheckouts = rowData[6] || 0;
     user.numberOfReturns = rowData[7] || 0;
@@ -48,7 +48,7 @@ class User {
       this.hasUnreturnedBike ? 'Yes' : 'No',
       this.lastCheckoutId,
       this.lastCheckoutDate,
-      this.lastReturnId,
+      this.lastReturnName,
       this.lastReturnDate,
       this.numberOfCheckouts,
       this.numberOfReturns,
@@ -91,16 +91,21 @@ class User {
     return bike;
   }
 
-  returnBike(bikeId, usageHours = 0) {
-    const bike = Bike.findById(bikeId);
+  returnBike(bikeName,timestamp, usageHours = 0) {
+    if (!this.hasUnreturnedBike) {
+      throw new Error('User has no unreturned bike');
+    }
+
+
+    const bike = Bike.findById(bikeName);
     if (!bike) {
       throw new Error('Bike not found');
     }
 
     bike.returnBike(usageHours);
     this.hasUnreturnedBike = false;
-    this.lastReturnId = bikeId;
-    this.lastReturnDate = new Date();
+    this.lastReturnName = bikeName;
+    this.lastReturnDate = timestamp;
     this.numberOfReturns++;
     this.usageHours += usageHours;
     this.save();
