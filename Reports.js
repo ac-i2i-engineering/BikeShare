@@ -50,16 +50,16 @@ class Report {
       reportData.totalUsageHours,
       reportData.adminNotes
     ];
-    this.db.appendRow(CONFIG.SHEETS.REPORTS, values);
+    this.db.appendRow(CONFIG.SHEETS.REPORTS.NAME, values);
   }
 
   getAllBikes() {
-    const data = this.db.getAllData(CONFIG.SHEETS.BIKES_STATUS);
+    const data = this.db.getAllData(CONFIG.SHEETS.BIKES_STATUS.NAME);
     return data.slice(1).map(row => Bike.fromSheetRow(row));
   }
 
   getAllUsers() {
-    const data = this.db.getAllData(CONFIG.SHEETS.USER_STATUS);
+    const data = this.db.getAllData(CONFIG.SHEETS.USER_STATUS.NAME);
     return data.slice(1).map(row => User.fromSheetRow(row));
   }
 

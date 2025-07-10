@@ -38,7 +38,7 @@ class User {
 
   static findByEmail(email) {
     const db = new DatabaseManager();
-    const userRecord = db.findRowByColumn(CONFIG.SHEETS.USER_STATUS, 0, email);
+    const userRecord = db.findRowByColumn(CONFIG.SHEETS.USER_STATUS.NAME, 0, email);
     return userRecord ? User.fromSheetRow(userRecord.data) : new User(email);
   }
 
@@ -58,20 +58,20 @@ class User {
       this.firstUsageDate
     ];
 
-    const existing = this.db.findRowByColumn(CONFIG.SHEETS.USER_STATUS, 0, this.email);
+    const existing = this.db.findRowByColumn(CONFIG.SHEETS.USER_STATUS.NAME, 0, this.email);
     if (existing) {
-      this.db.updateRow(CONFIG.SHEETS.USER_STATUS, existing.row, values);
+      this.db.updateRow(CONFIG.SHEETS.USER_STATUS.NAME, existing.row, values);
     } else {
-      this.db.appendRow(CONFIG.SHEETS.USER_STATUS, values);
+      this.db.appendRow(CONFIG.SHEETS.USER_STATUS.NAME, values);
     }
   }
 
-  checkoutBike(bikeId, timestamp) {
+  checkoutBike(bikeHash, timestamp) {
     if (this.hasUnreturnedBike && !CONFIG.REGULATIONS.CAN_CHECKOUT_WITH_UNRETURNED_BIKE) {
       throw new Error('User already has an unreturned bike');
     }
 
-    const bike = Bike.findById(bikeId);
+    const bike = Bike.findByHash(bikeHash);
     if (!bike) {
       throw new Error('Bike not found');
     }
@@ -83,7 +83,7 @@ class User {
       this.firstUsageDate = timestamp;
     }
     this.hasUnreturnedBike = true;
-    this.lastCheckoutId = bikeId;
+    this.lastCheckoutId = bike.bikeName;
     this.lastCheckoutDate = timestamp;
     this.numberOfCheckouts++;
     this.save();

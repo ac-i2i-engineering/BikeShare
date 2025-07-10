@@ -2,8 +2,9 @@
 // BIKE CLASS
 // =============================================================================
 class Bike {
-  constructor(bikeId, size, maintenanceStatus = 'Good', availability = 'Available') {
-    this.bikeId = bikeId;
+  constructor(bikeName, bikeHash, size, maintenanceStatus = 'Good', availability = 'Available') {
+    this.bikeName = bikeName;
+    this.bikeHash = bikeHash;
     this.size = size;
     this.maintenanceStatus = maintenanceStatus;
     this.availability = availability;
@@ -19,7 +20,7 @@ class Bike {
   }
 
   static fromSheetRow(rowData) {
-    const bike = new Bike(rowData[0], rowData[1], rowData[2], rowData[3]);
+    const bike = new Bike(rowData[0], rowData[12], rowData[1], rowData[2], rowData[3]);
     bike.lastCheckoutDate = rowData[4];
     bike.lastReturnDate = rowData[5];
     bike.currentUsageTimer = rowData[6] || 0;
@@ -31,15 +32,21 @@ class Bike {
     return bike;
   }
 
-  static findById(bikeId) {
+  static findByName(bikeName) {
     const db = new DatabaseManager();
-    const result = db.findRowByColumn(CONFIG.SHEETS.BIKES_STATUS, 0, bikeId);
+    const result = db.findRowByColumn(CONFIG.SHEETS.BIKES_STATUS.NAME, 0, bikeName);
+    return result ? Bike.fromSheetRow(result.data) : null;
+  }
+
+  static findByHash(bikeHash) {
+    const db = new DatabaseManager();
+    const result = db.findRowByColumn(CONFIG.SHEETS.BIKES_STATUS.NAME, 12, bikeHash);
     return result ? Bike.fromSheetRow(result.data) : null;
   }
 
   save() {
     const values = [
-      this.bikeId,
+      this.bikeName,
       this.size,
       this.maintenanceStatus,
       this.availability,
@@ -53,17 +60,17 @@ class Bike {
       this.tempRecent
     ];
 
-    const existing = this.db.findRowByColumn(CONFIG.SHEETS.BIKES_STATUS, 0, this.bikeId);
+    const existing = this.db.findRowByColumn(CONFIG.SHEETS.BIKES_STATUS.NAME, 0, this.bikeName);
     if (existing) {
-      this.db.updateRow(CONFIG.SHEETS.BIKES_STATUS, existing.row, values);
+      this.db.updateRow(CONFIG.SHEETS.BIKES_STATUS.NAME, existing.row, values);
     } else {
-      this.db.appendRow(CONFIG.SHEETS.BIKES_STATUS, values);
+      this.db.appendRow(CONFIG.SHEETS.BIKES_STATUS.NAME, values);
     }
   }
 
   checkout(userEmail,timestamp) {
     if (this.availability !== 'Available' && !CONFIG.REGULATIONS.CAN_CHECKOUT_UNAVAILABLE_BIKE) {
-      throw new Error(`Bike ${this.bikeId} is not available for checkout`);
+      throw new Error(`Bike ${this.bikeName} is not available for checkout`); 
     }
 
     this.availability = 'Checked Out';

@@ -46,10 +46,10 @@ class ReturnFullSimulator {
       const userEmailItem = form.getItemById(this.FIELD_IDS.EMAIL).asTextItem();
       formResponse.withItemResponse(userEmailItem.createResponse(formData.userEmail));
 
-      const bikeCodeItem = form.getItemById(this.FIELD_IDS.BIKE_CODE).asTextItem();
+      const bikeCodeItem = form.getItemById(this.FIELD_IDS.BIKE_NAME).asTextItem();
       formResponse.withItemResponse(bikeCodeItem.createResponse(formData.bikeCode));
 
-      const confirmBikeCodeItem = form.getItemById(this.FIELD_IDS.CONFIRM_BIKE_CODE).asTextItem();
+      const confirmBikeCodeItem = form.getItemById(this.FIELD_IDS.CONFIRM_BIKE_NAME).asTextItem();
       formResponse.withItemResponse(confirmBikeCodeItem.createResponse(formData.confirmBikeCode));
 
       const assureRodeBikeItem = form.getItemById(this.FIELD_IDS.ASSURE_RODE_BIKE).asMultipleChoiceItem();
@@ -190,7 +190,7 @@ class ReturnFullSimulator {
 class ReturnVirtualSimulator {
     constructor() {
         this.db = new DatabaseManager();
-        this.returnSheet = CONFIG.SHEETS.RETURN_LOGS;
+        this.returnSheet = CONFIG.SHEETS.RETURN_LOGS.NAME;
     }
 
     createReturnEntry(
@@ -243,5 +243,5 @@ function simulateVirtualReturn() {
     '',
     ''
   );
-  onFormSubmit(CONFIG.SHEETS.RETURN_LOGS, debugging = true);
+  simulateHandleOnFormSubmit(CONFIG.SHEETS.RETURN_LOGS.NAME, debugging = true);
 }
