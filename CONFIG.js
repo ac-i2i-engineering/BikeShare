@@ -4,11 +4,11 @@
 const CONFIG = {
   DEBUG_MODE: true,
   SHEETS: {
-    BIKES_STATUS: 'Bikes Status',
-    USER_STATUS: 'User Status', 
-    CHECKOUT_LOGS: 'Checkout Logs',
-    RETURN_LOGS: 'Return Logs',
-    REPORTS: 'Reports'
+    BIKES_STATUS: {NAME:'Bikes Status',SORT_COLUMN: 0, SORT_ORDER: 'asc'},
+    USER_STATUS: {NAME:'User Status', SORT_COLUMN: 0, SORT_ORDER: 'asc'}, 
+    CHECKOUT_LOGS: {NAME:'Checkout Logs', SORT_COLUMN: 0, SORT_ORDER: 'asc'},
+    RETURN_LOGS: {NAME:'Return Logs', SORT_COLUMN: 0, SORT_ORDER: 'asc'},
+    REPORTS: {NAME:'Reports', SORT_COLUMN: 0, SORT_ORDER: 'asc'}
   },
   FORMS: {
     CHECKOUT_FORM_ID: '1ThxJFJLjtQkvzXuX7ZPa2vEYWzIokWK89GUbW507zpM',
