@@ -4,3 +4,35 @@ function printFormFieldInfo(formId){
     console.log(`ID: ${item.getId()}, Title: ${item.getTitle()}, Type: ${item.getType()}`);
   });
 }
+
+function simulateHandleOnFormSubmit(sheetName, response) {
+  const service = new BikeShareService();
+  // Check if the edit is in the 'Checkout Logs' or 'Return Logs' sheet
+  if (sheetName === CONFIG.SHEETS.CHECKOUT_LOGS) {
+    const result = service.processCheckout(responses);
+    Logger.log('Checkout processed:', result.message || result.error);
+  } else if (sheetName === CONFIG.SHEETS.RETURN_LOGS) {
+    const result = service.processReturn(response);
+    Logger.log('Return processed:', result.message || result.error);
+  }
+}
+
+function clearCash(){
+let cache = PropertiesService.getScriptProperties();
+  cache.deleteAllProperties(); // Clears the cached data associated with the key "data"
+}
+
+function createOnSubmitTrigger(){
+  const sheet = SpreadsheetApp.getActive()
+  ScriptApp.newTrigger('handleOnFormSubmit')
+    .forSpreadsheet(sheet)
+    .onFormSubmit()
+    .create();
+}
+
+function deleteAllTriggers(){
+  triggers = ScriptApp.getProjectTriggers(); 
+  for (let i = 0; i < triggers.length; i++) { 
+    ScriptApp.deleteTrigger(triggers[i]); 
+    }
+}
