@@ -14,12 +14,9 @@ class BikeShareService {
       if (!validation.success) {
         throw new Error(validation.message.join(', '));
       }
-      Logger.log(`Processing checkout for user: ${checkoutLog.emailAddress} at ${checkoutLog.timestamp}`);
       const user = User.findByEmail(checkoutLog.emailAddress);
-      Logger.log(`User found: ${user.email}`);
       const bike = user.checkoutBike(checkoutLog.bikeHash, checkoutLog.timestamp);
-      Logger.log(`Bike checked out: ${bike.bikeName}`);
-      // this.sendCheckoutConfirmation(user.email, bike.bikeId);
+      // this.sendCheckoutConfirmation(checkoutLog.emailAddress, bike.bikeName);
       return { success: true, message: `Bike ${bike.bikeName} checked out successfully` };
     } catch (error) {
       // this.sendErrorNotification(checkoutLog.emailAddress, error.message);
@@ -37,17 +34,17 @@ class BikeShareService {
       }
 
       const user = User.findByEmail(returnLog.emailAddress);
-      const usageHours = this.calculateUsageHours(returnLog.bikeCode);
-      const bike = user.returnBike(returnLog.bikeCode, usageHours);
+      const usageHours = this.calculateUsageHours(returnLog.bikeName);
+      const bike = user.returnBike(returnLog.bikeName, usageHours);
 
       if (returnLog.hasMismatch()) {
         user.recordMismatch();
       }
 
-      this.sendReturnConfirmation(user.email, bike.bikeId);
-      return { success: true, message: `Bike ${bike.bikeId} returned successfully` };
+      // this.sendReturnConfirmation(returnLog.emailAddress, bike.bikeName);
+      return { success: true, message: `Bike ${bike.bikeName} returned successfully` };
     } catch (error) {
-      this.sendErrorNotification(formResponse.getRespondentEmail(), error.message);
+      // this.sendErrorNotification(returnLog.emailAddress, error.message);
       return { success: false, error: error.message };
     }
   }

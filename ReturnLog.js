@@ -5,8 +5,8 @@ class ReturnLog {
   constructor() {
     this.timestamp = null;
     this.emailAddress = null;
-    this.bikeCode = null;
-    this.confirmBikeCode = null;
+    this.bikeName = null;
+    this.confirmBikeName = null;
     this.assureRodeBike = null;
     this.mismatchExplanation = null;
     this.returningForFriend = null;
@@ -19,13 +19,15 @@ class ReturnLog {
     const log = new ReturnLog();
     log.timestamp = responses[0];
     log.emailAddress = responses[1];
-    log.bikeCode = responses[2];
-    log.confirmBikeCode = responses[3];
+    log.bikeName = responses[2];
+    log.confirmBikeName = responses[3];
     log.assureRodeBike = responses[4];
     log.mismatchExplanation = responses[5];
     log.returningForFriend = responses[6];
     log.friendEmail = responses[7];
     log.issuesConcerns = responses[8];
+    //sort the return logs
+    log.db.orderByColumn(null, CONFIG.SHEETS.RETURN_LOGS.NAME);
     return log;
   }
 
@@ -34,7 +36,7 @@ class ReturnLog {
       success:true,
       message:[]
     }
-    if (this.bikeCode !== this.confirmBikeCode) {
+    if (this.bikeName !== this.confirmBikeName) {
       response.success = false;
       response.message.push('Bike code confirmation does not match');
     }
