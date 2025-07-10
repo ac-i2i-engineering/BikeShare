@@ -88,6 +88,7 @@ class Bike {
   }
 
   updateRecentUsers(newUser) {
+    this.tempRecent = this.thirdRecentUser;
     this.thirdRecentUser = this.secondRecentUser;
     this.secondRecentUser = this.mostRecentUser;
     this.mostRecentUser = newUser;
