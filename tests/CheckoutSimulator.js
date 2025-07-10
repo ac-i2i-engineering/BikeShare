@@ -4,8 +4,7 @@
  * 
  * Form Structure:
  * [0] [Id=1337405542] Email: (TEXT)
- * [1] [Id=697424273] Enter the bike name/code from the key: (TEXT)
- * [2] [Id=1288559812] Confirm the bike name/code by entering it again: (TEXT)
+ * [1] [Id=697424273] Scanned bike Hash-ID: (TEXT)
  * [3] [Id=998220660] Did you check if this bike's key is available at the front desk before you check it out? (MULTIPLE_CHOICE)
  * [4] [Id=1671678893] Confirm that this bike's condition is okay for you to ride before you submit this request. (MULTIPLE_CHOICE)
  */
@@ -21,8 +20,7 @@ class CheckoutFullSimulator {
     // Default response data
     const defaultResponse = {
       userEmail: 'test003@amherst.edu',
-      bikeCode: 'King',
-      confirmBikeCode: 'King',
+      bikeHash: '3A8BD0',
       keyAvailable: 'Yes',
       conditionOk: ['I consent']
     };
@@ -38,11 +36,8 @@ class CheckoutFullSimulator {
       const userEmailItem = form.getItemById(this.FIELD_IDS.EMAIL).asTextItem();
       formResponse.withItemResponse(userEmailItem.createResponse(formData.userEmail));
 
-      const bikeCodeItem = form.getItemById(this.FIELD_IDS.BIKE_CODE).asTextItem();
-      formResponse.withItemResponse(bikeCodeItem.createResponse(formData.bikeCode));
-
-      const confirmBikeCodeItem = form.getItemById(this.FIELD_IDS.CONFIRM_BIKE_CODE).asTextItem();
-      formResponse.withItemResponse(confirmBikeCodeItem.createResponse(formData.confirmBikeCode));
+      const bikeHashItem = form.getItemById(this.FIELD_IDS.BIKE_HASH).asTextItem();
+      formResponse.withItemResponse(bikeHashItem.createResponse(formData.bikeHash));
 
       const keyAvailableCheckItem = form.getItemById(this.FIELD_IDS.KEY_AVAILABLE).asMultipleChoiceItem();
       formResponse.withItemResponse(keyAvailableCheckItem.createResponse(formData.keyAvailable));
@@ -71,11 +66,10 @@ class CheckoutFullSimulator {
     }
   }
 
-  createCustomCheckout(userEmail, bikeCode,confirmCode, keyAvailable = 'Yes', conditionOk = ['I consent']) {
+  createCustomCheckout(userEmail, bikeHash, keyAvailable = 'Yes', conditionOk = ['I consent']) {
     const customData = {
       userEmail: userEmail,
-      bikeCode: bikeCode,
-      confirmBikeCode: confirmCode || bikeCode, //Auto-confirm when no confirm code given
+      bikeHash: bikeHash,
       keyAvailable: keyAvailable,
       conditionOk: conditionOk
     };
@@ -86,51 +80,18 @@ class CheckoutFullSimulator {
   simulateMultipleCheckouts(num=2,isRandom=true,root="test",defaultBike="King") {
     const results = [];
     for(let i=0;i<num;i++){
-      let finalPart = i < 10 ? '00'+i : i < 100 ? '0'+i : i
+      let finalPart = i < 10 ? '00'+i : i < 100 ? '0'+i : i.toString();
       let emailAddress = root + finalPart+'@amherst.edu'
-      let randomIndex = Math.floor(Math.random() * CONFIG.BIKE_NAMES.length);
-      let bikeCode = isRandom ? CONFIG.BIKE_NAMES[randomIndex] : defaultBike;
+      let randomIndex = Math.floor(Math.random() * CONFIG.BIKE_HASHES.length);
+      let bikeHash = isRandom ? CONFIG.BIKE_HASHES[randomIndex] : defaultBike;
 
-      console.log(`\n-----Email:${emailAddress}-------Bike:${bikeCode}--------`)
-      results.push(this.createCustomCheckout(emailAddress,bikeCode))
+      console.log(`\n-----Email:${emailAddress}-------Bike:${bikeHash}--------`)
+      results.push(this.createCustomCheckout(emailAddress,bikeHash))
        // Small delay between submissions
       Utilities.sleep(500);
     }
 
     return results;
-  }
-
-  getTestScenarios() {
-    return [
-      {
-        userEmail: 'student1@amherst.edu',
-        bikeCode: 'Bike001',
-        confirmBikeCode: 'Bike001',
-        keyAvailable: 'Yes',
-        conditionOk: ['I consent']
-      },
-      {
-        userEmail: 'student2@amherst.edu',
-        bikeCode: 'Bike002',
-        confirmBikeCode: 'Bike002',
-        keyAvailable: 'No', // Key not available
-        conditionOk: ['I consent']
-      },
-      {
-        userEmail: 'student3@amherst.edu',
-        bikeCode: 'Bike003',
-        confirmBikeCode: 'Bike004', // Mismatch in confirmation
-        keyAvailable: 'Yes',
-        conditionOk: ['I consent']
-      },
-      {
-        userEmail: 'student4@amherst.edu',
-        bikeCode: 'Bike004',
-        confirmBikeCode: 'Bike004',
-        keyAvailable: 'Yes',
-        conditionOk: [] // No condition consent
-      }
-    ];
   }
 }
 
@@ -141,15 +102,14 @@ class CheckoutVirtualSimulator{
     // add a new row to the checkout logs sheet
     constructor() {
       this.db = new DatabaseManager();
-      this.checkoutSheet = CONFIG.SHEETS.CHECKOUT_LOGS;
+      this.checkoutSheet = CONFIG.SHEETS.CHECKOUT_LOGS.NAME;
     }
 
-    createCheckoutEntry(email, bikeCode, confirmCode, keyAvailable = 'Yes', conditionOk = ['I consent']) {
+    createCheckoutEntry(email, bikeHash, keyAvailable = 'Yes', conditionOk = ['I consent']) {
         const entry = [
           new Date(),
           email,
-          bikeCode,
-          confirmCode,
+          bikeHash,
           keyAvailable,
           conditionOk.toString()
         ];
@@ -164,12 +124,12 @@ class CheckoutVirtualSimulator{
 
 function simulateFullCheckout() {
   const simulator = new CheckoutFullSimulator();
-  return simulator.createCustomCheckout('test111@amherst.edu','Moore','Moore','No');
+  return simulator.createCustomCheckout('test111@amherst.edu','4038A4','Yes');
   // return simulator.simulateMultipleCheckouts(5);
 }
 
 function simulateVirtualCheckout() {
   const simulator = new CheckoutVirtualSimulator();
-  simulator.createCheckoutEntry('test312@amherst.edu','Moore','Moore');  
-  onFormSubmit(CONFIG.SHEETS.CHECKOUT_LOGS, debugging = true)
+  const response = simulator.createCheckoutEntry('test312@amherst.edu','3A8BD0');  
+  simulateHandleOnFormSubmit(CONFIG.SHEETS.CHECKOUT_LOGS.NAME, response)
 }
