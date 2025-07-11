@@ -20,8 +20,6 @@ class CheckoutLog {
     log.keyAvailableCheck = responses[3];
     log.conditionConfirmation = responses[4];
     log.db = new DatabaseManager();
-    //sort the checkout logs
-    log.db.orderByColumn(null, CONFIG.SHEETS.CHECKOUT_LOGS.NAME);
     return log;
   }
 

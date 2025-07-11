@@ -26,8 +26,6 @@ class ReturnLog {
     log.returningForFriend = responses[6];
     log.friendEmail = responses[7];
     log.issuesConcerns = responses[8];
-    //sort the return logs
-    log.db.orderByColumn(null, CONFIG.SHEETS.RETURN_LOGS.NAME);
     return log;
   }
 
