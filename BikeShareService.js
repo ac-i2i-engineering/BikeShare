@@ -41,7 +41,7 @@ class BikeShareService {
 
       const user = User.findByEmail(returnLog.emailAddress);
       const usageHours = this.calculateUsageHours(returnLog.bikeName);
-      const bike = user.returnBike(returnLog.bikeName, returnLog.timestamp, usageHours);
+      const bike = user.returnBike(returnLog, usageHours);
       this.db.sortByColumn(null, CONFIG.SHEETS.RETURN_LOGS.NAME);
 
       // this.sendReturnConfirmation(returnLog.emailAddress, bike.bikeName);

@@ -5,7 +5,7 @@ class User {
   constructor(email) {
     this.email = email;
     this.hasUnreturnedBike = false;
-    this.lastCheckoutId = '';
+    this.lastCheckoutName = '';
     this.lastCheckoutDate = null;
     this.lastReturnName = '';
     this.lastReturnDate = null;
@@ -22,7 +22,7 @@ class User {
   static fromSheetRow(rowData) {
     const user = new User(rowData[0]);
     user.hasUnreturnedBike = rowData[1] === 'Yes';
-    user.lastCheckoutId = rowData[2] || '';
+    user.lastCheckoutName = rowData[2] || '';
     user.lastCheckoutDate = rowData[3];
     user.lastReturnName = rowData[4] || '';
     user.lastReturnDate = rowData[5];
@@ -46,7 +46,7 @@ class User {
     const values = [
       this.email,
       this.hasUnreturnedBike ? 'Yes' : 'No',
-      this.lastCheckoutId,
+      this.lastCheckoutName,
       this.lastCheckoutDate,
       this.lastReturnName,
       this.lastReturnDate,
@@ -84,7 +84,7 @@ class User {
       this.firstUsageDate = timestamp;
     }
     this.hasUnreturnedBike = true;
-    this.lastCheckoutId = bike.bikeName;
+    this.lastCheckoutName = bike.bikeName;
     this.lastCheckoutDate = timestamp;
     this.numberOfCheckouts++;
     this.save();
@@ -92,15 +92,21 @@ class User {
     return bike;
   }
 
-  returnBike(bikeName,timestamp, usageHours = 0) {
+  returnBike(returnLog, usageHours = 0) {
+    const bikeName = returnLog.bikeName;
+    const timestamp = returnLog.timestamp;
     if (!this.hasUnreturnedBike) {
       throw new Error('User has no unreturned bike');
     }
 
 
-    const bike = Bike.findById(bikeName);
+    const bike = Bike.findByName(bikeName);
     if (!bike) {
       throw new Error('Bike not found');
+    }
+
+    if(this.lastCheckoutName !== bike.bikeName) {
+      throw new Error(`Bike ${bike.bikeName} does not match the last checked out bike ${this.lastCheckoutName}`);
     }
 
     bike.returnBike(usageHours);

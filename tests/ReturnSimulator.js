@@ -190,9 +190,9 @@ function simulateFullReturn() {
 function simulateVirtualReturn() {
   const simulator = new ReturnVirtualSimulator();
   const response = simulator.createReturnEntry(
-    'test504@amherst.edu',
-    'King',
-    'King',
+    'test101@amherst.edu',
+    'Meiklejohn',
+    'Meiklejohn',
     'Yes',
     [],
     'No',

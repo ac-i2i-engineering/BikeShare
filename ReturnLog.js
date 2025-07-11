@@ -36,12 +36,12 @@ class ReturnLog {
     }
     if (this.bikeName !== this.confirmBikeName) {
       response.success = false;
-      response.message.push('Bike code confirmation does not match');
+      response.message.push('Bike Name entries confirmation does not match');
     }
-    if (this.assureRodeBike !== 'Yes') {
-      response.success = false;
-      response.message.push(`User does not assure riding the bike\nReason: ${this.mismatchExplanation}`);
-    }
+    // if (this.assureRodeBike !== 'Yes') {
+    //   response.success = false;
+    //   response.message.push(`User does not assure riding the bike\nReason: ${this.mismatchExplanation}`);
+    // }
     return response;
   }
 }
