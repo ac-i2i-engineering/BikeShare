@@ -8,7 +8,6 @@ const CONFIG = {
       NAME:'Bikes Status',
       SORT_COLUMN: 0, 
       SORT_ORDER: 'asc',
-      ERROR_FLAG_COLOR: '#f9cb9c',
       AVAILABILITY_COL_OPTIONS: ['Available', 'Checked Out', 'Out of Service'],
       MAINTENANCE_COL_OPTIONS: ['Good', 'In Repair', 'Has Issues', 'Missing'],
       SIZE_COL_OPTIONS: ['S', 'M', 'L', 'XL'],
@@ -17,25 +16,21 @@ const CONFIG = {
       NAME:'User Status',
       SORT_COLUMN: 0,
       SORT_ORDER: 'asc',
-      ERROR_FLAG_COLOR: '#f9cb9c',
     },
     CHECKOUT_LOGS: {
       NAME:'Checkout Logs',
       SORT_COLUMN: 0,
       SORT_ORDER: 'desc',
-      ERROR_FLAG_COLOR: '#f9cb9c',
     },
     RETURN_LOGS: {
       NAME:'Return Logs',
       SORT_COLUMN: 0,
       SORT_ORDER: 'desc',
-      ERROR_FLAG_COLOR: '#f9cb9c'
     },
     REPORTS: {
       NAME:'Reports',
       SORT_COLUMN: 0,
       SORT_ORDER: 'desc',
-      ERROR_FLAG_COLOR: '#f9cb9c'
     }
   },
   FORMS: {

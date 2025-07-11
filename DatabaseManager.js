@@ -37,12 +37,8 @@ class DatabaseManager {
     sheet.appendRow(values);
   }
 
-  addErrorFlag(sheetName, range, errorMessage= null) {
-    const sheetConfig = this.getSheetConfig(sheetName);
-    if (!sheetConfig) {
-      throw new Error(`No configuration found for sheet: ${sheetName}`);
-    }
-    range.setBackground(sheetConfig.ERROR_FLAG_COLOR);
+  addErrorFlag(range, errorMessage= null,flagIndex = 0) {
+    range.setBackground(ERRORS["FLAG_COLORS"][flagIndex]);
     if (errorMessage) {
       range.setNote(errorMessage);
     }

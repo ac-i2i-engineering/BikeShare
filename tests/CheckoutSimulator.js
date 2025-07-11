@@ -88,7 +88,7 @@ class CheckoutFullSimulator {
       console.log(`\n-----Email:${emailAddress}-------Bike:${bikeHash}--------`)
       results.push(this.createCustomCheckout(emailAddress,bikeHash))
        // Small delay between submissions
-      Utilities.sleep(500);
+      Utilities.sleep(3000);
     }
 
     return results;

@@ -131,7 +131,7 @@ class ReturnFullSimulator {
             '' 
         ));
         // Small delay between submissions
-        Utilities.sleep(500);
+        Utilities.sleep(3000);
     }
     
     return results;
