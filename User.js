@@ -63,6 +63,7 @@ class User {
       this.db.updateRow(CONFIG.SHEETS.USER_STATUS.NAME, existing.row, values);
     } else {
       this.db.appendRow(CONFIG.SHEETS.USER_STATUS.NAME, values);
+      this.db.sortByColumn(null, CONFIG.SHEETS.USER_STATUS.NAME);
     }
   }
 

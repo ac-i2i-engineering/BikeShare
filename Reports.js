@@ -51,6 +51,7 @@ class Report {
       reportData.adminNotes
     ];
     this.db.appendRow(CONFIG.SHEETS.REPORTS.NAME, values);
+    this.db.sortByColumn(null, CONFIG.SHEETS.REPORTS.NAME);
   }
 
   getAllBikes() {

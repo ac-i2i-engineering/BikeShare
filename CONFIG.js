@@ -4,11 +4,11 @@
 const CONFIG = {
   DEBUG_MODE: true,
   SHEETS: {
-    BIKES_STATUS: {NAME:'Bikes Status',SORT_COLUMN: 0, SORT_ORDER: 'asc'},
-    USER_STATUS: {NAME:'User Status', SORT_COLUMN: 0, SORT_ORDER: 'asc'}, 
-    CHECKOUT_LOGS: {NAME:'Checkout Logs', SORT_COLUMN: 0, SORT_ORDER: 'desc'},
-    RETURN_LOGS: {NAME:'Return Logs', SORT_COLUMN: 0, SORT_ORDER: 'desc'},
-    REPORTS: {NAME:'Reports', SORT_COLUMN: 0, SORT_ORDER: 'desc'}
+    BIKES_STATUS: {NAME:'Bikes Status',SORT_COLUMN: 0, SORT_ORDER: 'asc',ERROR_FLAG_COLOR: '#f9cb9c'},
+    USER_STATUS: {NAME:'User Status', SORT_COLUMN: 0, SORT_ORDER: 'asc',ERROR_FLAG_COLOR: '#f9cb9c'},
+    CHECKOUT_LOGS: {NAME:'Checkout Logs', SORT_COLUMN: 0, SORT_ORDER: 'desc',ERROR_FLAG_COLOR: '#f9cb9c'},
+    RETURN_LOGS: {NAME:'Return Logs', SORT_COLUMN: 0, SORT_ORDER: 'desc',ERROR_FLAG_COLOR: '#f9cb9c'},
+    REPORTS: {NAME:'Reports', SORT_COLUMN: 0, SORT_ORDER: 'desc',ERROR_FLAG_COLOR: '#f9cb9c'}
   },
   FORMS: {
     CHECKOUT_FORM_ID: '1ThxJFJLjtQkvzXuX7ZPa2vEYWzIokWK89GUbW507zpM',

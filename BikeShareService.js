@@ -16,7 +16,7 @@ class BikeShareService {
       }
       const user = User.findByEmail(checkoutLog.emailAddress);
       const bike = user.checkoutBike(checkoutLog.bikeHash, checkoutLog.timestamp);
-      this.db.orderByColumn(null, CONFIG.SHEETS.CHECKOUT_LOGS.NAME);
+      this.db.sortByColumn(null, CONFIG.SHEETS.CHECKOUT_LOGS.NAME);
 
       // this.sendCheckoutConfirmation(checkoutLog.emailAddress, bike.bikeName);
       return { success: true, message: `Bike ${bike.bikeName} checked out successfully` };
@@ -40,7 +40,7 @@ class BikeShareService {
       const user = User.findByEmail(returnLog.emailAddress);
       const usageHours = this.calculateUsageHours(returnLog.bikeName);
       const bike = user.returnBike(returnLog.bikeName, returnLog.timestamp, usageHours);
-      this.db.orderByColumn(null, CONFIG.SHEETS.RETURN_LOGS.NAME);
+      this.db.sortByColumn(null, CONFIG.SHEETS.RETURN_LOGS.NAME);
 
       // this.sendReturnConfirmation(returnLog.emailAddress, bike.bikeName);
       return { success: true, message: `Bike ${bike.bikeName} returned successfully` };

@@ -116,6 +116,7 @@ class CheckoutVirtualSimulator{
 
         // Append the entry to the checkout logs sheet
         this.db.appendRow(this.checkoutSheet, entry);
+        this.db.sortByColumn(null, this.checkoutSheet);
 
         // Return the entry
         return entry;

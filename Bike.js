@@ -65,6 +65,7 @@ class Bike {
       this.db.updateRow(CONFIG.SHEETS.BIKES_STATUS.NAME, existing.row, values);
     } else {
       this.db.appendRow(CONFIG.SHEETS.BIKES_STATUS.NAME, values);
+      this.db.sortByColumn(null, CONFIG.SHEETS.BIKES_STATUS.NAME);
     }
   }
 

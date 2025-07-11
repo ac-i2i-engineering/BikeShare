@@ -172,6 +172,7 @@ class ReturnVirtualSimulator {
 
         // Append the entry to the return logs sheet
         this.db.appendRow(this.returnSheet, entry);
+        this.db.sortByColumn(null, this.returnSheet);
 
         // Return the entry
         return entry;

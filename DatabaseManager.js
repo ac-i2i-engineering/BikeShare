@@ -35,11 +35,21 @@ class DatabaseManager {
   appendRow(sheetName, values) {
     const sheet = this.getSheet(sheetName);
     sheet.appendRow(values);
-    this.orderByColumn(sheet, sheetName);
+  }
+
+  addErrorFlag(sheetName, range, errorMessage= null) {
+    const sheetConfig = this.getSheetConfig(sheetName);
+    if (!sheetConfig) {
+      throw new Error(`No configuration found for sheet: ${sheetName}`);
+    }
+    range.setBackground(sheetConfig.ERROR_FLAG_COLOR);
+    if (errorMessage) {
+      range.setNote(errorMessage);
+    }
   }
 
   // orders the sheet by a specific column
-  orderByColumn(sheet=null,sheetName=null) {
+  sortByColumn(sheet=null,sheetName=null) {
     if (!sheet && !sheetName) {
       throw new Error("Either 'sheet' or 'sheetName' must be provided.");
     }
@@ -59,8 +69,7 @@ class DatabaseManager {
     // Find the correct CONFIG key for this sheet name
     const sheetConfig = this.getSheetConfig(sheetName);
     if (!sheetConfig) {
-      console.log(`No sort configuration found for sheet: ${sheetName}`);
-      return; // Skip sorting if no config found
+      throw new Error(`No sort configuration found for sheet: ${sheetName}`);
     }
 
     const columnIndex = sheetConfig.SORT_COLUMN;
@@ -73,13 +82,13 @@ class DatabaseManager {
       return;
     }
     
-    // Define range excluding the header row (assumes header is in row 1)
+    // Exclude header
     const range = sheet.getRange(2, 1, lastRow - 1, lastColumn);
-    // Sort by desired column in false = (Z → A) or true = (A-Z)
-    range.sort({ column: columnIndex+1, ascending: (asc === 'asc' || asc === true) }) //use columnIndex + 1 because sort method is 1-based index
+    // order by false = (Z → A) or true = (A-Z)
+    //use 0-based index for columnIndex
+    range.sort({ column: columnIndex+1, ascending: (asc === 'asc' || asc === true) }) 
   }
 
-  // Helper method to find the correct config for a sheet name
   getSheetConfig(sheetName) {
     for (const key in CONFIG.SHEETS) {
       if (CONFIG.SHEETS[key].NAME === sheetName) {
