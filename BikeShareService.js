@@ -21,8 +21,10 @@ class BikeShareService {
       // this.sendCheckoutConfirmation(checkoutLog.emailAddress, bike.bikeName);
       return { success: true, message: `Bike ${bike.bikeName} checked out successfully` };
     } catch (error) {
-      range.setBackground('red');
-      range.setNote(error.message);
+      this.db.addErrorFlag(CONFIG.SHEETS.CHECKOUT_LOGS.NAME, range, error.message);
+      this.db.sortByColumn(null, CONFIG.SHEETS.CHECKOUT_LOGS.NAME);
+      // Log the error and notify the user
+      Logger.log(`Error processing checkout: ${error.message}`);
       // this.sendErrorNotification(checkoutLog.emailAddress, error.message);
       return { success: false, error: error.message };
     }
@@ -45,8 +47,10 @@ class BikeShareService {
       // this.sendReturnConfirmation(returnLog.emailAddress, bike.bikeName);
       return { success: true, message: `Bike ${bike.bikeName} returned successfully` };
     } catch (error) {
-      range.setBackground('red');
-      range.setNote(error.message);
+      this.db.addErrorFlag(CONFIG.SHEETS.RETURN_LOGS.NAME, range, error.message);
+      this.db.sortByColumn(null, CONFIG.SHEETS.RETURN_LOGS.NAME);
+      // Log the error and notify the user
+      Logger.log(`Error processing return: ${error.message}`);
       // this.sendErrorNotification(returnLog.emailAddress, error.message);
       return { success: false, error: error.message };
     }
