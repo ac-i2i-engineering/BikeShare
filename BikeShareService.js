@@ -4,29 +4,34 @@
 class BikeShareService {
   constructor() {
     this.db = new DatabaseManager();
+    this.errorManager = new ErrorManager();
   }
 
   processCheckout(formResponse, range) {
     try {
-      const checkoutLog = CheckoutLog.fromFormResponse(formResponse);
-      const validation = checkoutLog.validate();
-      // Validate the checkout log
-      if (!validation.success) {
-        throw new Error(validation.message.join(', '));
-      }
+      const checkoutLog = CheckoutLog.fromFormResponse(formResponse);      
       const user = User.findByEmail(checkoutLog.emailAddress);
       const bike = user.checkoutBike(checkoutLog.bikeHash, checkoutLog.timestamp);
+      
+      // Ensure database operations complete before sorting
+      SpreadsheetApp.flush();
       this.db.sortByColumn(null, CONFIG.SHEETS.CHECKOUT_LOGS.NAME);
 
       // this.sendCheckoutConfirmation(checkoutLog.emailAddress, bike.bikeName);
       return { success: true, message: `Bike ${bike.bikeName} checked out successfully` };
     } catch (error) {
-      this.db.addErrorFlag(range, error.message);
+      const errorCode = this.determineSystemErrorCode(error);
+      const managedError = this.errorManager.handleError(errorCode, {
+        userEmail: formResponse.getRespondentEmail(),
+        originalError: error.message,
+        operation: 'checkout'
+      });
+      
+      this.db.addErrorFlag(range, managedError.description, managedError.color);
+      SpreadsheetApp.flush();
       this.db.sortByColumn(null, CONFIG.SHEETS.CHECKOUT_LOGS.NAME);
-      // Log the error and notify the user
-      Logger.log(`Error processing checkout: ${error.message}`);
-      // this.sendErrorNotification(checkoutLog.emailAddress, error.message);
-      return { success: false, error: error.message };
+      
+      return { success: false, error: managedError.description, errorCode: managedError.code };
     }
   }
 
@@ -36,23 +41,44 @@ class BikeShareService {
       const validation = returnLog.validate();
 
       if (!validation.success) {
-        throw new Error(validation.message.join(', '));
+        const errorCode = this.determineReturnErrorCode(validation.message, returnLog);
+        const error = this.errorManager.handleError(errorCode, {
+          userEmail: returnLog.emailAddress,
+          bikeName: returnLog.bikeName,
+          confirmBikeName: returnLog.confirmBikeName,
+          validationErrors: validation.message
+        });
+        
+        this.db.addErrorFlag(range, error.description, error.color);
+        SpreadsheetApp.flush();
+        this.db.sortByColumn(null, CONFIG.SHEETS.RETURN_LOGS.NAME);
+        
+        return { success: false, error: error.description, errorCode: error.code };
       }
 
       const user = User.findByEmail(returnLog.emailAddress);
       const usageHours = this.calculateUsageHours(returnLog.bikeName);
       const bike = user.returnBike(returnLog, usageHours);
+      
+      // Ensure database operations complete before sorting
+      SpreadsheetApp.flush();
       this.db.sortByColumn(null, CONFIG.SHEETS.RETURN_LOGS.NAME);
 
       // this.sendReturnConfirmation(returnLog.emailAddress, bike.bikeName);
       return { success: true, message: `Bike ${bike.bikeName} returned successfully` };
     } catch (error) {
-      this.db.addErrorFlag(range, error.message);
+      const errorCode = this.determineSystemErrorCode(error);
+      const managedError = this.errorManager.handleError(errorCode, {
+        userEmail: formResponse.getRespondentEmail(),
+        originalError: error.message,
+        operation: 'return'
+      });
+      
+      this.db.addErrorFlag(range, managedError.description, managedError.color);
+      SpreadsheetApp.flush();
       this.db.sortByColumn(null, CONFIG.SHEETS.RETURN_LOGS.NAME);
-      // Log the error and notify the user
-      Logger.log(`Error processing return: ${error.message}`);
-      // this.sendErrorNotification(returnLog.emailAddress, error.message);
-      return { success: false, error: error.message };
+      
+      return { success: false, error: managedError.description, errorCode: managedError.code };
     }
   }
 
@@ -113,62 +139,6 @@ class BikeShareService {
         GmailApp.sendEmail(bike.mostRecentUser, subject, body);
       }
     });
-  }
-
-  healthCheck() {
-    try {
-      const startTime = new Date().getTime();
-      
-      // Test database connection
-      const testSheet = this.db.getSheet(CONFIG.SHEETS.BIKES_STATUS.NAME);
-      
-      // Test basic operations
-      const availableBikes = this.getAvailableBikes();
-      
-      const endTime = new Date().getTime();
-      const responseTime = endTime - startTime;
-      
-      return {
-        healthy: true,
-        responseTime: responseTime,
-        availableBikes: availableBikes.length,
-        timestamp: new Date()
-      };
-    } catch (error) {
-      return {
-        healthy: false,
-        error: error.message,
-        timestamp: new Date()
-      };
-    }
-  }
-
-  safeProcessing(processingFunction, formResponse) {
-    try {
-      const startTime = new Date().getTime();
-      const result = processingFunction(formResponse);
-      const endTime = new Date().getTime();
-      
-      // Log processing time for monitoring
-      console.log(`Processing completed in ${endTime - startTime}ms`);
-      
-      return result;
-    } catch (error) {
-      console.error('Processing error:', error);
-      
-      // Send error notification
-      this.sendErrorNotification(
-        formResponse.getRespondentEmail(), 
-        error.message
-      );
-      
-      // Return standardized error response
-      return {
-        success: false,
-        error: error.message,
-        timestamp: new Date()
-      };
-    }
   }
 }
 // =============================================================================
