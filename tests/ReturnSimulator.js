@@ -55,7 +55,7 @@ class ReturnFullSimulator {
       const assureRodeBikeItem = form.getItemById(this.FIELD_IDS.ASSURE_RODE_BIKE).asMultipleChoiceItem();
       formResponse.withItemResponse(assureRodeBikeItem.createResponse(formData.assureRodeBike));
 
-      const mismatchExplanationItem = form.getItemById(this.FIELD_IDS.BIKE_MISMATCH_EXPLANATION).asCheckboxItem();
+      const mismatchExplanationItem = form.getItemById(this.FIELD_IDS.BIKE_MISMATCH_EXPLANATION).asMultipleChoiceItem();
       formResponse.withItemResponse(mismatchExplanationItem.createResponse(formData.mismatchExplanation));
 
       const friendReturnItem = form.getItemById(this.FIELD_IDS.RETURNING_FOR_FRIEND).asMultipleChoiceItem();
@@ -125,7 +125,7 @@ class ReturnFullSimulator {
             bikeName,
             bikeName,
             'Yes',
-            [], 
+            '', 
             'No',
             '', 
             '' 
@@ -164,7 +164,7 @@ class ReturnVirtualSimulator {
             bikeName,
             confirmCode, 
             assureRodeBike, 
-            mismatchExplanation.toString(), 
+            mismatchExplanation, 
             returningForFriend,
             friendEmail, 
             issuesConcerns
@@ -183,7 +183,7 @@ class ReturnVirtualSimulator {
 function simulateFullReturn() {
   const simulator = new ReturnFullSimulator();
   // return simulator.simulateReturn();
-  // return simulator.createCustomReturn('test103@amherst.edu','King','Moore','Yes',['🔁 I swapped bikes with a friend during use'],'Yes','friend103@amherst.edu','Wheel was loose')
+  // return simulator.createCustomReturn('test103@amherst.edu','King','Moore','Yes','🔁 I swapped bikes with a friend during use','Yes','friend103@amherst.edu','Wheel was loose')
   return simulator.simulateMultipleReturns(num=5);
 }
 
@@ -194,7 +194,7 @@ function simulateVirtualReturn() {
     'Meiklejohn',
     'Meiklejohn',
     'Yes',
-    [],
+    '',
     'No',
     '',
     ''
