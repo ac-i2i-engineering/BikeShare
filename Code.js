@@ -13,11 +13,9 @@ function handleOnFormSubmit(e) {
   const range = e.range;
   // Check if the edit is in the 'Checkout Logs' or 'Return Logs' sheet
   if (sheetName === CONFIG.SHEETS.CHECKOUT_LOGS.NAME) {
-    const result = service.processCheckout(responses, range);
-    Logger.log('Checkout processed:', result.message || result.error);
+    service.processCheckout(responses, range);
   } else if (sheetName === CONFIG.SHEETS.RETURN_LOGS.NAME) {
-    const result = service.processReturn(responses, range);
-    Logger.log('Return processed:', result.message || result.error);
+    service.processReturn(responses, range);
   }
 }
 
