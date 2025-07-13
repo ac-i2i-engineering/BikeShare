@@ -107,5 +107,15 @@ class Bike {
   needsMaintenance() {
     return this.maintenanceStatus !== 'Good';
   }
+
+  findByFuzzyName(bikeName) {
+    const bikes = this.db.getAllData(CONFIG.SHEETS.BIKES_STATUS.NAME);
+    for (let i = 1; i < bikes.length; i++) {
+      if (fuzzyMatch(bikes[i][0], bikeName)) {
+        return Bike.fromSheetRow(bikes[i]);
+      }
+    }
+    return null;
+  }
 }
 // =============================================================================

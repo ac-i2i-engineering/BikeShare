@@ -115,12 +115,16 @@ class User {
     const timestamp = returnLog.timestamp;
     const bike = Bike.findByName(bikeName);
     if (!bike) {
-      this.comm.handleCommunication('ERR_USR_RET_002', {
-        userEmail: this.email,
-        bikeName: bikeName,
-        entryRange: returnLog.entryRange
-      });
-      throw new Error(`Bike ${bikeName} not found`);
+      if (fuzzyMatch(bikeName, this.lastCheckoutName)) {
+        bike = Bike.findByName(this.lastCheckoutName);
+      }else{
+        this.comm.handleCommunication('ERR_USR_RET_002', {
+          userEmail: this.email,
+          bikeName: bikeName,
+          entryRange: returnLog.entryRange
+        });
+        throw new Error(`Bike ${bikeName} not found`);
+      }
     }
     if (!this.hasUnreturnedBike) {
       // Check if returning on behalf of a friend
