@@ -38,10 +38,9 @@ class DatabaseManager {
   }
 
   addErrorFlag(range, color, errorMessage= null) {
-    range.setBackground(color);
-    if (errorMessage) {
-      range.setNote(errorMessage);
-    }
+    if (!color || !errorMessage) throw new Error("Both color and errorMessage are required");
+    if(color) range.setBackground(color);
+    if (errorMessage) range.setNote(errorMessage);
   }
 
   // orders the sheet by a specific column
