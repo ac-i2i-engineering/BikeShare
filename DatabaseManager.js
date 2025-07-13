@@ -37,10 +37,10 @@ class DatabaseManager {
     sheet.appendRow(values);
   }
 
-  addErrorFlag(range, color, errorMessage= null) {
-    if (!color || !errorMessage) throw new Error("Both color and errorMessage are required");
+  markEntry(range, color=null, note= null) {
+    if (!color && !note) throw new Error("color or note is required");
     if(color) range.setBackground(color);
-    if (errorMessage) range.setNote(errorMessage);
+    if (note) range.setNote(note);
   }
 
   // orders the sheet by a specific column
