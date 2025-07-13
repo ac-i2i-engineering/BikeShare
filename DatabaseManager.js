@@ -20,7 +20,7 @@ class DatabaseManager {
   findRowByColumn(sheetName, columnIndex, value) {
     const data = this.getAllData(sheetName);
     for (let i = 1; i < data.length; i++) {
-      if (data[i][columnIndex] === value) {
+      if (fuzzyMatch(data[i][columnIndex], value)) {
         return { row: i + 1, data: data[i] };
       }
     }
