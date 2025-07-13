@@ -60,11 +60,14 @@ function levenshteinDistance(str1, str2) {
   return matrix[str2.length][str1.length];
 }
 
-function fuzzyMatchString(targetStr, compStr){
-  if (!targetStr || !compStr) return false;
-  if (targetStr.toLowerCase() === compStr.toLowerCase()) return true;
-  if (targetStr.length < 3 || compStr.length < 3) return false;
-  const distance = levenshteinDistance(targetStr, compStr);
-  const maxLen = Math.max(targetStr.length, compStr.length);
+function fuzzyMatch(target, comp){
+  if (typeof(target) === 'number' && typeof(comp) === 'number'){
+    return target === comp;
+  }
+  if (!target || !comp) return false;
+  if (target.toLowerCase() === comp.toLowerCase()) return true;
+  if (target.length < 3 || comp.length < 3) return false;
+  const distance = levenshteinDistance(target, comp);
+  const maxLen = Math.max(target.length, comp.length);
   return distance / maxLen < CONFIG.FUZZY_MATCHING_THRESHOLD;
 }
