@@ -64,7 +64,6 @@ class Communicator {
   getCommunication(commID) {
     return COMM_CODES[commID] || null;
   }
-
   fillPlaceholders(template, context) {
     return template.replace(/{{(.*?)}}/g, (match, p1) => {
       return context[p1.trim()] || '';
