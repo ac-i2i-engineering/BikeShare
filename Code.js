@@ -2,7 +2,6 @@
  * BikeShare System - Object-Oriented Design
  * Uses Google Sheets as database and Google Forms for user interaction
  */
-
 // =============================================================================
 // FORM TRIGGER FUNCTIONS
 // =============================================================================
