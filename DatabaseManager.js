@@ -37,8 +37,8 @@ class DatabaseManager {
     sheet.appendRow(values);
   }
 
-  addErrorFlag(range, errorMessage= null,flagIndex = 0) {
-    range.setBackground(ERRORS["FLAG_COLORS"][flagIndex]);
+  addErrorFlag(range, color, errorMessage= null) {
+    range.setBackground(color);
     if (errorMessage) {
       range.setNote(errorMessage);
     }
