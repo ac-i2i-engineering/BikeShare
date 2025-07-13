@@ -92,5 +92,21 @@ class DatabaseManager {
     }
     return null;
   }
+
+  resetDatabase() {
+    if (!CONFIG.AUTO_RESET_ENABLED || !CONFIG.DEBUG_MODE) {
+      throw new Error("Auto reset is disabled or debug mode is off.");
+    }
+    for (const key in CONFIG.SHEETS) {
+      const sheetConfig = CONFIG.SHEETS[key];
+      const sheet = this.getSheet(sheetConfig.NAME);
+      if (sheet) {
+        const range = sheet.getRange(sheetConfig.RESET_RANGE);
+        range.clearContent();
+        range.setBackground(null);
+        range.setNote('');  
+      }
+    }
+  }
 }
 // =============================================================================

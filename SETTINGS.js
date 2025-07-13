@@ -3,6 +3,7 @@
 // =============================================================================
 const CONFIG = {
   DEBUG_MODE: true,
+  AUTO_RESET_ENABLED: true,
   ADMIN_EMAIL:'ndayishimiyeemile96@gmail.com',
   SHEETS: {
     BIKES_STATUS: {
@@ -12,26 +13,31 @@ const CONFIG = {
       AVAILABILITY_COL_OPTIONS: ['Available', 'Checked Out', 'Out of Service'],
       MAINTENANCE_COL_OPTIONS: ['Good', 'In Repair', 'Has Issues', 'Missing'],
       SIZE_COL_OPTIONS: ['S', 'M', 'L', 'XL'],
+      RESET_RANGE: 'E2:L',
     },
     USER_STATUS: {
       NAME:'User Status',
       SORT_COLUMN: 0,
       SORT_ORDER: 'asc',
+      RESET_RANGE: 'A2:L',
     },
     CHECKOUT_LOGS: {
       NAME:'Checkout Logs',
       SORT_COLUMN: 0,
       SORT_ORDER: 'desc',
+      RESET_RANGE: 'A2:D',
     },
     RETURN_LOGS: {
       NAME:'Return Logs',
       SORT_COLUMN: 0,
       SORT_ORDER: 'desc',
+      RESET_RANGE: 'A2:I',
     },
     REPORTS: {
       NAME:'Reports',
       SORT_COLUMN: 0,
       SORT_ORDER: 'desc',
+      RESET_RANGE: 'A2:O',
     }
   },
   FORMS: {
@@ -71,7 +77,7 @@ const CONFIG = {
     SEND_ADMIN_NOTIFICATIONS: false,
     SEND_DEVELOPER_NOTIFICATIONS: false,
     NOTIFICATION_RETRY_ATTEMPTS: 3,
-  }
+  },
 };
 
 // =============================================================================
