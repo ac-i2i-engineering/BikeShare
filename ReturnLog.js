@@ -12,7 +12,9 @@ class ReturnLog {
     this.returningForFriend = null;
     this.friendEmail = null;
     this.issuesConcerns = null;
+    this.isIndirectReturn = false;
     this.db = new DatabaseManager();
+    this.comm = new Communicator();
   }
 
   static fromFormResponse(responses) {
@@ -29,20 +31,31 @@ class ReturnLog {
     return log;
   }
 
-  validate() {
-    let response = {
-      success:true,
-      message:[]
+  static fromFriendReturnLog(returnLog) {
+    const log = new ReturnLog();
+    log.timestamp = returnLog.timestamp;
+    log.emailAddress = returnLog.friendEmail;
+    log.bikeName = returnLog.bikeName;
+    log.confirmBikeName = returnLog.confirmBikeName;
+    log.assureRodeBike = `Friend said: ${returnLog.assureRodeBike}`;
+    log.mismatchExplanation = `Friend said: ${returnLog.mismatchExplanation}`;
+    log.returningForFriend = false;
+    log.friendEmail = returnLog.emailAddress;
+    log.issuesConcerns = `Friend said: ${returnLog.issuesConcerns}`;
+    log.isIndirectReturn = true; // Mark as indirect return
+    return log;
+  }
+
+  validate(range) {
+    if (!fuzzyMatch(this.bikeName, this.confirmBikeName)) {
+      this.comm.handleCommunication('ERR_USR_RET_001', {
+        userEmail: this.emailAddress,
+        bikeName: this.bikeName,
+        confirmBikeName: this.confirmBikeName,
+        entryRange: range
+      });
+      throw new Error('Bike names do not match');
     }
-    if (this.bikeName !== this.confirmBikeName) {
-      response.success = false;
-      response.message.push('Bike Name entries confirmation does not match');
-    }
-    // if (this.assureRodeBike !== 'Yes') {
-    //   response.success = false;
-    //   response.message.push(`User does not assure riding the bike\nReason: ${this.mismatchExplanation}`);
-    // }
-    return response;
   }
 }
 // =============================================================================
