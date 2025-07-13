@@ -37,9 +37,9 @@ class DatabaseManager {
     sheet.appendRow(values);
   }
 
-  markEntry(range, color=null, note= null) {
-    if (!color && !note) throw new Error("color or note is required");
-    if(color) range.setBackground(color);
+  markEntry(range, bgColor=null, note= null) {
+    if (!bgColor && !note) throw new Error("bgColor or note is required");
+    if(bgColor) range.setBackground(bgColor);
     if (note) range.setNote(note);
   }
 

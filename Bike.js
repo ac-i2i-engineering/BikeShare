@@ -17,6 +17,7 @@ class Bike {
     this.thirdRecentUser = '';
     this.tempRecent = '';
     this.db = new DatabaseManager();
+    this.comm = new Communicator();
   }
 
   static fromSheetRow(rowData) {

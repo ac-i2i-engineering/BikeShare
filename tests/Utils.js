@@ -1,3 +1,8 @@
+function quickTest(){
+  const len = levenshteinDistance('hello', 'hallo');
+  console.log(len)
+}
+
 function printFormFieldInfo(formId){
   const form = FormApp.openById(formId);
   form.getItems().forEach(item=>{
@@ -12,16 +17,14 @@ function simulateHandleOnFormSubmit(sheetName, responses) {
   const range = sheet.getRange(2, 1, 1, responses.length);
   // Check if the edit is in the 'Checkout Logs' or 'Return Logs' sheet
   if (sheetName === CONFIG.SHEETS.CHECKOUT_LOGS.NAME) {
-    const result = service.processCheckout(responses, range);
-    Logger.log('Checkout processed:', result.message || result.error);
+    service.processCheckout(responses, range);
   } else if (sheetName === CONFIG.SHEETS.RETURN_LOGS.NAME) {
-    const result = service.processReturn(responses, range);
-    Logger.log('Return processed:', result.message || result.error);
+    service.processReturn(responses, range);
   }
 }
 
-function clearCash(){
-let cache = PropertiesService.getScriptProperties();
+function clearCache(){
+  let cache = PropertiesService.getScriptProperties();
   cache.deleteAllProperties(); // Clears the cached data associated with the key "data"
 }
 
@@ -64,9 +67,4 @@ function fuzzyMatchString(targetStr, compStr){
   const distance = levenshteinDistance(targetStr, compStr);
   const maxLen = Math.max(targetStr.length, compStr.length);
   return distance / maxLen < CONFIG.FUZZY_MATCHING_THRESHOLD;
-}
-
-function quickTest(){
-  const len = levenshteinDistance('hello', 'hallo');
-  console.log(len)
 }

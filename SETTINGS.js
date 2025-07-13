@@ -1,0 +1,129 @@
+// =============================================================================
+// CONFIGURATION AND CONSTANTS
+// =============================================================================
+const CONFIG = {
+  DEBUG_MODE: true,
+  ADMIN_EMAIL:'ndayishimiyeemile96@gmail.com',
+  SHEETS: {
+    BIKES_STATUS: {
+      NAME:'Bikes Status',
+      SORT_COLUMN: 0, 
+      SORT_ORDER: 'asc',
+      AVAILABILITY_COL_OPTIONS: ['Available', 'Checked Out', 'Out of Service'],
+      MAINTENANCE_COL_OPTIONS: ['Good', 'In Repair', 'Has Issues', 'Missing'],
+      SIZE_COL_OPTIONS: ['S', 'M', 'L', 'XL'],
+    },
+    USER_STATUS: {
+      NAME:'User Status',
+      SORT_COLUMN: 0,
+      SORT_ORDER: 'asc',
+    },
+    CHECKOUT_LOGS: {
+      NAME:'Checkout Logs',
+      SORT_COLUMN: 0,
+      SORT_ORDER: 'desc',
+    },
+    RETURN_LOGS: {
+      NAME:'Return Logs',
+      SORT_COLUMN: 0,
+      SORT_ORDER: 'desc',
+    },
+    REPORTS: {
+      NAME:'Reports',
+      SORT_COLUMN: 0,
+      SORT_ORDER: 'desc',
+    }
+  },
+  FORMS: {
+    CHECKOUT_FORM_ID: '1ThxJFJLjtQkvzXuX7ZPa2vEYWzIokWK89GUbW507zpM',
+    RETURN_FORM_ID: '1VFAY-49Qx2Ob5OdVZkI2rH9xbaT0DRF63q6fWZh-Pbc',
+    CHECKOUT_FIELD_IDS: {
+      EMAIL: 1337405542,
+      BIKE_HASH: 697424273,
+      KEY_AVAILABLE: 998220660,
+      CONDITION_OK: 1671678893
+    },
+    RETURN_FIELD_IDS: {
+      EMAIL: 1224208618,
+      BIKE_NAME: 1916897857,
+      CONFIRM_BIKE_NAME: 1814237596,
+      ASSURE_RODE_BIKE: 788338430,
+      BIKE_MISMATCH_EXPLANATION: 993479484,
+      RETURNING_FOR_FRIEND: 2017212460,
+      FRIEND_EMAIL: 552890597,
+      ISSUES_CONCERNS: 71285803
+    },
+  },
+  BIKE_NAMES:['Gates','Harris','Hitchcock','Humphrey','Meiklejohn','Moore','Olds','Seelye','Stearns'],
+  BIKE_HASHES:['39B9B5','3A8BD0','3A81B8','3A8FC0','3E950E','3E9A87','4038A4','437D9E','437FE3'],
+  REGULATIONS:{
+    CAN_CHECKOUT_WITH_UNRETURNED_BIKE: false,
+    CAN_CHECKOUT_UNAVAILABLE_BIKE: false,
+    CAN_RETURN_WITH_MISMATCHED_NAME: false,
+    NEED_USER_CONFIRM_KEY_ACCESS: false,
+    MAX_CHECKOUT_HOURS: 24,
+  },
+  FUZZY_MATCHING_THRESHOLD: 0.3,
+  NOTIFICATION_SETTINGS: {
+    NOTIFICATION_ENABLED: true,
+    SEND_USER_NOTIFICATIONS: false,
+    SEND_ADMIN_NOTIFICATIONS: false,
+    SEND_DEVELOPER_NOTIFICATIONS: false,
+    NOTIFICATION_RETRY_ATTEMPTS: 3,
+  }
+};
+
+// =============================================================================
+// ERROR MANAGEMENT SETUP
+// ===============================================================================
+const COMM_SEVERITY = {
+  INFO: { bgColor: '#d9d2e9'},
+  WARNING: { bgColor: '#fce5cd'},
+  ERROR: { bgColor: '#e6b8af'},
+  CRITICAL: { bgColor: '#f5cdeb'}
+};
+// STRUCTURE:commType_causeEntity_commID
+const COMM_CODES = {
+  'ERR_USR_001': {
+    triggerMethod: null,
+    notifyDeveloper: null,
+    notifyUser: {
+      subject:'Bike Name Mismatch Detected',
+      body: 'The bike name you entered does not match the confirmation. Please ensure both fields are identical.'
+    },
+    notifyAdmin: {
+      subject: 'Bike name mismatch detected for user {{userEmail}}',
+      body: 'Entered bike name: "{{bikeName}}", Confirmed bike name: "{{confirmName}}"'
+    },
+    markEntry: {
+      bgColor: COMM_SEVERITY.INFO.bgColor,
+      note: 'Bike name mismatch detected'
+    }
+  },
+  'ERR_USR_002': {
+    triggerMethod: null,
+    notifyDeveloper: null,
+    notifyUser: {
+      subject: 'ACTION REQUIRED: Unreturned Bike Detected',
+      body: 'Please return the bike "{{unreturnedBikeName}}" you checked out on {{prevCheckoutDate}} before checking out a new one.'
+    },
+    notifyAdmin: null,
+    markEntry: {
+      bgColor: COMM_SEVERITY.WARNING.bgColor,
+      note: 'Checkout failed because user had unreturned bike {{unreturnedBikeName}} checked out on {{prevCheckoutDate}}'
+    }
+  },
+  'ERR_USR_003': {
+    triggerMethod: null,
+    notifyDeveloper: null,
+    notifyUser: {
+      subject: 'CHECKOUT FAILED: Bike Not Found',
+      body: "The bike with hash {{bikeHash}} you attempted to check out could not be found. Please, retry and don't modify the pre-filled bike hash after scanning the QR code. If error persists, contact support."
+    },
+    notifyAdmin: null,
+    markEntry:{
+      bgColor: COMM_SEVERITY.ERROR.bgColor,
+      note: 'Checkout failed because bike with hash {{bikeHash}} was not found'
+    },
+  }
+};

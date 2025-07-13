@@ -17,6 +17,7 @@ class User {
     this.firstUsageDate = null;
     this.isFirstUsage = this.firstUsageDate === null; 
     this.db = new DatabaseManager();
+    this.comm = new Communicator();
   }
 
   static fromSheetRow(rowData) {
@@ -67,25 +68,36 @@ class User {
     }
   }
 
-  checkoutBike(bikeHash, timestamp) {
+  checkoutBike(checkoutLog, range) {
     if (this.hasUnreturnedBike && !CONFIG.REGULATIONS.CAN_CHECKOUT_WITH_UNRETURNED_BIKE) {
+      this.comm.handleCommunication('ERR_USR_002',{
+        unreturnedBikeName: this.lastCheckoutName,
+        prevCheckoutDate: this.lastCheckoutDate,
+        userEmail: this.email,
+        entryRange: range
+      });
       throw new Error('User already has an unreturned bike');
     }
 
-    const bike = Bike.findByHash(bikeHash);
+    const bike = Bike.findByHash(checkoutLog.bikeHash);
     if (!bike) {
+      this.comm.handleCommunication('ERR_USR_003', {
+        userEmail: this.email,
+        bikeHash: checkoutLog.bikeHash,
+        entryRange: range
+      });
       throw new Error('Bike not found');
     }
 
-    bike.checkout(this.email, timestamp);
+    bike.checkout(this.email, checkoutLog.timestamp);
 
     // Update user usage records
     if (this.isFirstUsage) {
-      this.firstUsageDate = timestamp;
+      this.firstUsageDate = checkoutLog.timestamp;
     }
     this.hasUnreturnedBike = true;
     this.lastCheckoutName = bike.bikeName;
-    this.lastCheckoutDate = timestamp;
+    this.lastCheckoutDate = checkoutLog.timestamp;
     this.numberOfCheckouts++;
     this.save();
 
