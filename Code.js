@@ -14,8 +14,10 @@ function handleOnFormSubmit(e) {
   // Check if the edit is in the 'Checkout Logs' or 'Return Logs' sheet
   if (sheetName === CONFIG.SHEETS.CHECKOUT_LOGS.NAME) {
     service.processCheckout(responses, range);
+    service.db.sortByColumn(null, CONFIG.SHEETS.CHECKOUT_LOGS.NAME);
   } else if (sheetName === CONFIG.SHEETS.RETURN_LOGS.NAME) {
     service.processReturn(responses, range);
+    service.db.sortByColumn(null, CONFIG.SHEETS.RETURN_LOGS.NAME);
   }
 }
 
