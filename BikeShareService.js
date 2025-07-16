@@ -10,7 +10,7 @@ class BikeShareService {
   processCheckout(formResponse, range) {
     try {
       const checkoutLog = CheckoutLog.fromFormResponse(formResponse);
-      const user = User.findByEmail(checkoutLog.emailAddress);
+      const user = User.findByEmail(checkoutLog.userEmail);
       user.checkoutBike(checkoutLog, range);
     } catch (error) {
       Logger.log(`Error processing checkout: ${error}`);
@@ -21,7 +21,7 @@ class BikeShareService {
     try {
       const returnLog = ReturnLog.fromFormResponse(formResponse);
       returnLog.validate(range);
-      const user = User.findByEmail(returnLog.emailAddress);
+      const user = User.findByEmail(returnLog.userEmail);
       user.checkIfReturningForFriend(returnLog);
       const usageHours = this.calculateUsageHours(returnLog.bikeName);
       user.returnBike(returnLog, usageHours);

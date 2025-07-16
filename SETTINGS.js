@@ -84,16 +84,16 @@ const CONFIG = {
 // ERROR MANAGEMENT SETUP
 // ===============================================================================
 const COMM_SEVERITY = {
-  INFO: { bgColor: '#d9d2e9'},
-  WARNING: { bgColor: '#fce5cd'},
-  ERROR: { bgColor: '#e6b8af'},
-  CRITICAL: { bgColor: '#f5cdeb'}
+  INFO: { bgColor: '#d9a1ffff'},
+  WARNING: { bgColor: '#f8e0c7ff'},
+  ERROR: { bgColor: '#e9b2a8ff'},
+  CRITICAL: { bgColor: '#ff7979c5'}
 };
 // STRUCTURE:commType_involvedEntity_relatedAction_commID
 const COMM_CODES = {
   // Confirm codes
   'CFM_USR_COT_001': {
-    triggerMethod: 'handleCommunication',
+    triggerMethod: null,
     notifyDeveloper: null,
     notifyUser: {
       subject: 'Bike Checkout Confirmation',
@@ -120,7 +120,10 @@ const COMM_CODES = {
       body: 'Your friend "{{friendEmail}}" has returned the bike "{{bikeName}}" on your behalf. Thank you for using BikeShare!'
     },
     notifyAdmin: null,
-    markEntry: null,
+    markEntry: {
+      bgColor: COMM_SEVERITY.INFO.bgColor,
+      note: 'Bike returned on behalf of user "{{userEmail}}" by friend "{{friendEmail}}" for bike "{{bikeName}}"'
+    },
   },
   'CFM_USR_RET_003': {
     triggerMethod: null,
@@ -137,12 +140,12 @@ const COMM_CODES = {
     notifyDeveloper: null,
     notifyUser: {
       subject: 'RETURN WARNING: Returned name does not match checkout',
-      body: 'Return processed. However, the returned bike name "{{bikeName}}" does not match the last checked out bike "{{lastCheckedOutBike}}". If this is an error, please contact support.'
+      body: 'Return processed. However, the returned bike name "{{bikeName}}" does not match the last checked out bike "{{lastCheckoutName}}". If this is an error, please contact support.'
     },
     notifyAdmin: null,
     markEntry: {
       bgColor: COMM_SEVERITY.INFO.bgColor,
-      note: 'Return processed with name mismatch: returned bike "{{bikeName}}" does not match last checked out bike "{{lastCheckedOutBike}}"'
+      note: 'Return processed with name mismatch: returned bike "{{bikeName}}" does not match last checked out bike "{{lastCheckoutName}}"'
     }
   },
   // Error codes
@@ -167,12 +170,12 @@ const COMM_CODES = {
     notifyDeveloper: null,
     notifyUser: {
       subject: 'Unreturned Bike Detected',
-      body: 'You still have "{{unreturnedBikeName}}" checked out since {{prevCheckoutDate}}. Please return it before checking out another bike.'
+      body: 'You still have "{{unreturnedBikeName}}" checked out since {{lastCheckoutDate}}. Please return it before checking out another bike.'
     },
     notifyAdmin: null,
     markEntry: {
       bgColor: COMM_SEVERITY.WARNING.bgColor,
-      note: 'Checkout blocked: user has unreturned bike "{{unreturnedBikeName}}" from {{prevCheckoutDate}}'
+      note: 'Checkout blocked: user has unreturned bike "{{unreturnedBikeName}}" from {{lastCheckoutDate}}'
     }
   },
   'ERR_USR_COT_003': {
@@ -219,12 +222,12 @@ const COMM_CODES = {
     notifyDeveloper: null,
     notifyUser: {
       subject: 'Friend has no Unreturned Bike',
-      body: 'The email "{{friendEmail}}" does not have any unreturned bike records. Please verify the email and try again.'
+      body: 'The userEmail "{{friendEmail}}" does not have any unreturned bike records. Please verify the userEmail and try again.'
     },
     notifyAdmin: null,
     markEntry: {
       bgColor: COMM_SEVERITY.ERROR.bgColor,
-      note: 'Return failed: friend\'s email "{{friendEmail}}" has no unreturned bike'
+      note: 'Return failed: friend\'s userEmail "{{friendEmail}}" has no unreturned bike'
     }
   },
   'ERR_USR_RET_004': {
@@ -232,12 +235,12 @@ const COMM_CODES = {
     notifyDeveloper: null,
     notifyUser: {
       subject: 'Friend\'s Email Not Provided',
-      body: 'Seems like you were trying to return a bike on behalf of a friend, but their email was not provided. Please provide the friend\'s email to proceed.'
+      body: 'Seems like you were trying to return a bike on behalf of a friend, but their userEmail was not provided. Please provide the friend\'s userEmail to proceed.'
     },
     notifyAdmin: null,
     markEntry: {
       bgColor: COMM_SEVERITY.ERROR.bgColor,
-      note: 'Return failed: friend\'s email not provided'
+      note: 'Return failed: friend\'s userEmail not provided'
     }
   },
   'ERR_USR_RET_005': {
@@ -258,12 +261,12 @@ const COMM_CODES = {
     notifyDeveloper: null,
     notifyUser: {
       subject: 'RETURN FAILED: No Unreturned Bike',
-      body: 'You have no unreturned bike records. You lastly checked out bike {{lastCheckedOutBike}} on {{lastCheckoutDate}}, but it\'s been returned on {{lastReturnDate}}. If you are returning for a friend, please fill the return form accordingly. Else, If you believe this is an error, contact support.'
+      body: 'You have no unreturned bike records. You lastly checked out bike {{lastCheckoutName}} on {{lastCheckoutDate}}, but it\'s been returned on {{lastReturnDate}}. If you are returning for a friend, please fill the return form accordingly. Else, If you believe this is an error, contact support.'
     },
     notifyAdmin: null,
     markEntry: {
       bgColor: COMM_SEVERITY.ERROR.bgColor,
-      note: 'Return failed: user has no unreturned bike, last checked out bike "{{lastCheckedOutBike}}" on "{{lastCheckoutDate}}", returned on "{{lastReturnDate}}"'
+      note: 'Return failed: user has no unreturned bike, last checked out bike "{{lastCheckoutName}}" on "{{lastCheckoutDate}}", returned on "{{lastReturnDate}}"'
     }
   },
   'ERR_USR_RET_007': {
@@ -271,12 +274,12 @@ const COMM_CODES = {
     notifyDeveloper: null,
     notifyUser: {
       subject: 'RETURN FAILED: Bike Name Mismatch',
-      body: 'The bike "{{bikeName}}" does not match the last checked out bike "{{lastCheckedOutBike}}". Verify name on your key and try again.'
+      body: 'The bike "{{bikeName}}" does not match the last checked out bike "{{lastCheckoutName}}". Verify name on your key and try again.'
     },
     notifyAdmin: null,
     markEntry: {
       bgColor: COMM_SEVERITY.ERROR.bgColor,
-      note: 'Return failed: bike "{{bikeName}}" does not match last checked out bike "{{lastCheckedOutBike}}"'
+      note: 'Return failed: bike "{{bikeName}}" does not match last checked out bike "{{lastCheckoutName}}"'
     }
   },
   'ERR_USR_RET_008': {

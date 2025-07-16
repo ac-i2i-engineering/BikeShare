@@ -9,7 +9,7 @@
  * [3] [Id=788338430] Did you ride the bike with the actual code/name you checked out?
  * [4] [Id=993479484] If you did not or are not sure you rode the bike with the actual ID you checked out, please explain why.
  * [5] [Id=2017212460] Are you returning on behalf of a friend?
- * [6] [Id=552890597] If you are returning on behalf of a friend, what is their email?
+ * [6] [Id=552890597] If you are returning on behalf of a friend, what is their userEmail?
  * [7] [Id=71285803] Are there any errors/issues/concerns you'd like us to know about?
  */
 
@@ -116,12 +116,12 @@ class ReturnFullSimulator {
     const results = [];
     for (let i = 0; i < num; i++) {
         let finalPart = i < 10 ? '00' + i : i < 100 ? '0' + i : i;
-        let emailAddress = root + finalPart + '@amherst.edu';
+        let userEmail = root + finalPart + '@amherst.edu';
         const randomIndex = Math.floor(Math.random() * CONFIG.BIKE_NAMES.length);
         const bikeName = isRandom ? CONFIG.BIKE_NAMES[randomIndex] : defaultBike;
-        console.log(`\n-----Email:${emailAddress}-------Bike:${bikeName}--------`);
+        console.log(`\n-----Email:${userEmail}-------Bike:${bikeName}--------`);
         results.push(this.createCustomReturn(
-            emailAddress,
+            userEmail,
             bikeName,
             bikeName,
             'Yes',
@@ -149,7 +149,7 @@ class ReturnVirtualSimulator {
     }
 
     createReturnEntry(
-        email, 
+        userEmail, 
         bikeName,
         confirmCode, 
         assureRodeBike = 'Yes', 
@@ -160,7 +160,7 @@ class ReturnVirtualSimulator {
     ) {
         const entry = [
             new Date(),
-            email, 
+            userEmail, 
             bikeName,
             confirmCode, 
             assureRodeBike, 

@@ -25,7 +25,7 @@ class Report {
       newUsers: this.getNewUsersThisWeek(),
       lateReturners: users.filter(user => user.overdueReturns > 0).length,
       returnMismatches: users.reduce((sum, user) => sum + user.numberOfMismatches, 0),
-      emailsWithMismatches: users.filter(user => user.numberOfMismatches > 0).map(user => user.email),
+      emailsWithMismatches: users.filter(user => user.numberOfMismatches > 0).map(user => user.userEmail),
       reportedIssues: this.getReportedIssuesThisWeek(),
       totalUsageHours: users.reduce((sum, user) => sum + user.usageHours, 0),
       adminNotes: ''

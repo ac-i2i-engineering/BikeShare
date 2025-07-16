@@ -5,7 +5,7 @@
 class CheckoutLog {
   constructor() {
     this.timestamp = null;
-    this.emailAddress = null;
+    this.userEmail = null;
     this.bikeHash = null;
     this.conditionConfirmation = null;
     this.db = null;
@@ -14,7 +14,7 @@ class CheckoutLog {
   static fromFormResponse(responses) {
     const log = new CheckoutLog();
     log.timestamp = responses[0];
-    log.emailAddress = responses[1];
+    log.userEmail = responses[1];
     log.bikeHash = responses[2];
     log.conditionConfirmation = responses[3];
     log.db = new DatabaseManager();

@@ -22,7 +22,7 @@ class Communicator {
       this.notifyDeveloper(this.fillPlaceholders(comm.notifyDeveloper.subject, context), this.fillPlaceholders(comm.notifyDeveloper.body, context));
     }
     if(comm.markEntry){
-      this.markEntry(context.entryRange, comm.markEntry.bgColor, this.fillPlaceholders(comm.markEntry.note, context));
+      this.markEntry(context.range, comm.markEntry.bgColor, this.fillPlaceholders(comm.markEntry.note, context));
     }
     // run that method if it exists
     if(comm.triggerMethod){

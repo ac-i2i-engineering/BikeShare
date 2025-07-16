@@ -46,13 +46,13 @@ function getSystemStatus() {
   };
 }
 
-function manuallyProcessCheckout(email, bikeId) {
-  const user = User.findByEmail(email);
+function manuallyProcessCheckout(userEmail, bikeId) {
+  const user = User.findByEmail(userEmail);
   return user.checkoutBike(bikeId);
 }
 
-function manuallyProcessReturn(email, bikeId) {
-  const user = User.findByEmail(email);
+function manuallyProcessReturn(userEmail, bikeId) {
+  const user = User.findByEmail(userEmail);
   const service = new BikeShareService();
   const usageHours = service.calculateUsageHours(bikeId);
   return user.returnBike(bikeId, usageHours);

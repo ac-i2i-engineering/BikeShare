@@ -75,12 +75,12 @@ class CheckoutFullSimulator {
     const results = [];
     for(let i=0;i<num;i++){
       let finalPart = i < 10 ? '00'+i : i < 100 ? '0'+i : i.toString();
-      let emailAddress = root + finalPart+'@amherst.edu'
+      let userEmail = root + finalPart+'@amherst.edu'
       let randomIndex = Math.floor(Math.random() * CONFIG.BIKE_HASHES.length);
       let bikeHash = isRandom ? CONFIG.BIKE_HASHES[randomIndex] : defaultBike;
 
-      console.log(`\n-----Email:${emailAddress}-------Bike:${bikeHash}--------`)
-      results.push(this.createCustomCheckout(emailAddress,bikeHash))
+      console.log(`\n-----Email:${userEmail}-------Bike:${bikeHash}--------`)
+      results.push(this.createCustomCheckout(userEmail,bikeHash))
        // Small delay between submissions
       Utilities.sleep(3000);
     }
@@ -99,10 +99,10 @@ class CheckoutVirtualSimulator{
       this.checkoutSheet = CONFIG.SHEETS.CHECKOUT_LOGS.NAME;
     }
 
-    createCheckoutEntry(email, bikeHash, conditionOk = ['I consent']) {
+    createCheckoutEntry(userEmail, bikeHash, conditionOk = ['I consent']) {
         const entry = [
           new Date(),
-          email,
+          userEmail,
           bikeHash,
           conditionOk.toString()
         ];
