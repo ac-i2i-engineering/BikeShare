@@ -70,22 +70,22 @@ class Bike {
     }
   }
 
-  checkout(userEmail,timestamp) {
+  checkout(commContext) {
     if (this.availability !== 'Available' && !CONFIG.REGULATIONS.CAN_CHECKOUT_UNAVAILABLE_BIKE) {
       throw new Error(`Bike ${this.bikeName} is not available for checkout`); 
     }
 
     this.availability = 'Checked Out';
-    this.lastCheckoutDate = timestamp;
-    this.updateRecentUsers(userEmail);
+    this.lastCheckoutDate = commContext.timestamp;
+    this.updateRecentUsers(commContext.userEmail);
     this.save();
   }
 
-  returnBike(actualUsageHours = 0) {
+  returnBike(commContext) {
     this.availability = 'Available';
-    this.lastReturnDate = new Date();
+    this.lastReturnDate = commContext.timestamp;
     this.currentUsageTimer = 0;
-    this.totalUsageHours += actualUsageHours;
+    this.totalUsageHours += commContext.usageHours;
     this.save();
   }
 

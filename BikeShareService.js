@@ -11,7 +11,11 @@ class BikeShareService {
     try {
       const checkoutLog = CheckoutLog.fromFormResponse(formResponse);
       const user = User.findByEmail(checkoutLog.userEmail);
-      user.checkoutBike(checkoutLog, range);
+      const commContext = {
+        ...checkoutLog,
+        range: range
+      };
+      user.checkoutBike(commContext);
     } catch (error) {
       Logger.log(`Error processing checkout: ${error.message}`);
     }
@@ -24,7 +28,12 @@ class BikeShareService {
       const user = User.findByEmail(returnLog.userEmail);
       user.checkIfReturningForFriend(returnLog);
       const usageHours = this.calculateUsageHours(returnLog.bikeName);
-      user.returnBike(returnLog, usageHours);
+      const commContext = {
+        ...returnLog,
+        usageHours: usageHours,
+        range: range
+      };
+      user.returnBike(commContext);
     } catch (error) {
       Logger.log(`Error processing return: ${error.message}`);
     }

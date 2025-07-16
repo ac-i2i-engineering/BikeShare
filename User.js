@@ -69,9 +69,8 @@ class User {
     }
   }
 
-  checkoutBike(checkoutLog, range) {
+  checkoutBike(commContext) {
     const commContext = checkoutLog;
-    commContext['range'] = range;
     commContext['maxCheckoutHours'] = CONFIG.REGULATIONS.MAX_CHECKOUT_HOURS;
     if (this.hasUnreturnedBike && !CONFIG.REGULATIONS.CAN_CHECKOUT_WITH_UNRETURNED_BIKE) {
       const errorMessage = 'User already has an unreturned bike';
@@ -80,7 +79,7 @@ class User {
       throw new Error(errorMessage);
     }
 
-    const bike = Bike.findByHash(checkoutLog.bikeHash);
+    const bike = Bike.findByHash(commContext.bikeHash);
     if (!bike) {
       const errorMessage = 'Bike not found';
       commContext['errorMessage'] = errorMessage;
@@ -88,15 +87,15 @@ class User {
       throw new Error(errorMessage);
     }
 
-    bike.checkout(this.userEmail, checkoutLog.timestamp);
+    bike.checkout(this.userEmail, commContext.timestamp);
 
     // Update user usage records
     if (this.isFirstUsage) {
-      this.firstUsageDate = checkoutLog.timestamp;
+      this.firstUsageDate = commContext.timestamp;
     }
     this.hasUnreturnedBike = true;
     this.lastCheckoutName = bike.bikeName;
-    this.lastCheckoutDate = checkoutLog.timestamp;
+    this.lastCheckoutDate = commContext.timestamp;
     this.numberOfCheckouts++;
     this.save();
 
@@ -105,16 +104,13 @@ class User {
     this.comm.handleCommunication('CFM_USR_COT_001', commContext);
   }
 
-  returnBike(returnLog, usageHours = 0) {
-    const bikeName = returnLog.bikeName;
-    const timestamp = returnLog.timestamp;
-    let bike = Bike.findByName(bikeName);
-    const commContext = returnLog;
+  returnBike(commContext) {
+    let bike = Bike.findByName(commContext.bikeName);
     if (!bike) {
-      if (fuzzyMatch(bikeName, this.lastCheckoutName)) {
+      if (fuzzyMatch(commContext.bikeName, this.lastCheckoutName)) {
         bike = Bike.findByName(this.lastCheckoutName);
       } else {
-        const errorMessage = `Bike ${bikeName} not found`;
+        const errorMessage = `Bike ${commContext.bikeName} not found`;
         commContext['errorMessage'] = errorMessage;
         this.comm.handleCommunication('ERR_USR_RET_002', commContext);
         throw new Error(errorMessage);
@@ -123,17 +119,23 @@ class User {
     commContext['bikeName'] = bike.bikeName; // re-assign context to collect fuzzy matches
     if (!this.hasUnreturnedBike) {
       // Check if returning on behalf of a friend
-      if (this.isReturningForFriend && returnLog.isDirectReturn) {
-        const friendEmail = returnLog.friendEmail;
+      if (this.isReturningForFriend && commContext.isDirectReturn) {
+        const friendEmail = commContext.friendEmail;
         if (friendEmail) {
           const friendUser = User.findByEmail(friendEmail);
           commContext['friendEmail'] = friendEmail; // re-assign context to collect fuzzy email matches
           if (friendUser.hasUnreturnedBike) {
             try {
               // Update friend's user record with the return details
-              const friendReturnLog = ReturnLog.fromFriendReturnLog(returnLog);
-              friendUser.returnBike(friendReturnLog, usageHours);
+              const friendReturnLog = ReturnLog.fromFriendReturnLog(commContext);
+              const friendContext = {
+                ...friendReturnLog,
+                usageHours: commContext.usageHours,
+                range: commContext.range
+              }
+              friendUser.returnBike(friendContext);
               // Notify user that bike was returned for a friend
+              commContext['usageHours'] = 0; // indicate no usage for the user returning for a friend
               this.comm.handleCommunication('CFM_USR_RET_003', commContext);
             } catch (error) {
               const errorMessage = `Error returning bike for friend: ${error.message}`;
@@ -170,26 +172,26 @@ class User {
       return;
     }
 
-    if (this.lastCheckoutName !== bike.bikeName && isDirectReturn) {
+    if (this.lastCheckoutName !== bike.bikeName && commContext.isDirectReturn) {
       this.numberOfMismatches++;
       this.comm.handleCommunication('CFM_USR_RET_004', commContext);
       bike = Bike.findByName(this.lastCheckoutName);
     }
     
-    if (this.lastCheckoutDate && (timestamp - this.lastCheckoutDate) > CONFIG.REGULATIONS.MAX_CHECKOUT_HOURS * 60 * 60 * 1000) {
+    if (this.lastCheckoutDate && (commContext.timestamp - this.lastCheckoutDate) > CONFIG.REGULATIONS.MAX_CHECKOUT_HOURS * 60 * 60 * 1000) {
       this.overdueReturns++;
     }
 
-    bike.returnBike(usageHours);
+    bike.returnBike(commContext);
     this.hasUnreturnedBike = false;
-    this.lastReturnName = bikeName;
-    this.lastReturnDate = timestamp;
+    this.lastReturnName = commContext.bikeName;
+    this.lastReturnDate = commContext.timestamp;
     this.numberOfReturns++;
-    this.usageHours += usageHours;
+    this.usageHours += commContext.usageHours;
     this.save();
 
     // send confirmation userEmail
-    if (!returnLog.isDirectReturn) {
+    if (!commContext.isDirectReturn) {
       this.comm.handleCommunication('CFM_USR_RET_002', commContext);
     } else {
       this.comm.handleCommunication('CFM_USR_RET_001', commContext);
