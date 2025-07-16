@@ -12,7 +12,7 @@ class ReturnLog {
     this.returningForFriend = null;
     this.friendEmail = null;
     this.issuesConcerns = null;
-    this.isIndirectReturn = false;
+    this.isDirectReturn = true;
     this.db = new DatabaseManager();
     this.comm = new Communicator();
   }
@@ -42,7 +42,7 @@ class ReturnLog {
     log.returningForFriend = false;
     log.friendEmail = friendReturnLog.userEmail;
     log.issuesConcerns = `Friend said: ${friendReturnLog.issuesConcerns}`;
-    log.isIndirectReturn = true; // Mark as indirect return
+    log.isDirectReturn = false; // Mark as indirect return
     return log;
   }
 

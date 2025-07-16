@@ -120,10 +120,10 @@ class User {
         throw new Error(errorMessage);
       }
     }
-    commContext['bikeName'] = this.lastCheckoutName; // re-assign context to collect fuzzy matches
+    commContext['bikeName'] = bike.bikeName; // re-assign context to collect fuzzy matches
     if (!this.hasUnreturnedBike) {
       // Check if returning on behalf of a friend
-      if (this.isReturningForFriend && !returnLog.isIndirectReturn) {
+      if (this.isReturningForFriend && returnLog.isDirectReturn) {
         const friendEmail = returnLog.friendEmail;
         if (friendEmail) {
           const friendUser = User.findByEmail(friendEmail);
@@ -170,7 +170,7 @@ class User {
       return;
     }
 
-    if (this.lastCheckoutName !== bike.bikeName) {
+    if (this.lastCheckoutName !== bike.bikeName && isDirectReturn) {
       this.numberOfMismatches++;
       this.comm.handleCommunication('CFM_USR_RET_004', commContext);
       bike = Bike.findByName(this.lastCheckoutName);
@@ -189,7 +189,7 @@ class User {
     this.save();
 
     // send confirmation userEmail
-    if (returnLog.isIndirectReturn) {
+    if (!returnLog.isDirectReturn) {
       this.comm.handleCommunication('CFM_USR_RET_002', commContext);
     } else {
       this.comm.handleCommunication('CFM_USR_RET_001', commContext);
