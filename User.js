@@ -97,6 +97,7 @@ class User {
     this.save();
 
     // send confirmation userEmail
+    commContext['bikeName'] = bike.bikeName;
     this.comm.handleCommunication('CFM_USR_COT_001', commContext);
   }
 
