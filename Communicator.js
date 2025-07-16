@@ -1,5 +1,5 @@
 // =============================================================================
-// ERROR MANAGER CLASS
+// NOTIFICATION,ERROR, AND ENTRY LABELLING MANAGER CLASS
 // =============================================================================
 class Communicator {
   constructor() {
@@ -33,7 +33,7 @@ class Communicator {
     try {
       GmailApp.sendEmail(userEmail, subject, body);
     } catch (error) {
-      console.error('Error sending email to user:', error);
+      console.error('Error sending email to user:', error.message);
     }
   }
 
@@ -41,7 +41,7 @@ class Communicator {
     try {
       GmailApp.sendEmail(CONFIG.ADMIN_EMAIL, subject, body);
     } catch (error) {
-      console.error('Error sending email to admin:', error);
+      console.error('Error sending email to admin:', error.message);
     }
   }
 
@@ -49,7 +49,7 @@ class Communicator {
     try {
       GmailApp.sendEmail(CONFIG.DEVELOPER_EMAIL, subject, body);
     } catch (error) {
-      console.error('Error sending email to developer:', error);
+      console.error('Error sending email to developer:', error.message);
     }
   }
 
@@ -57,7 +57,7 @@ class Communicator {
     try {
       this.db.markEntry(range, color, note);
     } catch (error) {
-      console.error('Error marking entry:', error);
+      console.error('Error marking entry:', error.message);
     }
   }
 

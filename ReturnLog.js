@@ -50,8 +50,10 @@ class ReturnLog {
     const commContext = this
     commContext['range'] = range;
     if (!fuzzyMatch(this.bikeName, this.confirmBikeName)) {
+      const errorMessage = 'Bike names do not match';
+      commContext['errorMessage'] = errorMessage;
       this.comm.handleCommunication('ERR_USR_RET_001', commContext);
-      throw new Error('Bike names do not match');
+      throw new Error(errorMessage);
     }
   }
 }

@@ -291,7 +291,7 @@ const COMM_CODES = {
     triggerMethod: null,
     notifyDeveloper: {
       subject: 'Return Failed: Could Not Process Friend Return',
-      body: 'On {{timestamp}}, user "{{userEmail}}" attempted to return bike "{{bikeName}}" for friend "{{friendEmail}}" but failed. Error: {{error}}'
+      body: 'On {{timestamp}}, user "{{userEmail}}" attempted to return bike "{{bikeName}}" for friend "{{friendEmail}}" but failed. Error: {{errorMessage}}'
     },
     notifyUser: {
       subject: 'Return Failed: Could Not Return for a Friend',
@@ -299,11 +299,11 @@ const COMM_CODES = {
     },
     notifyAdmin: {
       subject: 'Return Failed: Could Not Return for Friend',
-      body: 'On {{timestamp}}, user "{{userEmail}}" attempted to return bike "{{bikeName}}" for friend "{{friendEmail}}" but the process failed. Error: {{error}} [Copy sent to developers]'
+      body: 'On {{timestamp}}, user "{{userEmail}}" attempted to return bike "{{bikeName}}" for friend "{{friendEmail}}" but the process failed. Error: {{errorMessage}} [Copy sent to developers]'
     },
     markEntry: {
       bgColor: COMM_SEVERITY.ERROR.bgColor,
-      note: 'Return failed: "{{userEmail}}" could not return "{{bikeName}}" for "{{friendEmail}}", error: "{{error}}"'
+      note: 'Return failed: "{{userEmail}}" could not return "{{bikeName}}" for "{{friendEmail}}", error: "{{errorMessage}}"'
     }
   }
 }

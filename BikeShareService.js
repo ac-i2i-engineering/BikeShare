@@ -13,7 +13,7 @@ class BikeShareService {
       const user = User.findByEmail(checkoutLog.userEmail);
       user.checkoutBike(checkoutLog, range);
     } catch (error) {
-      Logger.log(`Error processing checkout: ${error}`);
+      Logger.log(`Error processing checkout: ${error.message}`);
     }
   }
 
@@ -26,7 +26,7 @@ class BikeShareService {
       const usageHours = this.calculateUsageHours(returnLog.bikeName);
       user.returnBike(returnLog, usageHours);
     } catch (error) {
-      Logger.log(`Error processing return: ${error}`);
+      Logger.log(`Error processing return: ${error.message}`);
     }
   }
 

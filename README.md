@@ -166,7 +166,7 @@ Replace `N2` with the cell containing the URL you want to convert into a QR code
 
 ### 5. Error Codes & Parsing System
 - **Error Convention:**  
-    - Define a set of error codes (e.g., `ERR_MISMATCH`, `ERR_INVALID_INPUT`, `ERR_PROXY_RETURN`) in a central `ERROR_CONFIG`.
+    - Define a set of error codes 
     - Map each error code to a response action and notification template.
     - Use error codes to categorize dashboard flags and automate comments.
 
