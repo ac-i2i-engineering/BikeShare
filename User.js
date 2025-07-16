@@ -70,7 +70,6 @@ class User {
   }
 
   checkoutBike(commContext) {
-    const commContext = checkoutLog;
     commContext['maxCheckoutHours'] = CONFIG.REGULATIONS.MAX_CHECKOUT_HOURS;
     if (this.hasUnreturnedBike && !CONFIG.REGULATIONS.CAN_CHECKOUT_WITH_UNRETURNED_BIKE) {
       const errorMessage = 'User already has an unreturned bike';
@@ -87,7 +86,7 @@ class User {
       throw new Error(errorMessage);
     }
 
-    bike.checkout(this.userEmail, commContext.timestamp);
+    bike.checkout(commContext);
 
     // Update user usage records
     if (this.isFirstUsage) {
