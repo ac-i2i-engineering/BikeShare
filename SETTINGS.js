@@ -73,8 +73,8 @@ const CONFIG = {
   FUZZY_MATCHING_THRESHOLD: 0.3,
   NOTIFICATION_SETTINGS: {
     NOTIFICATION_ENABLED: true,
-    SEND_USER_NOTIFICATIONS: false,
-    SEND_ADMIN_NOTIFICATIONS: false,
+    SEND_USER_NOTIFICATIONS: true,
+    SEND_ADMIN_NOTIFICATIONS: true,
     SEND_DEVELOPER_NOTIFICATIONS: false,
     NOTIFICATION_RETRY_ATTEMPTS: 3,
   },
@@ -84,6 +84,7 @@ const CONFIG = {
 // ERROR MANAGEMENT SETUP
 // ===============================================================================
 const COMM_SEVERITY = {
+  HINT : { bgColor: '#9effd5ff'},
   INFO: { bgColor: '#d9a1ffff'},
   WARNING: { bgColor: '#f8e0c7ff'},
   ERROR: { bgColor: '#e9b2a8ff'},
@@ -97,7 +98,7 @@ const COMM_CODES = {
     notifyDeveloper: null,
     notifyUser: {
       subject: 'Bike Checkout Confirmation',
-      body: 'Thank you for using BikeShare! You can unlock your checked-out bike using the key named "{{bikeName}}". Please return it within {{maxCheckoutHours}} hours.'
+      body: 'Your bike checkout is confirmed. Use the key labeled "{{bikeName}}" to unlock your bike. Please return it within {{maxCheckoutHours}} hours. Thank you for using BikeShare!'
     },
     notifyAdmin: null,
     markEntry: null,
@@ -107,7 +108,7 @@ const COMM_CODES = {
     notifyDeveloper: null,
     notifyUser: {
       subject: 'Bike Return Confirmation',
-      body: 'Thank you for returning the bike "{{bikeName}}". We hope you enjoyed your ride!'
+      body: 'Thank you for returning bike "{{bikeName}}". We hope you had a great ride!'
     },
     notifyAdmin: null,
     markEntry: null,
@@ -116,13 +117,13 @@ const COMM_CODES = {
     triggerMethod: null,
     notifyDeveloper: null,
     notifyUser: {
-      subject: 'Bike Returned on your Behalf',
-      body: 'Your friend "{{friendEmail}}" has returned the bike "{{bikeName}}" on your behalf. Thank you for using BikeShare!'
+      subject: 'Bike Returned on Your Behalf',
+      body: 'Your friend "{{friendEmail}}" has returned the bike "{{bikeName}}" for you. Thanks for using BikeShare!'
     },
     notifyAdmin: null,
     markEntry: {
       bgColor: COMM_SEVERITY.INFO.bgColor,
-      note: 'Bike returned on behalf of user "{{userEmail}}" by friend "{{friendEmail}}" for bike "{{bikeName}}"'
+      note: 'Bike returned on behalf of "{{userEmail}}" by "{{friendEmail}}" for bike "{{bikeName}}"'
     },
   },
   'CFM_USR_RET_003': {
@@ -130,35 +131,39 @@ const COMM_CODES = {
     notifyDeveloper: null,
     notifyUser: {
       subject: 'Bike Returned for a Friend',
-      body: 'You have successfully returned the bike "{{bikeName}}" for your friend "{{friendEmail}}". Thank you for using BikeShare!'
+      body: 'You’ve successfully returned bike "{{bikeName}}" for your friend "{{friendEmail}}". Thank you for your help and for using BikeShare!'
     },
     notifyAdmin: null,
-    markEntry: null,
+    markEntry: {
+      bgColor: COMM_SEVERITY.HINT.bgColor,
+      note: 'Bike returned for a friend: "{{friendEmail}}" returned bike "{{bikeName}}"'
+    },
   },
   'CFM_USR_RET_004': {
     triggerMethod: null,
     notifyDeveloper: null,
     notifyUser: {
-      subject: 'RETURN WARNING: Returned name does not match checkout',
-      body: 'Return processed. However, the returned bike name "{{bikeName}}" does not match the last checked out bike "{{lastCheckoutName}}". If this is an error, please contact support.'
+      subject: 'Return Warning: Bike Name Mismatch',
+      body: 'The return was processed, but the bike name "{{bikeName}}" does not match your last checked out bike "{{lastCheckoutName}}". If this seems incorrect, please contact support.'
     },
     notifyAdmin: null,
     markEntry: {
       bgColor: COMM_SEVERITY.INFO.bgColor,
-      note: 'Return processed with name mismatch: returned bike "{{bikeName}}" does not match last checked out bike "{{lastCheckoutName}}"'
+      note: 'Return processed with name mismatch: returned bike "{{bikeName}}" ≠ last checkout "{{lastCheckoutName}}"'
     }
   },
+
   // Error codes
   'ERR_USR_COT_001': {
     triggerMethod: null,
     notifyDeveloper: null,
     notifyUser: {
       subject: 'Bike Name Mismatch',
-      body: 'The bike name you entered does not match the confirmation. Please ensure both fields are identical before submitting.'
+      body: 'The bike name entered doesn’t match the confirmation field. Please make sure both fields are identical before submitting.'
     },
     notifyAdmin: {
       subject: 'Bike Name Mismatch for {{userEmail}}',
-      body: 'User entered bike name: "{{bikeName}}", confirmed name: "{{confirmName}}". Please review the submission.'
+      body: 'User entered bike name: "{{bikeName}}", confirmed name: "{{confirmName}}". Please review.'
     },
     markEntry: {
       bgColor: COMM_SEVERITY.INFO.bgColor,
@@ -170,12 +175,12 @@ const COMM_CODES = {
     notifyDeveloper: null,
     notifyUser: {
       subject: 'Unreturned Bike Detected',
-      body: 'You still have "{{unreturnedBikeName}}" checked out since {{lastCheckoutDate}}. Please return it before checking out another bike.'
+      body: 'You still have bike "{{unreturnedBikeName}}" checked out since {{lastCheckoutDate}}. Please return it before checking out another.'
     },
     notifyAdmin: null,
     markEntry: {
       bgColor: COMM_SEVERITY.WARNING.bgColor,
-      note: 'Checkout blocked: user has unreturned bike "{{unreturnedBikeName}}" from {{lastCheckoutDate}}'
+      note: 'Checkout blocked: user has unreturned bike "{{unreturnedBikeName}}" since {{lastCheckoutDate}}'
     }
   },
   'ERR_USR_COT_003': {
@@ -183,7 +188,7 @@ const COMM_CODES = {
     notifyDeveloper: null,
     notifyUser: {
       subject: 'Bike Not Found',
-      body: 'The bike with hash "{{bikeHash}}" could not be found. Please retry and ensure the bike hash is correct. If the issue persists, contact support.'
+      body: 'Bike with hash "{{bikeHash}}" was not found. Please double-check the hash and try again. If the issue continues, contact support.'
     },
     notifyAdmin: null,
     markEntry: {
@@ -195,21 +200,21 @@ const COMM_CODES = {
     triggerMethod: null,
     notifyDeveloper: null,
     notifyUser: {
-      subject: 'Bike Return Failed: Name Mismatch',
+      subject: 'Return Failed: Name Mismatch',
       body: 'The bike name "{{bikeName}}" does not match the confirmation "{{confirmBikeName}}". Please ensure both fields are identical before submitting.'
     },
     notifyAdmin: null,
     markEntry: {
       bgColor: COMM_SEVERITY.ERROR.bgColor,
-      note: 'Return failed: bike name "{{bikeName}}" does not match confirmation "{{confirmBikeName}}"'
+      note: 'Return failed: "{{bikeName}}" ≠ confirmation "{{confirmBikeName}}"'
     }
   },
   'ERR_USR_RET_002': {
     triggerMethod: null,
     notifyDeveloper: null,
     notifyUser: {
-      subject: 'RETURN FAILED: Couldn\'t Find Bike',
-      body: 'The bike with name "{{bikeName}}" could not be found. Verify the bike name and try again. If the issue persists, contact support.'
+      subject: 'Return Failed: Bike Not Found',
+      body: 'We couldn’t find the bike named "{{bikeName}}". Please check the name and try again. Contact support if the issue persists.'
     },
     notifyAdmin: null,
     markEntry: {
@@ -221,13 +226,13 @@ const COMM_CODES = {
     triggerMethod: null,
     notifyDeveloper: null,
     notifyUser: {
-      subject: 'Friend has no Unreturned Bike',
-      body: 'The userEmail "{{friendEmail}}" does not have any unreturned bike records. Please verify the userEmail and try again.'
+      subject: 'Friend Has No Unreturned Bike',
+      body: 'No unreturned bike found for "{{friendEmail}}". Please verify the email and try again.'
     },
     notifyAdmin: null,
     markEntry: {
       bgColor: COMM_SEVERITY.ERROR.bgColor,
-      note: 'Return failed: friend\'s userEmail "{{friendEmail}}" has no unreturned bike'
+      note: 'Return failed: no unreturned bike for "{{friendEmail}}"'
     }
   },
   'ERR_USR_RET_004': {
@@ -235,70 +240,71 @@ const COMM_CODES = {
     notifyDeveloper: null,
     notifyUser: {
       subject: 'Friend\'s Email Not Provided',
-      body: 'Seems like you were trying to return a bike on behalf of a friend, but their userEmail was not provided. Please provide the friend\'s userEmail to proceed.'
+      body: 'It seems you were trying to return a bike for a friend but didn’t provide their email. Please enter their email to proceed.'
     },
     notifyAdmin: null,
     markEntry: {
       bgColor: COMM_SEVERITY.ERROR.bgColor,
-      note: 'Return failed: friend\'s userEmail not provided'
+      note: 'Return failed: no userEmail provided for friend'
     }
   },
   'ERR_USR_RET_005': {
     triggerMethod: null,
     notifyDeveloper: null,
     notifyUser: {
-      subject: 'RETURN FAILED: No Record for Last Checkout',
-      body: 'It seems you have no record of the last bike checkout. If you are returning for a friend, please fill the return form accordingly. Else, If you believe this is an error, contact support.'
+      subject: 'Return Failed: No Checkout Record Found',
+      body: 'We couldn’t find a record of your last bike checkout. If returning for a friend, please use the appropriate form. Contact support if this seems incorrect.'
     },
     notifyAdmin: null,
     markEntry: {
       bgColor: COMM_SEVERITY.ERROR.bgColor,
-      note: 'Return failed: no record for last checkout'
+      note: 'Return failed: no record found for last checkout'
     }
   },
   'ERR_USR_RET_006': {
     triggerMethod: null,
     notifyDeveloper: null,
     notifyUser: {
-      subject: 'RETURN FAILED: No Unreturned Bike',
-      body: 'You have no unreturned bike records. You lastly checked out bike {{lastCheckoutName}} on {{lastCheckoutDate}}, but it\'s been returned on {{lastReturnDate}}. If you are returning for a friend, please fill the return form accordingly. Else, If you believe this is an error, contact support.'
+      subject: 'Return Failed: No Unreturned Bike',
+      body: 'You have no unreturned bikes. Your last checkout was bike "{{lastCheckoutName}}" on {{lastCheckoutDate}}, returned on {{lastReturnDate}}. If returning for a friend, please complete the form accordingly. Contact support if needed.'
     },
     notifyAdmin: null,
     markEntry: {
       bgColor: COMM_SEVERITY.ERROR.bgColor,
-      note: 'Return failed: user has no unreturned bike, last checked out bike "{{lastCheckoutName}}" on "{{lastCheckoutDate}}", returned on "{{lastReturnDate}}"'
+      note: 'Return failed: no unreturned bike. Last checked out: "{{lastCheckoutName}}" on {{lastCheckoutDate}}, returned {{lastReturnDate}}'
     }
   },
   'ERR_USR_RET_007': {
     triggerMethod: null,
     notifyDeveloper: null,
     notifyUser: {
-      subject: 'RETURN FAILED: Bike Name Mismatch',
-      body: 'The bike "{{bikeName}}" does not match the last checked out bike "{{lastCheckoutName}}". Verify name on your key and try again.'
+      subject: 'Return Failed: Bike Name Mismatch',
+      body: 'The bike "{{bikeName}}" does not match your last checked out bike "{{lastCheckoutName}}". Please verify the name on your key and try again.'
     },
     notifyAdmin: null,
     markEntry: {
       bgColor: COMM_SEVERITY.ERROR.bgColor,
-      note: 'Return failed: bike "{{bikeName}}" does not match last checked out bike "{{lastCheckoutName}}"'
+      note: 'Return failed: "{{bikeName}}" ≠ last checkout "{{lastCheckoutName}}"'
     }
   },
   'ERR_USR_RET_008': {
     triggerMethod: null,
     notifyDeveloper: {
-      subject: 'RETURN FAILED: User could not return for a friend',
-      body: 'On {{timestamp}}, user "{{userEmail}}" tried to return bike "{{bikeName}}" for friend "{{friendEmail}}", but the operation failed. Error: {{error}}'
+      subject: 'Return Failed: Could Not Process Friend Return',
+      body: 'On {{timestamp}}, user "{{userEmail}}" attempted to return bike "{{bikeName}}" for friend "{{friendEmail}}" but failed. Error: {{error}}'
     },
     notifyUser: {
-      subject: 'RETURN FAILED: Could not return bike for a friend',
-      body: 'We encountered an issue while trying to return the bike "{{bikeName}}" for your friend "{{friendEmail}}". Please try again later or contact support if the issue persists.'
+      subject: 'Return Failed: Could Not Return for a Friend',
+      body: 'We encountered a problem while processing the return of bike "{{bikeName}}" on behalf of "{{friendEmail}}". Please try again later or contact support.'
     },
     notifyAdmin: {
-      subject: 'RETURN FAILED: User could not return bike for a friend',
-      body: 'On {{timestamp}}, user "{{userEmail}}" tried to return bike "{{bikeName}}" for friend "{{friendEmail}}", but the operation failed. Error: {{error}}[copy sent to developers to assess the issue]'
+      subject: 'Return Failed: Could Not Return for Friend',
+      body: 'On {{timestamp}}, user "{{userEmail}}" attempted to return bike "{{bikeName}}" for friend "{{friendEmail}}" but the process failed. Error: {{error}} [Copy sent to developers]'
     },
     markEntry: {
       bgColor: COMM_SEVERITY.ERROR.bgColor,
-      note: 'Return failed: user "{{userEmail}}" could not return bike "{{bikeName}}" for friend "{{friendEmail}}", error: "{{error}}"'
+      note: 'Return failed: "{{userEmail}}" could not return "{{bikeName}}" for "{{friendEmail}}", error: "{{error}}"'
     }
   }
 }
+

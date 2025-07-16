@@ -79,7 +79,6 @@ class User {
     }
 
     const bike = Bike.findByHash(checkoutLog.bikeHash);
-    commContext['bikeHash'] = checkoutLog.bikeHash;
     if (!bike) {
       this.comm.handleCommunication('ERR_USR_COT_003', commContext);
       throw new Error('Bike not found');
@@ -117,7 +116,7 @@ class User {
     commContext['bikeName'] = this.lastCheckoutName; // re-assign context to collect fuzzy matches
     if (!this.hasUnreturnedBike) {
       // Check if returning on behalf of a friend
-      if (this.isReturningForFriend) {
+      if (this.isReturningForFriend && !returnLog.isIndirectReturn) {
         const friendEmail = returnLog.friendEmail;
         if (friendEmail) {
         const friendUser = User.findByEmail(friendEmail);

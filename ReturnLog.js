@@ -31,17 +31,17 @@ class ReturnLog {
     return log;
   }
 
-  static fromFriendReturnLog(returnLog) {
+  static fromFriendReturnLog(friendReturnLog) {
     const log = new ReturnLog();
-    log.timestamp = returnLog.timestamp;
-    log.userEmail = returnLog.friendEmail;
-    log.bikeName = returnLog.bikeName;
-    log.confirmBikeName = returnLog.confirmBikeName;
-    log.assureRodeBike = `Friend said: ${returnLog.assureRodeBike}`;
-    log.mismatchExplanation = `Friend said: ${returnLog.mismatchExplanation}`;
+    log.timestamp = friendReturnLog.timestamp;
+    log.userEmail = friendReturnLog.friendEmail;
+    log.bikeName = friendReturnLog.bikeName;
+    log.confirmBikeName = friendReturnLog.confirmBikeName;
+    log.assureRodeBike = `Friend said: ${friendReturnLog.assureRodeBike}`;
+    log.mismatchExplanation = `Friend said: ${friendReturnLog.mismatchExplanation}`;
     log.returningForFriend = false;
-    log.friendEmail = returnLog.userEmail;
-    log.issuesConcerns = `Friend said: ${returnLog.issuesConcerns}`;
+    log.friendEmail = friendReturnLog.userEmail;
+    log.issuesConcerns = `Friend said: ${friendReturnLog.issuesConcerns}`;
     log.isIndirectReturn = true; // Mark as indirect return
     return log;
   }
