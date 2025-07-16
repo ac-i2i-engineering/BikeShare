@@ -173,8 +173,9 @@ class User {
 
     if (this.lastCheckoutName !== bike.bikeName && commContext.isDirectReturn) {
       this.numberOfMismatches++;
-      this.comm.handleCommunication('CFM_USR_RET_004', commContext);
       bike = Bike.findByName(this.lastCheckoutName);
+      commContext['bikeName'] = bike.bikeName; // re-assign context to collect mismatch
+      commContext['isCollectedMismatch'] = true;
     }
     
     if (this.lastCheckoutDate && (commContext.timestamp - this.lastCheckoutDate) > CONFIG.REGULATIONS.MAX_CHECKOUT_HOURS * 60 * 60 * 1000) {
@@ -192,6 +193,8 @@ class User {
     // send confirmation userEmail
     if (!commContext.isDirectReturn) {
       this.comm.handleCommunication('CFM_USR_RET_002', commContext);
+    } else if (commContext.isCollectedMismatch) {
+      this.comm.handleCommunication('CFM_USR_RET_004', commContext);
     } else {
       this.comm.handleCommunication('CFM_USR_RET_001', commContext);
     }
