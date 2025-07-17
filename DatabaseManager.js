@@ -108,5 +108,13 @@ class DatabaseManager {
       }
     }
   }
+
+  getColumnSum(sheetName, columnIndex) {
+    const data = this.getAllData(sheetName);
+    return data.slice(1).reduce((sum, row) => {
+      const value = parseFloat(row[columnIndex]);
+      return sum + (isNaN(value) ? 0 : value);
+    }, 0);
+  }
 }
 // =============================================================================

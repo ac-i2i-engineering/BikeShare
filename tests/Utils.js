@@ -1,6 +1,6 @@
 function quickTest(){
-  const len = levenshteinDistance('hello', 'hallo');
-  console.log(len)
+  const rep = new Report();
+  console.log(rep.getPeriodNumber());
 }
 
 function printFormFieldInfo(formId){
@@ -8,19 +8,6 @@ function printFormFieldInfo(formId){
   form.getItems().forEach(item=>{
     console.log(`ID: ${item.getId()}, Title: ${item.getTitle()}, Type: ${item.getType()}`);
   });
-}
-
-function simulateHandleOnFormSubmit(sheetName, responses) {
-  const service = new BikeShareService();
-  const sheet = service.db.getSheet(sheetName);
-  service.db.sortByColumn(sheet, null);
-  const range = sheet.getRange(2, 1, 1, responses.length);
-  // Check if the edit is in the 'Checkout Logs' or 'Return Logs' sheet
-  if (sheetName === CONFIG.SHEETS.CHECKOUT_LOGS.NAME) {
-    service.processCheckout(responses, range);
-  } else if (sheetName === CONFIG.SHEETS.RETURN_LOGS.NAME) {
-    service.processReturn(responses, range);
-  }
 }
 
 function clearCache(){

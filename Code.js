@@ -3,7 +3,7 @@
  * Uses Google Sheets as database and Google Forms for user interaction
  */
 // =============================================================================
-// FORM TRIGGER FUNCTIONS
+// FORM TRIGGER & SCHEDULED FUNCTIONS
 // =============================================================================
 function handleOnFormSubmit(e) {
   const service = new BikeShareService();
@@ -20,40 +20,25 @@ function handleOnFormSubmit(e) {
   }
 }
 
-// =============================================================================
-// SCHEDULED FUNCTIONS
-// =============================================================================
-function dailyOverdueCheck() {
+function executeReportGeneration() {
   const service = new BikeShareService();
-  service.sendOverdueNotifications();
-}
-
-function weeklyReportGeneration() {
-  const service = new BikeShareService();
-  const report = service.generateWeeklyReport();
-  console.log('Weekly report generated:', report);
+  Logger.log(service.generatePeriodicReport());
+  service.db.sortByColumn(null, CONFIG.SHEETS.REPORTS.NAME);
 }
 
 // =============================================================================
-// ADMIN FUNCTIONS
+// TEST FUNCTIONS
 // =============================================================================
-function getSystemStatus() {
-  const service = new BikeShareService();
-  return {
-    availableBikes: service.getAvailableBikes().length,
-    overdueBikes: service.getOverdueBikes().length,
-    lastReportGenerated: new Date()
-  };
-}
 
-function manuallyProcessCheckout(userEmail, bikeId) {
-  const user = User.findByEmail(userEmail);
-  return user.checkoutBike(bikeId);
-}
-
-function manuallyProcessReturn(userEmail, bikeId) {
-  const user = User.findByEmail(userEmail);
+function simulateHandleOnFormSubmit(sheetName, responses) {
   const service = new BikeShareService();
-  const usageHours = service.calculateUsageHours(bikeId);
-  return user.returnBike(bikeId, usageHours);
+  const sheet = service.db.getSheet(sheetName);
+  service.db.sortByColumn(sheet, null);
+  const range = sheet.getRange(2, 1, 1, responses.length);
+  // Check if the edit is in the 'Checkout Logs' or 'Return Logs' sheet
+  if (sheetName === CONFIG.SHEETS.CHECKOUT_LOGS.NAME) {
+    service.processCheckout(responses, range);
+  } else if (sheetName === CONFIG.SHEETS.RETURN_LOGS.NAME) {
+    service.processReturn(responses, range);
+  }
 }

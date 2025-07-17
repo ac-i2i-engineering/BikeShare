@@ -39,27 +39,12 @@ class BikeShareService {
     }
   }
 
-  generateWeeklyReport() {
+  generatePeriodicReport() {
     const report = new Report();
     const reportData = report.generate();
     report.save(reportData);
     return reportData;
   }
-
-  getAvailableBikes() {
-    const data = this.db.getAllData(CONFIG.SHEETS.BIKES_STATUS.NAME);
-    return data.slice(1)
-      .map(row => Bike.fromSheetRow(row))
-      .filter(bike => bike.availability === 'Available' && !bike.needsMaintenance());
-  }
-
-  getOverdueBikes() {
-    const data = this.db.getAllData(CONFIG.SHEETS.BIKES_STATUS.NAME);
-    return data.slice(1)
-      .map(row => Bike.fromSheetRow(row))
-      .filter(bike => bike.isOverdue());
-  }
-
   calculateUsageHours(bikeName) {
     const bike = Bike.findByName(bikeName);
     if (!bike || !bike.lastCheckoutDate) return 0;

@@ -32,12 +32,17 @@ const CONFIG = {
       SORT_COLUMN: 0,
       SORT_ORDER: 'desc',
       RESET_RANGE: 'A2:I',
+      DATE_COLUMN: 0, 
     },
     REPORTS: {
       NAME:'Reports',
       SORT_COLUMN: 0,
+      OVERDUE_RETURNS_COLUMN: 6,
+      RETURN_MISMATCHES_COLUMN: 10,
+      TOTAL_USAGE_HOURS_COLUMN: 12,
       SORT_ORDER: 'desc',
       RESET_RANGE: 'A2:O',
+      PERIOD_NUM_COLUMN: 2
     }
   },
   FORMS: {
@@ -63,7 +68,6 @@ const CONFIG = {
   BIKE_NAMES:['Gates','Harris','Hitchcock','Humphrey','Meiklejohn','Moore','Olds','Seelye','Stearns'],
   BIKE_HASHES:['39B9B5','3A8BD0','3A81B8','3A8FC0','3E950E','3E9A87','4038A4','437D9E','437FE3'],
   REGULATIONS:{
-    MAX_CHECKOUT_HOURS: 4,
     CAN_CHECKOUT_WITH_UNRETURNED_BIKE: false,
     CAN_CHECKOUT_UNAVAILABLE_BIKE: false,
     CAN_RETURN_WITH_MISMATCHED_NAME: false,
@@ -78,6 +82,16 @@ const CONFIG = {
     SEND_DEVELOPER_NOTIFICATIONS: false,
     NOTIFICATION_RETRY_ATTEMPTS: 3,
   },
+  REPORT_GENERATION: {
+    // ENABLED: true,
+    FREQUENCY: 7, // in days
+    FIRST_RUN_DATE: '2025-07-01', // YYYY-MM-DD
+    // AI_SUMMARY_RECIPIENTS: {
+    //   ADMIN: true,
+    //   USERS: false,
+    //   DEVELOPERS: false
+    // }
+  }
 };
 
 // =============================================================================

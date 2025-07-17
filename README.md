@@ -61,7 +61,7 @@ Fields:
 Fields:
 - **Timestamp**
 - **Recorded By**
-- **Week**
+- **Period**
 - **Total # of Bikes**
 - **Total # of Bikes in Repair**
 - **# of Checked Out**

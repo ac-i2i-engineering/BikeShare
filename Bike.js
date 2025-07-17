@@ -96,7 +96,7 @@ class Bike {
     this.mostRecentUser = newUser;
   }
 
-  isOverdue(maxHours = 24) {
+  isOverdue(maxHours = CONFIG.REGULATIONS.MAX_CHECKOUT_HOURS) {
     if (!this.lastCheckoutDate || this.availability === 'Available') {
       return false;
     }
@@ -104,9 +104,22 @@ class Bike {
     return hoursSinceCheckout > maxHours;
   }
 
-  needsMaintenance() {
-    return this.maintenanceStatus !== 'Good';
+  isInRepair() {
+    return this.maintenanceStatus === 'In Repair';
   }
+
+  isCheckedOut() {
+    return this.availability === 'Checked Out';
+  }
+
+  isReadyForCheckout() {
+    return this.availability === 'Available' && this.maintenanceStatus === 'Good';
+  }
+
+  isOutOfService() {
+    return this.availability === 'Out of Service';
+  }
+
 
   findByFuzzyName(bikeName) {
     const bikes = this.db.getAllData(CONFIG.SHEETS.BIKES_STATUS.NAME);
