@@ -15,11 +15,22 @@ function clearCache(){
   cache.deleteAllProperties(); // Clears the cached data associated with the key "data"
 }
 
-function createOnSubmitTrigger(){
+function installOnSubmitTrigger(){
   const sheet = SpreadsheetApp.getActive()
   ScriptApp.newTrigger('handleOnFormSubmit')
     .forSpreadsheet(sheet)
     .onFormSubmit()
+    .create();
+}
+
+// creates a trigger that runs every n days at a specific hour
+function installExecuteReportGenerationTrigger(){
+  const dayInterval = CONFIG.REPORT_GENERATION.FREQUENCY;
+  const hour = CONFIG.REPORT_GENERATION.GENERATION_HOUR;
+  ScriptApp.newTrigger('executeReportGeneration')
+    .timeBased()
+    .everyDays(dayInterval)
+    .atHour(hour)
     .create();
 }
 
@@ -28,6 +39,12 @@ function deleteAllTriggers(){
   for (let i = 0; i < triggers.length; i++) { 
     ScriptApp.deleteTrigger(triggers[i]); 
     }
+}
+
+function reInstallTriggers(){
+  deleteAllTriggers();
+  installOnSubmitTrigger();
+  installExecuteReportGenerationTrigger();
 }
 
 function levenshteinDistance(str1, str2) {

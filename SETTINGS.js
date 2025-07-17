@@ -83,9 +83,10 @@ const CONFIG = {
     NOTIFICATION_RETRY_ATTEMPTS: 3,
   },
   REPORT_GENERATION: {
-    // ENABLED: true,
-    FREQUENCY: 7, // in days
+    ENABLED: true,
+    FREQUENCY: 1, // in days
     FIRST_RUN_DATE: '2025-07-01', // YYYY-MM-DD
+    GENERATION_HOUR: 2, // 24-hour format
     // AI_SUMMARY_RECIPIENTS: {
     //   ADMIN: true,
     //   USERS: false,
