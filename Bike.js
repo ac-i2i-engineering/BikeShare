@@ -71,7 +71,7 @@ class Bike {
   }
 
   checkout(commContext) {
-    if (this.availability !== 'Available' && !CONFIG.REGULATIONS.CAN_CHECKOUT_UNAVAILABLE_BIKE) {
+    if (this.availability !== 'Available' || this.maintenanceStatus !== 'Good') {
       throw new Error(`Bike ${this.bikeName} is not available for checkout`); 
     }
 
