@@ -69,7 +69,7 @@ class Report {
   }
   // calculate the period number based on the first run date and round it to the nearest period
   getPeriodNumber() {
-    const firstRunDate = new Date(CONFIG.REPORT_GENERATION.FIRST_RUN_DATE);
+    const firstRunDate = new Date(CONFIG.REPORT_GENERATION.FIRST_GENERATION_DATE);
     const diffInMs = this.timestamp - firstRunDate;
     const weeks = Math.round(diffInMs / this.checkSpan);
     return weeks;
