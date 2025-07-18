@@ -82,7 +82,7 @@ const CONFIG = {
   },
   REPORT_GENERATION: {
     ENABLED: true,
-    FREQUENCY: 1, // in days
+    DAYS_INTERVAL: 1, // in days
     FIRST_GENERATION_DATE: '2025-07-01', // YYYY-MM-DD
     GENERATION_HOUR: 2, // 24-hour format
     // AI_SUMMARY_RECIPIENTS: {
@@ -167,22 +167,6 @@ const COMM_CODES = {
   },
 
   // Error codes
-  'ERR_USR_COT_001': {
-    triggerMethod: null,
-    notifyDeveloper: null,
-    notifyUser: {
-      subject: 'Bike Name Mismatch',
-      body: 'The bike name entered doesn’t match the confirmation field. Please make sure both fields are identical before submitting.'
-    },
-    notifyAdmin: {
-      subject: 'Bike Name Mismatch for {{userEmail}}',
-      body: 'User entered bike name: "{{bikeName}}", confirmed name: "{{confirmName}}". Please review.'
-    },
-    markEntry: {
-      bgColor: COMM_SEVERITY.INFO.bgColor,
-      note: 'Bike name mismatch detected during checkout'
-    }
-  },
   'ERR_USR_COT_002': {
     triggerMethod: null,
     notifyDeveloper: null,

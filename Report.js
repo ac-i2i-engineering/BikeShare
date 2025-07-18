@@ -5,7 +5,7 @@ class Report {
   constructor() {
     this.timestamp = new Date();
     this.recordedBy = "Automated";
-    this.frequencyInDays = CONFIG.REPORT_GENERATION.FREQUENCY;
+    this.frequencyInDays = CONFIG.REPORT_GENERATION.DAYS_INTERVAL;
     this.checkSpan = this.frequencyInDays * 24 * 60 * 60 * 1000; // convert days to milliseconds
     this.period = this.getPeriodNumber();
     this.db = new DatabaseManager();

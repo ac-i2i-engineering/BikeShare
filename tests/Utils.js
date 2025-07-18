@@ -25,7 +25,7 @@ function installOnSubmitTrigger(){
 
 // creates a trigger that runs every n days at a specific hour
 function installExecuteReportGenerationTrigger(){
-  const dayInterval = CONFIG.REPORT_GENERATION.FREQUENCY;
+  const dayInterval = CONFIG.REPORT_GENERATION.DAYS_INTERVAL;
   const hour = CONFIG.REPORT_GENERATION.GENERATION_HOUR;
   ScriptApp.newTrigger('executeReportGeneration')
     .timeBased()
