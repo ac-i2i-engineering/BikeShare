@@ -82,6 +82,9 @@ class Bike {
   }
 
   returnBike(commContext) {
+    if(commContext.issuesConcerns != ""){
+      this.maintenanceStatus = "Has Issue"
+    }
     this.availability = 'Available';
     this.lastReturnDate = commContext.timestamp;
     this.currentUsageTimer = 0;

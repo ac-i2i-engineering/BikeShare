@@ -131,7 +131,7 @@ const COMM_CODES = {
     notifyDeveloper: null,
     notifyUser: {
       subject: 'Bike Returned on Your Behalf',
-      body: 'Your friend "{{friendEmail}}" has returned the bike "{{bikeName}}" for you. Thanks for using BikeShare!'
+      body: 'Your friend {{friendEmail}} has returned the bike "{{bikeName}}" for you. Thanks for using BikeShare!'
     },
     notifyAdmin: null,
     markEntry: {
@@ -144,7 +144,7 @@ const COMM_CODES = {
     notifyDeveloper: null,
     notifyUser: {
       subject: 'Bike Returned for a Friend',
-      body: 'You’ve successfully returned bike "{{bikeName}}" for your friend "{{friendEmail}}". Thank you for your help and for using BikeShare!'
+      body: 'You’ve successfully returned bike "{{bikeName}}" for your friend {{friendEmail}}. Thank you for your help and for using BikeShare!'
     },
     notifyAdmin: null,
     markEntry: {
@@ -157,7 +157,7 @@ const COMM_CODES = {
     notifyDeveloper: null,
     notifyUser: {
       subject: 'Return Warning: Bike Name Mismatch',
-      body: 'The return was processed, but the bike name "{{bikeName}}" does not match your last checked out bike "{{lastCheckoutName}}". If this seems incorrect, please contact support.'
+      body: 'The return was processed, but the bike name "{{responseBikeName}}" does not match your last checked out bike "{{lastCheckoutName}}". If this seems incorrect, please contact support.'
     },
     notifyAdmin: null,
     markEntry: {
@@ -167,6 +167,19 @@ const COMM_CODES = {
   },
 
   // Error codes
+  'ERR_USR_COT_001': {
+    triggerMethod: null,
+    notifyDeveloper: null,
+    notifyUser: {
+      subject: 'Checkout Failed: Bike not available',
+      body: 'Checkout could not be processed because "{{bikeName}}" is not available for checkout. Please try to checkout another bike.'
+    },
+    notifyAdmin: null,
+    markEntry: {
+      bgColor: COMM_SEVERITY.INFO.bgColor,
+      note: 'Checkout failed: bike was either not in available or in good condition'
+    }
+  },
   'ERR_USR_COT_002': {
     triggerMethod: null,
     notifyDeveloper: null,

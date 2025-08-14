@@ -74,6 +74,8 @@ class User {
     if (this.hasUnreturnedBike && !CONFIG.REGULATIONS.CAN_CHECKOUT_WITH_UNRETURNED_BIKE) {
       const errorMessage = 'User already has an unreturned bike';
       commContext['errorMessage'] = errorMessage;
+      commContext['unreturnedBikeName'] = this.lastCheckoutName
+      commContext['lastCheckoutDate'] = this.lastCheckoutDate
       this.comm.handleCommunication('ERR_USR_COT_002', commContext);
       throw new Error(errorMessage);
     }
@@ -86,6 +88,15 @@ class User {
       throw new Error(errorMessage);
     }
 
+    if(!bike.isReadyForCheckout()){
+      const errorMessage = 'Bike is not ready for checkout';
+      commContext['errorMessage'] = errorMessage;
+      commContext['bikeName'] = bike.bikeName
+      Logger.log(bike.bikeName)
+      this.comm.handleCommunication('ERR_USR_COT_001', commContext);
+      throw new Error(errorMessage);
+    }
+    
     bike.checkout(commContext);
 
     // Update user usage records
@@ -105,6 +116,7 @@ class User {
 
   returnBike(commContext) {
     let bike = Bike.findByName(commContext.bikeName);
+    commContext['responseBikeName'] = commContext.bikeName
     if (!bike) {
       if (fuzzyMatch(commContext.bikeName, this.lastCheckoutName)) {
         bike = Bike.findByName(this.lastCheckoutName);
@@ -194,6 +206,7 @@ class User {
     if (!commContext.isDirectReturn) {
       this.comm.handleCommunication('CFM_USR_RET_002', commContext);
     } else if (commContext.isCollectedMismatch) {
+      commContext['lastCheckoutName'] = this.lastCheckoutName
       this.comm.handleCommunication('CFM_USR_RET_004', commContext);
     } else {
       this.comm.handleCommunication('CFM_USR_RET_001', commContext);

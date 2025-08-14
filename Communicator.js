@@ -31,7 +31,7 @@ class Communicator {
   }
   notifyUser(userEmail, subject, body) {
     try {
-      GmailApp.sendEmail(userEmail, subject, body);
+      GmailApp.sendEmail(userEmail, subject, "Hi,\n\n"+body+"\n\nThank you,\nBike Share Team");
     } catch (error) {
       console.error('Error sending email to user:', error.message);
     }
@@ -39,7 +39,7 @@ class Communicator {
 
   notifyAdmin(subject, body) {
     try {
-      GmailApp.sendEmail(CONFIG.ADMIN_EMAIL, subject, body);
+      GmailApp.sendEmail(CONFIG.ADMIN_EMAIL, subject, "Hi,\n\n"+body+"\n\nThank you,\nBike Share Team");
     } catch (error) {
       console.error('Error sending email to admin:', error.message);
     }
@@ -47,7 +47,7 @@ class Communicator {
 
   notifyDeveloper(subject, body) {
     try {
-      GmailApp.sendEmail(CONFIG.DEVELOPER_EMAIL, subject, body);
+      GmailApp.sendEmail(CONFIG.DEVELOPER_EMAIL, subject, "Hi,\n\n"+body+"\n\nThank you,\nBike Share Team");
     } catch (error) {
       console.error('Error sending email to developer:', error.message);
     }
@@ -69,4 +69,8 @@ class Communicator {
       return context[p1.trim()] || '';
     });
   }
+
+  // getFullBody(body){
+  //   return "Hi,\n"+body+"\nThank you,\nBike Share Team"
+  // }
 }
