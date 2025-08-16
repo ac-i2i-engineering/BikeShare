@@ -176,3 +176,130 @@ Replace `N2` with the cell containing the URL you want to convert into a QR code
     - Centralize notification templates for easy updates.
     - Link error codes to user-facing messages and admin comments for dynamic handling.
 
+# Dynamic Configuration System Integration
+
+## Overview
+The BikeShare system has been enhanced with a dynamic configuration management system that integrates cached configurations from Google Sheets with fallback static configurations.
+
+## Key Features
+
+### 1. Cached Configuration Structure
+The system now supports the following configuration categories from your sample:
+
+- **systemButtons**: System-wide toggle settings
+  - `SYSTEM_ACTIVE`: Controls if the system is operational
+  - `USER_NOTIFICATIONS_ENABLED`: Controls notification system
+  - `CAN_CHECKOUT_WITH_UNRETURNED_BIKE`: Checkout restriction setting
+
+- **systemTime**: Time-based system settings
+  - `NEXT_SYSTEM_TURN_OFF`: Scheduled system maintenance
+  - `NEXT_SYSTEM_TURN_ON`: System reactivation time
+  - `LAST_UPDATED`: Last configuration update timestamp
+
+- **coreConfig**: Core system parameters
+  - `AUTO_RESET_ENABLED`: Automatic system reset functionality
+  - `ADMIN_EMAIL`: Administrator contact
+  - `FUZZY_MATCHING_THRESHOLD`: String matching sensitivity
+  - `MAX_CHECKOUT_HOURS`: Maximum bike checkout duration
+
+- **Sheet Configurations**: Dynamic sheet settings for all major sheets
+  - `bikesStatus`, `reportSheet`, `checkoutLogs`, `userStatus`, `returnLogs`
+  - Each with NAME, SORT_COLUMN, SORT_ORDER, RESET_RANGE
+
+- **reportGenerationSettings**: Automated report configuration
+- **successMessages** & **errorMessages**: Dynamic notification templates
+
+### 2. Migration-Friendly API
+
+#### Convenience Functions
+```javascript
+// System status checks
+isSystemActive()
+areNotificationsEnabled()
+canCheckoutWithUnreturnedBike()
+isAutoResetEnabled()
+
+// Configuration getters
+getMaxCheckoutHours()
+getFuzzyMatchingThreshold()
+getAdminEmail()
+getSheetConfig(sheetType)
+getReportGenerationSettings()
+getMessageConfig(messageCode)
+getSystemTime(key)
+```
+
+#### Universal Configuration Access
+```javascript
+// Direct path-based access
+const value = getConfig('systemButtons.SYSTEM_ACTIVE')
+const sheetName = getConfig('bikesStatus.NAME')
+
+// Unified configuration object (backwards compatible)
+const maxHours = UNIFIED_CONFIG.REGULATIONS.MAX_CHECKOUT_HOURS
+const bikesSheet = UNIFIED_CONFIG.SHEETS.BIKES_STATUS
+```
+
+### 3. Fallback System
+All dynamic configurations have fallback to the original static CONFIG values, ensuring system stability during transitions.
+
+## Implementation Examples
+
+### Updated Code Examples
+
+**Before:**
+```javascript
+if (sheetName === CONFIG.SHEETS.CHECKOUT_LOGS.NAME) {
+  // process checkout
+}
+const maxHours = CONFIG.REGULATIONS.MAX_CHECKOUT_HOURS;
+```
+
+**After:**
+```javascript
+const checkoutLogsConfig = getSheetConfig('checkoutLogs') || UNIFIED_CONFIG.SHEETS.CHECKOUT_LOGS;
+if (sheetName === checkoutLogsConfig.NAME) {
+  // process checkout  
+}
+const maxHours = getMaxCheckoutHours() || UNIFIED_CONFIG.REGULATIONS.MAX_CHECKOUT_HOURS;
+```
+
+### System Initialization
+```javascript
+// Initialize system and load dynamic configs
+initializeBikeShareSystem();
+
+// Refresh configuration from sheets
+refreshConfiguration();
+
+// Test configuration system
+testDynamicConfiguration();
+```
+
+## Files Modified
+
+1. **dynamicConfig.js** - Complete rewrite with new API
+2. **SETTINGS.js** - Added UNIFIED_CONFIG bridge and utility functions  
+3. **Code.js** - Updated main handlers with system status checks
+4. **Bike.js** - Updated to use dynamic sheet configurations
+5. **tests/Utils.js** - Updated utility functions
+
+## Benefits
+
+1. **Real-time Configuration**: Changes in Google Sheets take effect immediately
+2. **System Control**: Ability to enable/disable system remotely
+3. **Flexible Notifications**: Dynamic message templates
+4. **Sheet Management**: Runtime control of sheet configurations
+5. **Backwards Compatibility**: Existing code continues to work with fallbacks
+6. **Performance**: Cached configurations reduce sheet API calls
+
+## Usage Instructions
+
+1. **For New Code**: Use the convenience functions (`getMaxCheckoutHours()`, etc.)
+2. **For Existing Code**: Gradually replace `CONFIG.*` with `UNIFIED_CONFIG.*` or specific getters
+3. **For System Admin**: Use `initializeBikeShareSystem()` to verify configuration status
+4. **For Debugging**: Use `testDynamicConfiguration()` to inspect current settings
+
+The system maintains full backward compatibility while providing a path to more flexible, runtime-configurable behavior.
+
+

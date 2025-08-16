@@ -1,58 +1,189 @@
+class Settings {
+  constructor() {
+    this.management_ss_ID = "1Ux1Lt9KNXVNrE0KP6C-Wbf5xmeos5Yf-ybmAfRtEvmQ";
+    this.cacheName = "configCache";
+    this.cacheValues = null;
+    this.settingRangeMap = {
+      mainConfig: {
+        systemButtons: "A7:C13",
+        systemTime: "F7:H9",
+        coreConfig: "F14:H16",
+        reportGenerationSettings: "F21:H23",
+      },
+      sheetsConfig: {
+        bikesStatus: "A10:C13",
+        reportSheet: "F10:H13",
+        checkoutLogs: "A21:C24",
+        userStatus: "F21:H24",
+        returnLogs: "A32:C35",
+      },
+      notificationsConfig: {
+        successMessages: "A13:H17",
+        errorMessages: "A25:H34",
+      },
+    };
+    this.fetchCache();
+  }
+
+  convertType(value, type) {
+    if (typeof type !== "string") return value;
+    switch (type.toLowerCase()) {
+      case "number":
+        return Number(value);
+      case "button":
+        return value.toString().toUpperCase() === "ON";
+      case "datetime":
+        return new Date(value);
+      case "string":
+      case "range":
+      default:
+        return value.toString();
+    }
+  }
+
+  extractEmailFromString(text) {
+    if (!text || text.trim() === "-") return null;
+
+    const subjectMatch = text.match(/SUBJECT: '([^']*)'/);
+    const bodyMatch = text.match(/BODY: '([^']*)'/);
+
+    return {
+      subject: subjectMatch ? subjectMatch[1] : "",
+      body: bodyMatch ? bodyMatch[1].replace(/""/g, '"') : "",
+    };
+  }
+  setSettingsCache() {
+    let loadedConfigs = {};
+    const ss = SpreadsheetApp.openById(this.management_ss_ID);
+    for (const sheetName in this.settingRangeMap) {
+      const sheet = ss.getSheetByName(sheetName);
+      for (const tableName in this.settingRangeMap[sheetName]) {
+        const tableRange = sheet.getRange(
+          this.settingRangeMap[sheetName][tableName]
+        );
+        const table = tableRange.getValues();
+
+        if (sheetName === "notificationsConfig") {
+          let rowCounter = tableRange.getRow();
+          loadedConfigs[tableName] = table.reduce((acc, curItem, index) => {
+            let [col1, col2, col3, col4, col5, col6, col7, col8] = curItem;
+            const currRow = rowCounter + index;
+            const cellRange = `E${currRow}`;
+            acc[col1] = {
+              markEntry: {
+                bgColor: sheet.getRange(cellRange).getBackground(),
+                note: col5,
+              },
+              notifyUser: this.extractEmailFromString(col6),
+              notifyAdmin: this.extractEmailFromString(col7),
+              notifyDeveloper: this.extractEmailFromString(col8),
+            };
+            return acc;
+          }, {});
+          continue;
+        }
+
+        loadedConfigs[tableName] = table.reduce((acc, curItem) => {
+          let [col1, col2, col3] = curItem;
+          col3 = this.convertType(col3, col2);
+          acc[col1] = col3;
+          return acc;
+        }, {});
+      }
+    }
+    CacheService.getDocumentCache().put(
+      this.cacheName,
+      JSON.stringify(loadedConfigs)
+    );
+  }
+  fetchCache() {
+    try {
+      let configs = CacheService.getDocumentCache().get(this.cacheName);
+      if (!configs) {
+        this.setSettingsCache();
+        // Logger.log("Settings cache was empty, reloading...");
+        configs = CacheService.getDocumentCache().get(this.cacheName);
+      }
+      this.cacheValues = JSON.parse(configs);
+    } catch (error) {
+      console.error("Error fetching cache:", error);
+      return null;
+    }
+  }
+
+  isSystemActive() {
+    return this.cacheValues.systemButtons?.SYSTEM_ACTIVE ?? true;
+  }
+
+  canCheckoutWithUnreturnedBike() {
+    return (
+      this.cacheValues.systemButtons?.CAN_CHECKOUT_WITH_UNRETURNED_BIKE ?? false
+    );
+  }
+
+  getMaxCheckoutHours() {
+    return this.cacheValues.coreConfig?.MAX_CHECKOUT_HOURS ?? 72;
+  }
+
+  getFuzzyMatchingThreshold() {
+    return this.cacheValues.coreConfig?.FUZZY_MATCHING_THRESHOLD ?? 0.3;
+  }
+
+  getAdminEmail() {
+    return (
+      this.cacheValues.coreConfig?.ADMIN_EMAIL ??
+      "ndayishimiyeemile96@gmail.com"
+    );
+  }
+
+  isAutoResetEnabled() {
+    return this.cacheValues.coreConfig?.AUTO_RESET_ENABLED ?? true;
+  }
+
+  getReportGenerationSettings() {
+    return (
+      this.cacheValues.reportGenerationSettings ?? {
+        ENABLED: true,
+        DAYS_INTERVAL: 1,
+        FIRST_GENERATION_DATE: "2025-07-01",
+        GENERATION_HOUR: 2,
+      }
+    );
+  }
+}
+
 // =============================================================================
 // CONFIGURATION AND CONSTANTS
 // =============================================================================
-const CONFIG = {
+const settings = new Settings();
+let CONFIG = {
   DEBUG_MODE: true,
   AUTO_RESET_ENABLED: true,
-  ADMIN_EMAIL:'ndayishimiyeemile96@gmail.com',
+  ADMIN_EMAIL: settings.getAdminEmail(),
   SHEETS: {
-    BIKES_STATUS: {
-      NAME:'Bikes Status',
-      SORT_COLUMN: 0, 
-      SORT_ORDER: 'asc',
-      AVAILABILITY_COL_OPTIONS: ['Available', 'Checked Out', 'Out of Service'],
-      MAINTENANCE_COL_OPTIONS: ['Good', 'In Repair', 'Has Issues', 'Missing'],
-      SIZE_COL_OPTIONS: ['S', 'M', 'L', 'XL'],
-      RESET_RANGE: 'E2:L',
-    },
-    USER_STATUS: {
-      NAME:'User Status',
-      SORT_COLUMN: 0,
-      SORT_ORDER: 'asc',
-      RESET_RANGE: 'A2:L',
-    },
-    CHECKOUT_LOGS: {
-      NAME:'Checkout Logs',
-      SORT_COLUMN: 0,
-      SORT_ORDER: 'desc',
-      RESET_RANGE: 'A2:D',
-    },
+    BIKES_STATUS: settings.cacheValues.bikesStatus,
+    USER_STATUS: settings.cacheValues.userStatus,
+    CHECKOUT_LOGS: settings.cacheValues.checkoutLogs,
     RETURN_LOGS: {
-      NAME:'Return Logs',
-      SORT_COLUMN: 0,
-      SORT_ORDER: 'desc',
-      RESET_RANGE: 'A2:I',
-      DATE_COLUMN: 0, 
+      ...settings.cacheValues.returnLogs,
+      DATE_COLUMN: 0,
     },
     REPORTS: {
-      NAME:'Reports',
-      SORT_COLUMN: 0,
+      ...settings.cacheValues.reportSheet,
       OVERDUE_RETURNS_COLUMN: 6,
       RETURN_MISMATCHES_COLUMN: 10,
       TOTAL_USAGE_HOURS_COLUMN: 12,
-      SORT_ORDER: 'desc',
-      RESET_RANGE: 'A2:O',
-      PERIOD_NUM_COLUMN: 2
-    }
+      PERIOD_NUM_COLUMN: 2,
+    },
   },
   FORMS: {
-    CHECKOUT_FORM_ID: '1ThxJFJLjtQkvzXuX7ZPa2vEYWzIokWK89GUbW507zpM',
-    RETURN_FORM_ID: '1VFAY-49Qx2Ob5OdVZkI2rH9xbaT0DRF63q6fWZh-Pbc',
+    CHECKOUT_FORM_ID: "1ThxJFJLjtQkvzXuX7ZPa2vEYWzIokWK89GUbW507zpM",
+    RETURN_FORM_ID: "1VFAY-49Qx2Ob5OdVZkI2rH9xbaT0DRF63q6fWZh-Pbc",
     CHECKOUT_FIELD_IDS: {
       EMAIL: 1337405542,
       BIKE_HASH: 697424273,
       KEY_AVAILABLE: 998220660,
-      CONDITION_OK: 1671678893
+      CONDITION_OK: 1671678893,
     },
     RETURN_FIELD_IDS: {
       EMAIL: 1224208618,
@@ -62,259 +193,23 @@ const CONFIG = {
       BIKE_MISMATCH_EXPLANATION: 993479484,
       RETURNING_FOR_FRIEND: 2017212460,
       FRIEND_EMAIL: 552890597,
-      ISSUES_CONCERNS: 71285803
+      ISSUES_CONCERNS: 71285803,
     },
   },
-  BIKE_NAMES:['Gates','Harris','Hitchcock','Humphrey','Meiklejohn','Moore','Olds','Seelye','Stearns'],
-  BIKE_HASHES:['39B9B5','3A8BD0','3A81B8','3A8FC0','3E950E','3E9A87','4038A4','437D9E','437FE3'],
-  REGULATIONS:{
+  REGULATIONS: {
     CAN_CHECKOUT_WITH_UNRETURNED_BIKE: false,
     NEED_USER_CONFIRM_KEY_ACCESS: false,
-    MAX_CHECKOUT_HOURS: 72, //3 days
+    MAX_CHECKOUT_HOURS: settings.getMaxCheckoutHours(),
   },
-  FUZZY_MATCHING_THRESHOLD: 0.3,
+  FUZZY_MATCHING_THRESHOLD: settings.getFuzzyMatchingThreshold(),
   NOTIFICATION_SETTINGS: {
-    NOTIFICATION_ENABLED: true,
-    SEND_USER_NOTIFICATIONS: true,
-    SEND_ADMIN_NOTIFICATIONS: true,
-    SEND_DEVELOPER_NOTIFICATIONS: false,
-    NOTIFICATION_RETRY_ATTEMPTS: 3,
+    ENABLE_USER_NOTIFICATIONS: settings.cacheValues.systemButtons?.ENABLE_USER_NOTIFICATIONS,
+    ENABLE_ADMIN_NOTIFICATIONS: settings.cacheValues.systemButtons?.ENABLE_ADMIN_NOTIFICATIONS,
+    ENABLE_DEV_NOTIFICATIONS: settings.cacheValues.systemButtons?.ENABLE_DEV_NOTIFICATIONS,
   },
-  REPORT_GENERATION: {
-    ENABLED: true,
-    DAYS_INTERVAL: 1, // in days
-    FIRST_GENERATION_DATE: '2025-07-01', // YYYY-MM-DD
-    GENERATION_HOUR: 2, // 24-hour format
-    // AI_SUMMARY_RECIPIENTS: {
-    //   ADMIN: true,
-    //   USERS: false,
-    //   DEVELOPERS: false
-    // }
-  }
+  REPORT_GENERATION: settings.getReportGenerationSettings(),
+  COMM_CODES: {
+    ...settings.cacheValues.successMessages,
+    ...settings.cacheValues.errorMessages,
+  },
 };
-
-// =============================================================================
-// ERROR MANAGEMENT SETUP
-// ===============================================================================
-const COMM_SEVERITY = {
-  HINT : { bgColor: '#9effd5ff'},
-  INFO: { bgColor: '#d9a1ffff'},
-  WARNING: { bgColor: '#f8e0c7ff'},
-  ERROR: { bgColor: '#e9b2a8ff'},
-  CRITICAL: { bgColor: '#ff7979c5'}
-};
-// STRUCTURE:commType_involvedEntity_relatedAction_commID
-const COMM_CODES = {
-  // Confirm codes
-  'CFM_USR_COT_001': {
-    triggerMethod: null,
-    notifyDeveloper: null,
-    notifyUser: {
-      subject: 'Bike Checkout Confirmation',
-      body: 'Your bike checkout is confirmed. Use the key labeled "{{bikeName}}" to unlock your bike. Please return it within {{maxCheckoutHours}} hours. Thank you for using BikeShare!'
-    },
-    notifyAdmin: null,
-    markEntry: null,
-  },
-  'CFM_USR_RET_001': {
-    triggerMethod: null,
-    notifyDeveloper: null,
-    notifyUser: {
-      subject: 'Bike Return Confirmation',
-      body: 'Thank you for returning bike "{{bikeName}}". We hope you had a great ride!'
-    },
-    notifyAdmin: null,
-    markEntry: null,
-  },
-  'CFM_USR_RET_002': {
-    triggerMethod: null,
-    notifyDeveloper: null,
-    notifyUser: {
-      subject: 'Bike Returned on Your Behalf',
-      body: 'Your friend {{friendEmail}} has returned the bike "{{bikeName}}" for you. Thanks for using BikeShare!'
-    },
-    notifyAdmin: null,
-    markEntry: {
-      bgColor: COMM_SEVERITY.INFO.bgColor,
-      note: 'Bike returned on behalf of "{{userEmail}}" by "{{friendEmail}}" for bike "{{bikeName}}"'
-    },
-  },
-  'CFM_USR_RET_003': {
-    triggerMethod: null,
-    notifyDeveloper: null,
-    notifyUser: {
-      subject: 'Bike Returned for a Friend',
-      body: 'You’ve successfully returned bike "{{bikeName}}" for your friend {{friendEmail}}. Thank you for your help and for using BikeShare!'
-    },
-    notifyAdmin: null,
-    markEntry: {
-      bgColor: COMM_SEVERITY.HINT.bgColor,
-      note: 'Bike returned for a friend: "{{friendEmail}}" returned bike "{{bikeName}}"'
-    },
-  },
-  'CFM_USR_RET_004': {
-    triggerMethod: null,
-    notifyDeveloper: null,
-    notifyUser: {
-      subject: 'Return Warning: Bike Name Mismatch',
-      body: 'The return was processed, but the bike name "{{responseBikeName}}" does not match your last checked out bike "{{lastCheckoutName}}". If this seems incorrect, please contact support.'
-    },
-    notifyAdmin: null,
-    markEntry: {
-      bgColor: COMM_SEVERITY.INFO.bgColor,
-      note: 'Return processed with name mismatch: returned bike "{{bikeName}}" ≠ last checkout "{{lastCheckoutName}}"'
-    }
-  },
-
-  // Error codes
-  'ERR_USR_COT_001': {
-    triggerMethod: null,
-    notifyDeveloper: null,
-    notifyUser: {
-      subject: 'Checkout Failed: Bike not available',
-      body: 'Checkout could not be processed because "{{bikeName}}" is not available for checkout. Please try to checkout another bike.'
-    },
-    notifyAdmin: null,
-    markEntry: {
-      bgColor: COMM_SEVERITY.INFO.bgColor,
-      note: 'Checkout failed: bike was either not in available or in good condition'
-    }
-  },
-  'ERR_USR_COT_002': {
-    triggerMethod: null,
-    notifyDeveloper: null,
-    notifyUser: {
-      subject: 'Unreturned Bike Detected',
-      body: 'You still have bike "{{unreturnedBikeName}}" checked out since {{lastCheckoutDate}}. Please return it before checking out another.'
-    },
-    notifyAdmin: null,
-    markEntry: {
-      bgColor: COMM_SEVERITY.WARNING.bgColor,
-      note: 'Checkout blocked: user has unreturned bike "{{unreturnedBikeName}}" since {{lastCheckoutDate}}'
-    }
-  },
-  'ERR_USR_COT_003': {
-    triggerMethod: null,
-    notifyDeveloper: null,
-    notifyUser: {
-      subject: 'Bike Not Found',
-      body: 'Bike with hash "{{bikeHash}}" was not found. Please double-check the hash and try again. If the issue continues, contact support.'
-    },
-    notifyAdmin: null,
-    markEntry: {
-      bgColor: COMM_SEVERITY.ERROR.bgColor,
-      note: 'Checkout failed: bike with hash "{{bikeHash}}" not found'
-    },
-  },
-  'ERR_USR_RET_001': {
-    triggerMethod: null,
-    notifyDeveloper: null,
-    notifyUser: {
-      subject: 'Return Failed: Name Mismatch',
-      body: 'The bike name "{{bikeName}}" does not match the confirmation "{{confirmBikeName}}". Please ensure both fields are identical before submitting.'
-    },
-    notifyAdmin: null,
-    markEntry: {
-      bgColor: COMM_SEVERITY.ERROR.bgColor,
-      note: 'Return failed: "{{bikeName}}" ≠ confirmation "{{confirmBikeName}}"'
-    }
-  },
-  'ERR_USR_RET_002': {
-    triggerMethod: null,
-    notifyDeveloper: null,
-    notifyUser: {
-      subject: 'Return Failed: Bike Not Found',
-      body: 'We couldn’t find the bike named "{{bikeName}}". Please check the name and try again. Contact support if the issue persists.'
-    },
-    notifyAdmin: null,
-    markEntry: {
-      bgColor: COMM_SEVERITY.ERROR.bgColor,
-      note: 'Return failed: bike "{{bikeName}}" not found'
-    }
-  },
-  'ERR_USR_RET_003': {
-    triggerMethod: null,
-    notifyDeveloper: null,
-    notifyUser: {
-      subject: 'Friend Has No Unreturned Bike',
-      body: 'No unreturned bike found for "{{friendEmail}}". Please verify the email and try again.'
-    },
-    notifyAdmin: null,
-    markEntry: {
-      bgColor: COMM_SEVERITY.ERROR.bgColor,
-      note: 'Return failed: no unreturned bike for "{{friendEmail}}"'
-    }
-  },
-  'ERR_USR_RET_004': {
-    triggerMethod: null,
-    notifyDeveloper: null,
-    notifyUser: {
-      subject: 'Friend\'s Email Not Provided',
-      body: 'It seems you were trying to return a bike for a friend but didn’t provide their email. Please enter their email to proceed.'
-    },
-    notifyAdmin: null,
-    markEntry: {
-      bgColor: COMM_SEVERITY.ERROR.bgColor,
-      note: 'Return failed: no userEmail provided for friend'
-    }
-  },
-  'ERR_USR_RET_005': {
-    triggerMethod: null,
-    notifyDeveloper: null,
-    notifyUser: {
-      subject: 'Return Failed: No Checkout Record Found',
-      body: 'We couldn’t find a record of your last bike checkout. If returning for a friend, please use the appropriate form. Contact support if this seems incorrect.'
-    },
-    notifyAdmin: null,
-    markEntry: {
-      bgColor: COMM_SEVERITY.ERROR.bgColor,
-      note: 'Return failed: no record found for last checkout'
-    }
-  },
-  'ERR_USR_RET_006': {
-    triggerMethod: null,
-    notifyDeveloper: null,
-    notifyUser: {
-      subject: 'Return Failed: No Unreturned Bike',
-      body: 'You have no unreturned bikes. Your last checkout was bike "{{lastCheckoutName}}" on {{lastCheckoutDate}}, returned on {{lastReturnDate}}. If returning for a friend, please complete the form accordingly. Contact support if needed.'
-    },
-    notifyAdmin: null,
-    markEntry: {
-      bgColor: COMM_SEVERITY.ERROR.bgColor,
-      note: 'Return failed: no unreturned bike. Last checked out: "{{lastCheckoutName}}" on {{lastCheckoutDate}}, returned {{lastReturnDate}}'
-    }
-  },
-  'ERR_USR_RET_007': {
-    triggerMethod: null,
-    notifyDeveloper: null,
-    notifyUser: {
-      subject: 'Return Failed: Bike Name Mismatch',
-      body: 'The bike "{{bikeName}}" does not match your last checked out bike "{{lastCheckoutName}}". Please verify the name on your key and try again.'
-    },
-    notifyAdmin: null,
-    markEntry: {
-      bgColor: COMM_SEVERITY.ERROR.bgColor,
-      note: 'Return failed: "{{bikeName}}" ≠ last checkout "{{lastCheckoutName}}"'
-    }
-  },
-  'ERR_USR_RET_008': {
-    triggerMethod: null,
-    notifyDeveloper: {
-      subject: 'Return Failed: Could Not Process Friend Return',
-      body: 'On {{timestamp}}, user "{{userEmail}}" attempted to return bike "{{bikeName}}" for friend "{{friendEmail}}" but failed. Error: {{errorMessage}}'
-    },
-    notifyUser: {
-      subject: 'Return Failed: Could Not Return for a Friend',
-      body: 'We encountered a problem while processing the return of bike "{{bikeName}}" on behalf of "{{friendEmail}}". Please try again later or contact support.'
-    },
-    notifyAdmin: {
-      subject: 'Return Failed: Could Not Return for Friend',
-      body: 'On {{timestamp}}, user "{{userEmail}}" attempted to return bike "{{bikeName}}" for friend "{{friendEmail}}" but the process failed. Error: {{errorMessage}} [Copy sent to developers]'
-    },
-    markEntry: {
-      bgColor: COMM_SEVERITY.ERROR.bgColor,
-      note: 'Return failed: "{{userEmail}}" could not return "{{bikeName}}" for "{{friendEmail}}", error: "{{errorMessage}}"'
-    }
-  }
-}
-

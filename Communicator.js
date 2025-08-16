@@ -12,13 +12,13 @@ class Communicator {
       throw new Error(`Communication with ID ${commID} not found.`);
     }
     // Handle the communication based on its type
-    if(comm.notifyUser && CONFIG.NOTIFICATION_SETTINGS.SEND_USER_NOTIFICATIONS && CONFIG.NOTIFICATION_SETTINGS.NOTIFICATION_ENABLED){
+    if(comm.notifyUser && CONFIG.NOTIFICATION_SETTINGS.ENABLE_USER_NOTIFICATIONS){
       this.notifyUser(context.userEmail, this.fillPlaceholders(comm.notifyUser.subject, context), this.fillPlaceholders(comm.notifyUser.body, context));
     }
-    if(comm.notifyAdmin && CONFIG.NOTIFICATION_SETTINGS.SEND_ADMIN_NOTIFICATIONS && CONFIG.NOTIFICATION_SETTINGS.NOTIFICATION_ENABLED){
+    if(comm.notifyAdmin && CONFIG.NOTIFICATION_SETTINGS.ENABLE_ADMIN_NOTIFICATIONS){
       this.notifyAdmin(this.fillPlaceholders(comm.notifyAdmin.subject, context), this.fillPlaceholders(comm.notifyAdmin.body, context));
     }
-    if(comm.notifyDeveloper && CONFIG.NOTIFICATION_SETTINGS.SEND_DEVELOPER_NOTIFICATIONS && CONFIG.NOTIFICATION_SETTINGS.NOTIFICATION_ENABLED){
+    if(comm.notifyDeveloper && CONFIG.NOTIFICATION_SETTINGS.ENABLE_DEV_NOTIFICATIONS){
       this.notifyDeveloper(this.fillPlaceholders(comm.notifyDeveloper.subject, context), this.fillPlaceholders(comm.notifyDeveloper.body, context));
     }
     if(comm.markEntry){
@@ -62,15 +62,12 @@ class Communicator {
   }
 
   getCommunication(commID) {
-    return COMM_CODES[commID] || null;
+    return CONFIG.COMM_CODES[commID] || null;
   }
+
   fillPlaceholders(template, context) {
     return template.replace(/{{(.*?)}}/g, (match, p1) => {
       return context[p1.trim()] || '';
     });
   }
-
-  // getFullBody(body){
-  //   return "Hi,\n"+body+"\nThank you,\nBike Share Team"
-  // }
 }
