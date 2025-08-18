@@ -94,7 +94,7 @@ class DatabaseManager {
   }
 
   resetDatabase() {
-    if (!CACHED_SETTINGS.VALUES.AUTO_RESET_ENABLED || !CACHED_SETTINGS.VALUES.DEBUG_MODE) {
+    if (!CACHED_SETTINGS.VALUES.ENABLE_FORCED_RESET || !CACHED_SETTINGS.VALUES.DEBUG_MODE) {
       throw new Error("Auto reset is disabled or debug mode is off.");
     }
     for (const key in CACHED_SETTINGS.VALUES.SHEETS) {

@@ -197,7 +197,7 @@ The system now supports the following configuration categories from your sample:
   - `LAST_UPDATED`: Last configuration update timestamp
 
 - **coreConfig**: Core system parameters
-  - `AUTO_RESET_ENABLED`: Automatic system reset functionality
+  - `ENABLE_FORCED_RESET`: Automatic system reset functionality
   - `ADMIN_EMAIL`: Administrator contact
   - `FUZZY_MATCHING_THRESHOLD`: String matching sensitivity
   - `MAX_CHECKOUT_HOURS`: Maximum bike checkout duration

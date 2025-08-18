@@ -44,7 +44,7 @@ function handleSettingsUpdate(e){
   //Process systemButtons
   if(editedCol == 3 && curSheetName == "mainConfig"){
     const editedParam = editedSheet.getRange(editedRow,1).getValue()
-    //process the action
+    //process the database reset
     if(editedParam === "FORCE_SYSTEM_RESET" && newValue === "ON"){
       services.db.resetDatabase()
       //send success confirmation to the administrator
@@ -53,18 +53,17 @@ function handleSettingsUpdate(e){
       curCell.setValue("OFF")
       curCell.setNote(`Last reset on ${curDate}`)
     }
-  }
 
-  // manage form accessibility
-  // if(e.source.getActiveSheet().getName() === "mainConfig"){
-    // let bikeShareService = new BikeShareService();
-    // bikeShareService.manageFormsAccessibility();
-    // console.log(CACHED_SETTINGS.VALUES.SYSTEM_ACTIVE)
-  // }
+    //process system operations pause or resume by disabling/enabling all forms
+    if(editedParam === "SYSTEM_ACTIVE"){
+      const action = newValue === "ON" ? "resume" : "pause";
+      services.manageFormsAccessibility(action);
+      curCell.setNote(`System ${action}d on ${curDate}`);
+    }
+  }
 }
 
-//
-//
+//next: report generation... && automated on and off scheduling
 
 
 // =============================================================================

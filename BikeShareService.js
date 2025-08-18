@@ -64,10 +64,11 @@ class BikeShareService {
     return Math.round((now - checkoutTime) / (1000 * 60 * 60) * 100) / 100;
   }
 
-  manageFormsAccessibility(){
+  manageFormsAccessibility(action){
     // stop accepting responses for return and checkout form
-    FormApp.openById(CACHED_SETTINGS.VALUES.FORMS.CHECKOUT_FORM_ID).setAcceptingResponses(CACHED_SETTINGS.VALUES.SYSTEM_ACTIVE)
-    FormApp.openById(CACHED_SETTINGS.VALUES.FORMS.RETURN_FORM_ID).setAcceptingResponses(CACHED_SETTINGS.VALUES.SYSTEM_ACTIVE)
+    const state = action === "resume";
+    FormApp.openById(CACHED_SETTINGS.VALUES.FORMS.CHECKOUT_FORM_ID).setAcceptingResponses(state);
+    FormApp.openById(CACHED_SETTINGS.VALUES.FORMS.RETURN_FORM_ID).setAcceptingResponses(state);
   }
 }
 // =============================================================================
