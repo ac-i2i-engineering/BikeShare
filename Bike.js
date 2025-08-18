@@ -35,13 +35,13 @@ class Bike {
 
   static findByName(bikeName) {
     const db = new DatabaseManager();
-    const result = db.findRowByColumn(CONFIG.SHEETS.BIKES_STATUS.NAME, 0, bikeName);
+    const result = db.findRowByColumn(CACHED_SETTINGS.VALUES.SHEETS.BIKES_STATUS.NAME, 0, bikeName);
     return result ? Bike.fromSheetRow(result.data) : null;
   }
 
   static findByHash(bikeHash) {
     const db = new DatabaseManager();
-    const result = db.findRowByColumn(CONFIG.SHEETS.BIKES_STATUS.NAME, 12, bikeHash);
+    const result = db.findRowByColumn(CACHED_SETTINGS.VALUES.SHEETS.BIKES_STATUS.NAME, 12, bikeHash);
     return result ? Bike.fromSheetRow(result.data) : null;
   }
 
@@ -61,12 +61,12 @@ class Bike {
       this.tempRecent
     ];
 
-    const existing = this.db.findRowByColumn(CONFIG.SHEETS.BIKES_STATUS.NAME, 0, this.bikeName);
+    const existing = this.db.findRowByColumn(CACHED_SETTINGS.VALUES.SHEETS.BIKES_STATUS.NAME, 0, this.bikeName);
     if (existing) {
-      this.db.updateRow(CONFIG.SHEETS.BIKES_STATUS.NAME, existing.row, values);
+      this.db.updateRow(CACHED_SETTINGS.VALUES.SHEETS.BIKES_STATUS.NAME, existing.row, values);
     } else {
-      this.db.appendRow(CONFIG.SHEETS.BIKES_STATUS.NAME, values);
-      this.db.sortByColumn(null, CONFIG.SHEETS.BIKES_STATUS.NAME);
+      this.db.appendRow(CACHED_SETTINGS.VALUES.SHEETS.BIKES_STATUS.NAME, values);
+      this.db.sortByColumn(null, CACHED_SETTINGS.VALUES.SHEETS.BIKES_STATUS.NAME);
     }
   }
 
@@ -99,7 +99,7 @@ class Bike {
     this.mostRecentUser = newUser;
   }
 
-  isOverdue(maxHours = CONFIG.REGULATIONS.MAX_CHECKOUT_HOURS) {
+  isOverdue(maxHours = CACHED_SETTINGS.VALUES.REGULATIONS.MAX_CHECKOUT_HOURS) {
     if (!this.lastCheckoutDate || this.availability === 'Available') {
       return false;
     }
@@ -125,7 +125,7 @@ class Bike {
 
 
   findByFuzzyName(bikeName) {
-    const bikes = this.db.getAllData(CONFIG.SHEETS.BIKES_STATUS.NAME);
+    const bikes = this.db.getAllData(CACHED_SETTINGS.VALUES.SHEETS.BIKES_STATUS.NAME);
     for (let i = 1; i < bikes.length; i++) {
       if (fuzzyMatch(bikes[i][0], bikeName)) {
         return Bike.fromSheetRow(bikes[i]);

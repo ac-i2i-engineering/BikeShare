@@ -40,7 +40,7 @@ class User {
 
   static findByEmail(userEmail) {
     const db = new DatabaseManager();
-    const userRecord = db.findRowByColumn(CONFIG.SHEETS.USER_STATUS.NAME, 0, userEmail);
+    const userRecord = db.findRowByColumn(CACHED_SETTINGS.VALUES.SHEETS.USER_STATUS.NAME, 0, userEmail);
     return userRecord ? User.fromSheetRow(userRecord.data) : new User(userEmail);
   }
 
@@ -60,18 +60,18 @@ class User {
       this.firstUsageDate
     ];
 
-    const existing = this.db.findRowByColumn(CONFIG.SHEETS.USER_STATUS.NAME, 0, this.userEmail);
+    const existing = this.db.findRowByColumn(CACHED_SETTINGS.VALUES.SHEETS.USER_STATUS.NAME, 0, this.userEmail);
     if (existing) {
-      this.db.updateRow(CONFIG.SHEETS.USER_STATUS.NAME, existing.row, values);
+      this.db.updateRow(CACHED_SETTINGS.VALUES.SHEETS.USER_STATUS.NAME, existing.row, values);
     } else {
-      this.db.appendRow(CONFIG.SHEETS.USER_STATUS.NAME, values);
-      this.db.sortByColumn(null, CONFIG.SHEETS.USER_STATUS.NAME);
+      this.db.appendRow(CACHED_SETTINGS.VALUES.SHEETS.USER_STATUS.NAME, values);
+      this.db.sortByColumn(null, CACHED_SETTINGS.VALUES.SHEETS.USER_STATUS.NAME);
     }
   }
 
   checkoutBike(commContext) {
-    commContext['maxCheckoutHours'] = CONFIG.REGULATIONS.MAX_CHECKOUT_HOURS;
-    if (this.hasUnreturnedBike && !CONFIG.REGULATIONS.CAN_CHECKOUT_WITH_UNRETURNED_BIKE) {
+    commContext['maxCheckoutHours'] = CACHED_SETTINGS.VALUES.REGULATIONS.MAX_CHECKOUT_HOURS;
+    if (this.hasUnreturnedBike && !CACHED_SETTINGS.VALUES.REGULATIONS.CAN_CHECKOUT_WITH_UNRETURNED_BIKE) {
       const errorMessage = 'User already has an unreturned bike';
       commContext['errorMessage'] = errorMessage;
       commContext['unreturnedBikeName'] = this.lastCheckoutName
@@ -190,7 +190,7 @@ class User {
       commContext['isCollectedMismatch'] = true;
     }
     
-    if (this.lastCheckoutDate && (commContext.timestamp - this.lastCheckoutDate) > CONFIG.REGULATIONS.MAX_CHECKOUT_HOURS * 60 * 60 * 1000) {
+    if (this.lastCheckoutDate && (commContext.timestamp - this.lastCheckoutDate) > CACHED_SETTINGS.VALUES.REGULATIONS.MAX_CHECKOUT_HOURS * 60 * 60 * 1000) {
       this.overdueReturns++;
     }
 

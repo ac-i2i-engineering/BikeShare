@@ -61,7 +61,7 @@ class DatabaseManager {
       sheetName = sheet.getSheetName();
     }
 
-    // Find the correct CONFIG key for this sheet name
+    // Find the correct CACHED_SETTINGS.VALUES key for this sheet name
     const sheetConfig = this.getSheetConfig(sheetName);
     if (!sheetConfig) {
       throw new Error(`No sort configuration found for sheet: ${sheetName}`);
@@ -85,20 +85,20 @@ class DatabaseManager {
   }
 
   getSheetConfig(sheetName) {
-    for (const key in CONFIG.SHEETS) {
-      if (CONFIG.SHEETS[key].NAME === sheetName) {
-        return CONFIG.SHEETS[key];
+    for (const key in CACHED_SETTINGS.VALUES.SHEETS) {
+      if (CACHED_SETTINGS.VALUES.SHEETS[key].NAME === sheetName) {
+        return CACHED_SETTINGS.VALUES.SHEETS[key];
       }
     }
     return null;
   }
 
   resetDatabase() {
-    if (!CONFIG.AUTO_RESET_ENABLED || !CONFIG.DEBUG_MODE) {
+    if (!CACHED_SETTINGS.VALUES.AUTO_RESET_ENABLED || !CACHED_SETTINGS.VALUES.DEBUG_MODE) {
       throw new Error("Auto reset is disabled or debug mode is off.");
     }
-    for (const key in CONFIG.SHEETS) {
-      const sheetConfig = CONFIG.SHEETS[key];
+    for (const key in CACHED_SETTINGS.VALUES.SHEETS) {
+      const sheetConfig = CACHED_SETTINGS.VALUES.SHEETS[key];
       const sheet = this.getSheet(sheetConfig.NAME);
       if (sheet) {
         const range = sheet.getRange(sheetConfig.RESET_RANGE);

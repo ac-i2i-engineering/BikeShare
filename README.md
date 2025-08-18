@@ -111,7 +111,7 @@ Replace `N2` with the cell containing the URL you want to convert into a QR code
 ## Development Notes:
 ## Database Reset and Error Handling Design
 
-### 1. Clear Sheets Method & Config
+### 1. Clear Sheets Method & VALUES
 - **Purpose:** Reset the database to a clean state for maintenance or troubleshooting.
 - **Method:**  
     - Implement a `clearSheets()` function in `DatabaseManager` to wipe all relevant tables' specified range for (Bikes Status, User Status, Checkout Logs, Return Logs, Reports).
@@ -241,7 +241,7 @@ const bikesSheet = UNIFIED_CONFIG.SHEETS.BIKES_STATUS
 ```
 
 ### 3. Fallback System
-All dynamic configurations have fallback to the original static CONFIG values, ensuring system stability during transitions.
+All dynamic configurations have fallback to the original static CACHED_SETTINGS.VALUES values, ensuring system stability during transitions.
 
 ## Implementation Examples
 
@@ -249,10 +249,10 @@ All dynamic configurations have fallback to the original static CONFIG values, e
 
 **Before:**
 ```javascript
-if (sheetName === CONFIG.SHEETS.CHECKOUT_LOGS.NAME) {
+if (sheetName === CACHED_SETTINGS.VALUES.SHEETS.CHECKOUT_LOGS.NAME) {
   // process checkout
 }
-const maxHours = CONFIG.REGULATIONS.MAX_CHECKOUT_HOURS;
+const maxHours = CACHED_SETTINGS.VALUES.REGULATIONS.MAX_CHECKOUT_HOURS;
 ```
 
 **After:**
@@ -296,10 +296,11 @@ testDynamicConfiguration();
 ## Usage Instructions
 
 1. **For New Code**: Use the convenience functions (`getMaxCheckoutHours()`, etc.)
-2. **For Existing Code**: Gradually replace `CONFIG.*` with `UNIFIED_CONFIG.*` or specific getters
+2. **For Existing Code**: Gradually replace `CACHED_SETTINGS.VALUES.*` with `UNIFIED_CONFIG.*` or specific getters
 3. **For System Admin**: Use `initializeBikeShareSystem()` to verify configuration status
 4. **For Debugging**: Use `testDynamicConfiguration()` to inspect current settings
 
 The system maintains full backward compatibility while providing a path to more flexible, runtime-configurable behavior.
 
 
+### It's important to remember changing tableKeyMaps when adding, deleting or re-arranging the settings sheet.

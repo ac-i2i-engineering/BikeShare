@@ -3,7 +3,7 @@
  * Uses Google Sheets as database and Google Forms for user interaction
  */
 // =============================================================================
-// FORM TRIGGER & SCHEDULED FUNCTIONS
+// FORM TRIGGER & SCHEDULED & EVENTHANDLER FUNCTIONS
 // =============================================================================
 function handleOnFormSubmit(e) {
   const service = new BikeShareService();
@@ -11,20 +11,61 @@ function handleOnFormSubmit(e) {
   const responses = e.values;
   const range = e.range;
   // Check if the edit is in the 'Checkout Logs' or 'Return Logs' sheet
-  if (sheetName === CONFIG.SHEETS.CHECKOUT_LOGS.NAME) {
+  if (sheetName === CACHED_SETTINGS.VALUES.SHEETS.CHECKOUT_LOGS.NAME) {
     service.processCheckout(responses, range);
-    service.db.sortByColumn(null, CONFIG.SHEETS.CHECKOUT_LOGS.NAME);
-  } else if (sheetName === CONFIG.SHEETS.RETURN_LOGS.NAME) {
+    service.db.sortByColumn(null, CACHED_SETTINGS.VALUES.SHEETS.CHECKOUT_LOGS.NAME);
+  } else if (sheetName === CACHED_SETTINGS.VALUES.SHEETS.RETURN_LOGS.NAME) {
     service.processReturn(responses, range);
-    service.db.sortByColumn(null, CONFIG.SHEETS.RETURN_LOGS.NAME);
+    service.db.sortByColumn(null, CACHED_SETTINGS.VALUES.SHEETS.RETURN_LOGS.NAME);
   }
 }
 
 function executeReportGeneration() {
   const service = new BikeShareService();
   Logger.log(service.generatePeriodicReport());
-  service.db.sortByColumn(null, CONFIG.SHEETS.REPORTS.NAME);
+  service.db.sortByColumn(null, CACHED_SETTINGS.VALUES.SHEETS.REPORTS.NAME);
 }
+
+function handleSettingsUpdate(e){
+  if(!CACHED_SETTINGS.refreshCache(true)){
+    throw new Error("Failed to refresh settings cache");
+  }
+  const editedSheet = e.source.getActiveSheet()
+  const curSheetName = editedSheet.getName()
+  const curCell = e.source.getActiveCell()
+  const editedRange = editedSheet.getActiveRange()
+  const editedCol = editedRange.getLastColumn()
+  const editedRow = editedRange.getLastRow()
+  const newValue = editedRange.getValue()
+  const services = new BikeShareService()
+  const curDate =  new Date()
+  const commContext = {}
+
+  //Process systemButtons
+  if(editedCol == 3 && curSheetName == "mainConfig"){
+    const editedParam = editedSheet.getRange(editedRow,1).getValue()
+    //process the action
+    if(editedParam === "FORCE_SYSTEM_RESET" && newValue === "ON"){
+      services.db.resetDatabase()
+      //send success confirmation to the administrator
+      commContext['resetDate'] = curDate
+      services.comm.handleCommunication('CFM_ADMIN_RESET_001',commContext)
+      curCell.setValue("OFF")
+      curCell.setNote(`Last reset on ${curDate}`)
+    }
+  }
+
+  // manage form accessibility
+  // if(e.source.getActiveSheet().getName() === "mainConfig"){
+    // let bikeShareService = new BikeShareService();
+    // bikeShareService.manageFormsAccessibility();
+    // console.log(CACHED_SETTINGS.VALUES.SYSTEM_ACTIVE)
+  // }
+}
+
+//
+//
+
 
 // =============================================================================
 // TEST FUNCTIONS
@@ -36,9 +77,9 @@ function simulateHandleOnFormSubmit(sheetName, responses) {
   service.db.sortByColumn(sheet, null);
   const range = sheet.getRange(2, 1, 1, responses.length);
   // Check if the edit is in the 'Checkout Logs' or 'Return Logs' sheet
-  if (sheetName === CONFIG.SHEETS.CHECKOUT_LOGS.NAME) {
+  if (sheetName === CACHED_SETTINGS.VALUES.SHEETS.CHECKOUT_LOGS.NAME) {
     service.processCheckout(responses, range);
-  } else if (sheetName === CONFIG.SHEETS.RETURN_LOGS.NAME) {
+  } else if (sheetName === CACHED_SETTINGS.VALUES.SHEETS.RETURN_LOGS.NAME) {
     service.processReturn(responses, range);
   }
 }

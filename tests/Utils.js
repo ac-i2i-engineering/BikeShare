@@ -1,6 +1,6 @@
 function quickTest(){
-  const rep = new Report();
-  console.log(rep.getPeriodNumber());
+  const sets = new Settings();
+  console.log(sets.cacheValues)
 }
 
 function printFormFieldInfo(formId){
@@ -25,13 +25,17 @@ function installOnSubmitTrigger(){
 
 // creates a trigger that runs every n days at a specific hour
 function installExecuteReportGenerationTrigger(){
-  const dayInterval = CONFIG.REPORT_GENERATION.DAYS_INTERVAL;
-  const hour = CONFIG.REPORT_GENERATION.GENERATION_HOUR;
+  const dayInterval = CACHED_SETTINGS.VALUES.REPORT_GENERATION.DAYS_INTERVAL;
+  const hour = CACHED_SETTINGS.VALUES.REPORT_GENERATION.GENERATION_HOUR;
   ScriptApp.newTrigger('executeReportGeneration')
     .timeBased()
     .everyDays(dayInterval)
     .atHour(hour)
     .create();
+}
+
+function installHandleSettingsUpdateTrigger(){
+  ScriptApp.newTrigger('handleSettingsUpdate').forSpreadsheet(CACHED_SETTINGS.management_ss).onChange().create();
 }
 
 function deleteAllTriggers(){
@@ -41,10 +45,12 @@ function deleteAllTriggers(){
     }
 }
 
-function reInstallTriggers(){
+function reInstallAllTriggers(){
+  clearCache()
   deleteAllTriggers();
   installOnSubmitTrigger();
   installExecuteReportGenerationTrigger();
+  installHandleSettingsUpdateTrigger()
 }
 
 function levenshteinDistance(str1, str2) {
@@ -73,5 +79,5 @@ function fuzzyMatch(target, comp){
   if (target.length < 3 || comp.length < 3) return false;
   const distance = levenshteinDistance(target, comp);
   const maxLen = Math.max(target.length, comp.length);
-  return distance / maxLen < CONFIG.FUZZY_MATCHING_THRESHOLD;
+  return distance / maxLen < CACHED_SETTINGS.VALUES.FUZZY_MATCHING_THRESHOLD;
 }

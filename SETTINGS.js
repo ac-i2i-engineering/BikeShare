@@ -1,11 +1,13 @@
 class Settings {
   constructor() {
     this.management_ss_ID = "1Ux1Lt9KNXVNrE0KP6C-Wbf5xmeos5Yf-ybmAfRtEvmQ";
+    this.management_ss = SpreadsheetApp.openById(this.management_ss_ID);
     this.cacheName = "configCache";
     this.cacheValues = null;
+    this.VALUES = {};
     this.settingRangeMap = {
       mainConfig: {
-        systemButtons: "A7:C13",
+        systemButtons: "A7:C14",
         systemTime: "F7:H9",
         coreConfig: "F14:H16",
         reportGenerationSettings: "F21:H23",
@@ -18,11 +20,13 @@ class Settings {
         returnLogs: "A32:C35",
       },
       notificationsConfig: {
-        successMessages: "A13:H17",
-        errorMessages: "A25:H34",
+        successMessages: "A13:H18",
+        errorMessages: "A26:H36",
       },
     };
-    this.fetchCache();
+    if (!this.refreshCache(false)) {
+      throw new Error("Failed to initialize Settings: Cache refresh failed.");
+    };
   }
 
   convertType(value, type) {
@@ -52,11 +56,19 @@ class Settings {
       body: bodyMatch ? bodyMatch[1].replace(/""/g, '"') : "",
     };
   }
+
+  extractNoteFromString(cellRange, sheet, text) {
+    const unAllowedNotes = ["", "-", "none"];
+    return !unAllowedNotes.includes(text.trim().toLowerCase()) ? {
+      bgColor: sheet.getRange(cellRange).getBackground(),
+      note: text,
+    } : null
+  }
+
   setSettingsCache() {
     let loadedConfigs = {};
-    const ss = SpreadsheetApp.openById(this.management_ss_ID);
     for (const sheetName in this.settingRangeMap) {
-      const sheet = ss.getSheetByName(sheetName);
+      const sheet = this.management_ss.getSheetByName(sheetName);
       for (const tableName in this.settingRangeMap[sheetName]) {
         const tableRange = sheet.getRange(
           this.settingRangeMap[sheetName][tableName]
@@ -70,10 +82,7 @@ class Settings {
             const currRow = rowCounter + index;
             const cellRange = `E${currRow}`;
             acc[col1] = {
-              markEntry: {
-                bgColor: sheet.getRange(cellRange).getBackground(),
-                note: col5,
-              },
+              markEntry: this.extractNoteFromString(cellRange, sheet, col5),
               notifyUser: this.extractEmailFromString(col6),
               notifyAdmin: this.extractEmailFromString(col7),
               notifyDeveloper: this.extractEmailFromString(col8),
@@ -96,18 +105,22 @@ class Settings {
       JSON.stringify(loadedConfigs)
     );
   }
-  fetchCache() {
+  // New unified method
+  refreshCache(forceRefresh = false) {
     try {
-      let configs = CacheService.getDocumentCache().get(this.cacheName);
-      if (!configs) {
+      let configs = null;
+      configs = CacheService.getDocumentCache().get(this.cacheName);
+      if(forceRefresh || !configs){
+         // Load from management spreadsheet
         this.setSettingsCache();
-        // Logger.log("Settings cache was empty, reloading...");
         configs = CacheService.getDocumentCache().get(this.cacheName);
       }
       this.cacheValues = JSON.parse(configs);
+      this.setGlobalConfigs();
+      return true;
     } catch (error) {
-      console.error("Error fetching cache:", error);
-      return null;
+      console.error("Error managing cache:", error);
+      return false;
     }
   }
 
@@ -150,66 +163,70 @@ class Settings {
       }
     );
   }
+
+  setGlobalConfigs() {
+  this.VALUES = {
+      DEBUG_MODE: true,
+      AUTO_RESET_ENABLED: true,
+      SYSTEM_ACTIVE: this.isSystemActive(),
+      ADMIN_EMAIL: this.getAdminEmail(),
+      SHEETS: {
+        BIKES_STATUS: this.cacheValues.bikesStatus,
+        USER_STATUS: this.cacheValues.userStatus,
+        CHECKOUT_LOGS: this.cacheValues.checkoutLogs,
+        RETURN_LOGS: {
+          ...this.cacheValues.returnLogs,
+          DATE_COLUMN: 0,
+        },
+        REPORTS: {
+          ...this.cacheValues.reportSheet,
+          OVERDUE_RETURNS_COLUMN: 6,
+          RETURN_MISMATCHES_COLUMN: 10,
+          TOTAL_USAGE_HOURS_COLUMN: 12,
+          PERIOD_NUM_COLUMN: 2,
+        },
+      },
+      FORMS: {
+        CHECKOUT_FORM_ID: "1ThxJFJLjtQkvzXuX7ZPa2vEYWzIokWK89GUbW507zpM",
+        RETURN_FORM_ID: "1VFAY-49Qx2Ob5OdVZkI2rH9xbaT0DRF63q6fWZh-Pbc",
+        CHECKOUT_FIELD_IDS: {
+          EMAIL: 1337405542,
+          BIKE_HASH: 697424273,
+          KEY_AVAILABLE: 998220660,
+          CONDITION_OK: 1671678893,
+        },
+        RETURN_FIELD_IDS: {
+          EMAIL: 1224208618,
+          BIKE_NAME: 1916897857,
+          CONFIRM_BIKE_NAME: 1814237596,
+          ASSURE_RODE_BIKE: 788338430,
+          BIKE_MISMATCH_EXPLANATION: 993479484,
+          RETURNING_FOR_FRIEND: 2017212460,
+          FRIEND_EMAIL: 552890597,
+          ISSUES_CONCERNS: 71285803,
+        },
+      },
+      REGULATIONS: {
+        CAN_CHECKOUT_WITH_UNRETURNED_BIKE: false,
+        NEED_USER_CONFIRM_KEY_ACCESS: false,
+        MAX_CHECKOUT_HOURS: this.getMaxCheckoutHours(),
+      },
+      FUZZY_MATCHING_THRESHOLD: this.getFuzzyMatchingThreshold(),
+      NOTIFICATION_SETTINGS: {
+        ENABLE_USER_NOTIFICATIONS: this.cacheValues.systemButtons?.ENABLE_USER_NOTIFICATIONS,
+        ENABLE_ADMIN_NOTIFICATIONS: this.cacheValues.systemButtons?.ENABLE_ADMIN_NOTIFICATIONS,
+        ENABLE_DEV_NOTIFICATIONS: this.cacheValues.systemButtons?.ENABLE_DEV_NOTIFICATIONS,
+      },
+      REPORT_GENERATION: this.getReportGenerationSettings(),
+      COMM_CODES: {
+        ...this.cacheValues.successMessages,
+        ...this.cacheValues.errorMessages,
+      },
+    }
+  }
 }
 
 // =============================================================================
 // CONFIGURATION AND CONSTANTS
 // =============================================================================
-const settings = new Settings();
-let CONFIG = {
-  DEBUG_MODE: true,
-  AUTO_RESET_ENABLED: true,
-  ADMIN_EMAIL: settings.getAdminEmail(),
-  SHEETS: {
-    BIKES_STATUS: settings.cacheValues.bikesStatus,
-    USER_STATUS: settings.cacheValues.userStatus,
-    CHECKOUT_LOGS: settings.cacheValues.checkoutLogs,
-    RETURN_LOGS: {
-      ...settings.cacheValues.returnLogs,
-      DATE_COLUMN: 0,
-    },
-    REPORTS: {
-      ...settings.cacheValues.reportSheet,
-      OVERDUE_RETURNS_COLUMN: 6,
-      RETURN_MISMATCHES_COLUMN: 10,
-      TOTAL_USAGE_HOURS_COLUMN: 12,
-      PERIOD_NUM_COLUMN: 2,
-    },
-  },
-  FORMS: {
-    CHECKOUT_FORM_ID: "1ThxJFJLjtQkvzXuX7ZPa2vEYWzIokWK89GUbW507zpM",
-    RETURN_FORM_ID: "1VFAY-49Qx2Ob5OdVZkI2rH9xbaT0DRF63q6fWZh-Pbc",
-    CHECKOUT_FIELD_IDS: {
-      EMAIL: 1337405542,
-      BIKE_HASH: 697424273,
-      KEY_AVAILABLE: 998220660,
-      CONDITION_OK: 1671678893,
-    },
-    RETURN_FIELD_IDS: {
-      EMAIL: 1224208618,
-      BIKE_NAME: 1916897857,
-      CONFIRM_BIKE_NAME: 1814237596,
-      ASSURE_RODE_BIKE: 788338430,
-      BIKE_MISMATCH_EXPLANATION: 993479484,
-      RETURNING_FOR_FRIEND: 2017212460,
-      FRIEND_EMAIL: 552890597,
-      ISSUES_CONCERNS: 71285803,
-    },
-  },
-  REGULATIONS: {
-    CAN_CHECKOUT_WITH_UNRETURNED_BIKE: false,
-    NEED_USER_CONFIRM_KEY_ACCESS: false,
-    MAX_CHECKOUT_HOURS: settings.getMaxCheckoutHours(),
-  },
-  FUZZY_MATCHING_THRESHOLD: settings.getFuzzyMatchingThreshold(),
-  NOTIFICATION_SETTINGS: {
-    ENABLE_USER_NOTIFICATIONS: settings.cacheValues.systemButtons?.ENABLE_USER_NOTIFICATIONS,
-    ENABLE_ADMIN_NOTIFICATIONS: settings.cacheValues.systemButtons?.ENABLE_ADMIN_NOTIFICATIONS,
-    ENABLE_DEV_NOTIFICATIONS: settings.cacheValues.systemButtons?.ENABLE_DEV_NOTIFICATIONS,
-  },
-  REPORT_GENERATION: settings.getReportGenerationSettings(),
-  COMM_CODES: {
-    ...settings.cacheValues.successMessages,
-    ...settings.cacheValues.errorMessages,
-  },
-};
+const CACHED_SETTINGS = new Settings();

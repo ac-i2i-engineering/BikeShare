@@ -12,13 +12,13 @@ class Communicator {
       throw new Error(`Communication with ID ${commID} not found.`);
     }
     // Handle the communication based on its type
-    if(comm.notifyUser && CONFIG.NOTIFICATION_SETTINGS.ENABLE_USER_NOTIFICATIONS){
+    if(comm.notifyUser && CACHED_SETTINGS.VALUES.NOTIFICATION_SETTINGS.ENABLE_USER_NOTIFICATIONS){
       this.notifyUser(context.userEmail, this.fillPlaceholders(comm.notifyUser.subject, context), this.fillPlaceholders(comm.notifyUser.body, context));
     }
-    if(comm.notifyAdmin && CONFIG.NOTIFICATION_SETTINGS.ENABLE_ADMIN_NOTIFICATIONS){
+    if(comm.notifyAdmin && CACHED_SETTINGS.VALUES.NOTIFICATION_SETTINGS.ENABLE_ADMIN_NOTIFICATIONS){
       this.notifyAdmin(this.fillPlaceholders(comm.notifyAdmin.subject, context), this.fillPlaceholders(comm.notifyAdmin.body, context));
     }
-    if(comm.notifyDeveloper && CONFIG.NOTIFICATION_SETTINGS.ENABLE_DEV_NOTIFICATIONS){
+    if(comm.notifyDeveloper && CACHED_SETTINGS.VALUES.NOTIFICATION_SETTINGS.ENABLE_DEV_NOTIFICATIONS){
       this.notifyDeveloper(this.fillPlaceholders(comm.notifyDeveloper.subject, context), this.fillPlaceholders(comm.notifyDeveloper.body, context));
     }
     if(comm.markEntry){
@@ -39,7 +39,7 @@ class Communicator {
 
   notifyAdmin(subject, body) {
     try {
-      GmailApp.sendEmail(CONFIG.ADMIN_EMAIL, subject, "Hi,\n\n"+body+"\n\nThank you,\nBike Share Team");
+      GmailApp.sendEmail(CACHED_SETTINGS.VALUES.ADMIN_EMAIL, subject, "Hi,\n\n"+body+"\n\nThank you,\nBike Share Team");
     } catch (error) {
       console.error('Error sending email to admin:', error.message);
     }
@@ -47,7 +47,7 @@ class Communicator {
 
   notifyDeveloper(subject, body) {
     try {
-      GmailApp.sendEmail(CONFIG.DEVELOPER_EMAIL, subject, "Hi,\n\n"+body+"\n\nThank you,\nBike Share Team");
+      GmailApp.sendEmail(CACHED_SETTINGS.VALUES.DEVELOPER_EMAIL, subject, "Hi,\n\n"+body+"\n\nThank you,\nBike Share Team");
     } catch (error) {
       console.error('Error sending email to developer:', error.message);
     }
@@ -62,7 +62,7 @@ class Communicator {
   }
 
   getCommunication(commID) {
-    return CONFIG.COMM_CODES[commID] || null;
+    return CACHED_SETTINGS.VALUES.COMM_CODES[commID] || null;
   }
 
   fillPlaceholders(template, context) {

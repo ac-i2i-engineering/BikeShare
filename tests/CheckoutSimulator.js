@@ -12,8 +12,8 @@
 // =============================================================================
 class CheckoutFullSimulator {
   constructor(){
-    this.formId = CONFIG.FORMS.CHECKOUT_FORM_ID;
-    this.FIELD_IDS = CONFIG.FORMS.CHECKOUT_FIELD_IDS;
+    this.formId = CACHED_SETTINGS.VALUES.FORMS.CHECKOUT_FORM_ID;
+    this.FIELD_IDS = CACHED_SETTINGS.VALUES.FORMS.CHECKOUT_FIELD_IDS;
   }
   simulateCheckout(responseData = null) {
     // Default response data
@@ -76,8 +76,8 @@ class CheckoutFullSimulator {
     for(let i=0;i<num;i++){
       let finalPart = i < 10 ? '00'+i : i < 100 ? '0'+i : i.toString();
       let userEmail = root + finalPart+'@amherst.edu'
-      let randomIndex = Math.floor(Math.random() * CONFIG.BIKE_HASHES.length);
-      let bikeHash = isRandom ? CONFIG.BIKE_HASHES[randomIndex] : defaultBike;
+      let randomIndex = Math.floor(Math.random() * CACHED_SETTINGS.VALUES.BIKE_HASHES.length);
+      let bikeHash = isRandom ? CACHED_SETTINGS.VALUES.BIKE_HASHES[randomIndex] : defaultBike;
 
       console.log(`\n-----Email:${userEmail}-------Bike:${bikeHash}--------`)
       results.push(this.createCustomCheckout(userEmail,bikeHash))
@@ -96,7 +96,7 @@ class CheckoutVirtualSimulator{
     // add a new row to the checkout logs sheet
     constructor() {
       this.db = new DatabaseManager();
-      this.checkoutSheet = CONFIG.SHEETS.CHECKOUT_LOGS.NAME;
+      this.checkoutSheet = CACHED_SETTINGS.VALUES.SHEETS.CHECKOUT_LOGS.NAME;
     }
 
     createCheckoutEntry(userEmail, bikeHash, conditionOk = ['I consent']) {
@@ -125,5 +125,5 @@ function simulateFullCheckout() {
 function simulateVirtualCheckout() {
   const simulator = new CheckoutVirtualSimulator();
   const response = simulator.createCheckoutEntry('test312@amherst.edu','3A8BD0');  
-  simulateHandleOnFormSubmit(CONFIG.SHEETS.CHECKOUT_LOGS.NAME, response)
+  simulateHandleOnFormSubmit(CACHED_SETTINGS.VALUES.SHEETS.CHECKOUT_LOGS.NAME, response)
 }

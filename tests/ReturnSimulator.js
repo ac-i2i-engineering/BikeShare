@@ -18,8 +18,8 @@
 // =============================================================================
 class ReturnFullSimulator {
   constructor() {
-    this.formId = CONFIG.FORMS.RETURN_FORM_ID;
-    this.FIELD_IDS = CONFIG.FORMS.RETURN_FIELD_IDS;
+    this.formId = CACHED_SETTINGS.VALUES.FORMS.RETURN_FORM_ID;
+    this.FIELD_IDS = CACHED_SETTINGS.VALUES.FORMS.RETURN_FIELD_IDS;
   }
 
   simulateReturn(responseData = null) {
@@ -117,8 +117,8 @@ class ReturnFullSimulator {
     for (let i = 0; i < num; i++) {
         let finalPart = i < 10 ? '00' + i : i < 100 ? '0' + i : i;
         let userEmail = root + finalPart + '@amherst.edu';
-        const randomIndex = Math.floor(Math.random() * CONFIG.BIKE_NAMES.length);
-        const bikeName = isRandom ? CONFIG.BIKE_NAMES[randomIndex] : defaultBike;
+        const randomIndex = Math.floor(Math.random() * CACHED_SETTINGS.VALUES.BIKE_NAMES.length);
+        const bikeName = isRandom ? CACHED_SETTINGS.VALUES.BIKE_NAMES[randomIndex] : defaultBike;
         console.log(`\n-----Email:${userEmail}-------Bike:${bikeName}--------`);
         results.push(this.createCustomReturn(
             userEmail,
@@ -145,7 +145,7 @@ class ReturnFullSimulator {
 class ReturnVirtualSimulator {
     constructor() {
         this.db = new DatabaseManager();
-        this.returnSheet = CONFIG.SHEETS.RETURN_LOGS.NAME;
+        this.returnSheet = CACHED_SETTINGS.VALUES.SHEETS.RETURN_LOGS.NAME;
     }
 
     createReturnEntry(
@@ -199,5 +199,5 @@ function simulateVirtualReturn() {
     '',
     ''
   );
-  simulateHandleOnFormSubmit(CONFIG.SHEETS.RETURN_LOGS.NAME, response);
+  simulateHandleOnFormSubmit(CACHED_SETTINGS.VALUES.SHEETS.RETURN_LOGS.NAME, response);
 }

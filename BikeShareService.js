@@ -15,7 +15,12 @@ class BikeShareService {
         ...checkoutLog,
         range: range
       };
-      user.checkoutBike(commContext);
+      if (CACHED_SETTINGS.VALUES.SYSTEM_ACTIVE) {
+        user.checkoutBike(commContext);
+      } else {
+        //system out of service
+        user.comm.handleCommunication('ERR_OPR_COR_001', commContext);
+      }
     } catch (error) {
       Logger.log(`Error processing checkout: ${error.message}`);
     }
@@ -33,7 +38,12 @@ class BikeShareService {
         usageHours: usageHours,
         range: range
       };
-      user.returnBike(commContext);
+      if (CACHED_SETTINGS.VALUES.SYSTEM_ACTIVE) {
+        user.returnBike(commContext);
+      } else {
+        // we are currently offline
+        user.comm.handleCommunication('ERR_OPR_COR_001', commContext);
+      }
     } catch (error) {
       Logger.log(`Error processing return: ${error.message}`);
     }
@@ -52,6 +62,12 @@ class BikeShareService {
     const now = new Date();
     const checkoutTime = new Date(bike.lastCheckoutDate);
     return Math.round((now - checkoutTime) / (1000 * 60 * 60) * 100) / 100;
+  }
+
+  manageFormsAccessibility(){
+    // stop accepting responses for return and checkout form
+    FormApp.openById(CACHED_SETTINGS.VALUES.FORMS.CHECKOUT_FORM_ID).setAcceptingResponses(CACHED_SETTINGS.VALUES.SYSTEM_ACTIVE)
+    FormApp.openById(CACHED_SETTINGS.VALUES.FORMS.RETURN_FORM_ID).setAcceptingResponses(CACHED_SETTINGS.VALUES.SYSTEM_ACTIVE)
   }
 }
 // =============================================================================

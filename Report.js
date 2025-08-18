@@ -5,7 +5,7 @@ class Report {
   constructor() {
     this.timestamp = new Date();
     this.recordedBy = "Automated";
-    this.frequencyInDays = CONFIG.REPORT_GENERATION.DAYS_INTERVAL;
+    this.frequencyInDays = CACHED_SETTINGS.VALUES.REPORT_GENERATION.DAYS_INTERVAL;
     this.checkSpan = this.frequencyInDays * 24 * 60 * 60 * 1000; // convert days to milliseconds
     this.period = this.getPeriodNumber();
     this.db = new DatabaseManager();
@@ -50,26 +50,26 @@ class Report {
       reportData.adminNotes
     ];
     // check if row with same period already exists and update it, else append a new row
-    const existingRow = this.db.findRowByColumn(CONFIG.SHEETS.REPORTS.NAME, CONFIG.SHEETS.REPORTS.PERIOD_NUM_COLUMN, reportData.period);
+    const existingRow = this.db.findRowByColumn(CACHED_SETTINGS.VALUES.SHEETS.REPORTS.NAME, CACHED_SETTINGS.VALUES.SHEETS.REPORTS.PERIOD_NUM_COLUMN, reportData.period);
     if (existingRow) {
-      this.db.updateRow(CONFIG.SHEETS.REPORTS.NAME, existingRow.rowIndex, values);
+      this.db.updateRow(CACHED_SETTINGS.VALUES.SHEETS.REPORTS.NAME, existingRow.rowIndex, values);
       return;
     }
-    this.db.appendRow(CONFIG.SHEETS.REPORTS.NAME, values);
+    this.db.appendRow(CACHED_SETTINGS.VALUES.SHEETS.REPORTS.NAME, values);
   }
 
   getAllBikes() {
-    const data = this.db.getAllData(CONFIG.SHEETS.BIKES_STATUS.NAME);
+    const data = this.db.getAllData(CACHED_SETTINGS.VALUES.SHEETS.BIKES_STATUS.NAME);
     return data.slice(1).map(row => Bike.fromSheetRow(row));
   }
 
   getAllUsers() {
-    const data = this.db.getAllData(CONFIG.SHEETS.USER_STATUS.NAME);
+    const data = this.db.getAllData(CACHED_SETTINGS.VALUES.SHEETS.USER_STATUS.NAME);
     return data.slice(1).map(row => User.fromSheetRow(row));
   }
   // calculate the period number based on the first run date and round it to the nearest period
   getPeriodNumber() {
-    const firstRunDate = new Date(CONFIG.REPORT_GENERATION.FIRST_GENERATION_DATE);
+    const firstRunDate = new Date(CACHED_SETTINGS.VALUES.REPORT_GENERATION.FIRST_GENERATION_DATE);
     const diffInMs = this.timestamp - firstRunDate;
     const weeks = Math.round(diffInMs / this.checkSpan);
     return weeks;
@@ -92,7 +92,7 @@ class Report {
     const totalOverdueReturns = this.users.reduce((count, user) => {
       return count + user.overdueReturns;
     }, 0);
-    const prevRecordedOverdueReturns = this.db.getColumnSum(CONFIG.SHEETS.REPORTS.NAME, CONFIG.SHEETS.REPORTS.OVERDUE_RETURNS_COLUMN);
+    const prevRecordedOverdueReturns = this.db.getColumnSum(CACHED_SETTINGS.VALUES.SHEETS.REPORTS.NAME, CACHED_SETTINGS.VALUES.SHEETS.REPORTS.OVERDUE_RETURNS_COLUMN);
     return totalOverdueReturns - prevRecordedOverdueReturns;
   }
 
@@ -100,7 +100,7 @@ class Report {
     const currentPeriodMismatches = this.users.reduce((count, user) => {
       return count + user.numberOfMismatches;
     }, 0);
-    const prevRecordedMismatches = this.db.getColumnSum(CONFIG.SHEETS.REPORTS.NAME, CONFIG.SHEETS.REPORTS.RETURN_MISMATCHES_COLUMN);
+    const prevRecordedMismatches = this.db.getColumnSum(CACHED_SETTINGS.VALUES.SHEETS.REPORTS.NAME, CACHED_SETTINGS.VALUES.SHEETS.REPORTS.RETURN_MISMATCHES_COLUMN);
     return currentPeriodMismatches - prevRecordedMismatches;
   }
 
@@ -108,14 +108,14 @@ class Report {
     const totalUsageHours = this.users.reduce((sum, user) => {
       return sum + user.usageHours;
     }, 0);
-    const prevRecordedUsageHours = this.db.getColumnSum(CONFIG.SHEETS.REPORTS.NAME, CONFIG.SHEETS.REPORTS.TOTAL_USAGE_HOURS_COLUMN);
+    const prevRecordedUsageHours = this.db.getColumnSum(CACHED_SETTINGS.VALUES.SHEETS.REPORTS.NAME, CACHED_SETTINGS.VALUES.SHEETS.REPORTS.TOTAL_USAGE_HOURS_COLUMN);
     return totalUsageHours - prevRecordedUsageHours;
   }
 
   returnLogsInCoverage(){
-    const returnLogs = this.db.getAllData(CONFIG.SHEETS.RETURN_LOGS.NAME);
+    const returnLogs = this.db.getAllData(CACHED_SETTINGS.VALUES.SHEETS.RETURN_LOGS.NAME);
     const logsInRange = returnLogs.filter(log => {
-      const returnDate = new Date(log[CONFIG.SHEETS.RETURN_LOGS.DATE_COLUMN]);
+      const returnDate = new Date(log[CACHED_SETTINGS.VALUES.SHEETS.RETURN_LOGS.DATE_COLUMN]);
       return (this.timestamp - returnDate) <= this.checkSpan;
     });
     return logsInRange;
