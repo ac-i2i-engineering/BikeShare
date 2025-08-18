@@ -170,6 +170,8 @@ class Settings {
       AUTO_RESET_ENABLED: true,
       SYSTEM_ACTIVE: this.isSystemActive(),
       ADMIN_EMAIL: this.getAdminEmail(),
+      MANAGEMENT_SS_ID: this.management_ss_ID,
+      MAIN_DASHBOARD_SS_ID: '1XE9b58isw2MreAvcNSDiCTIIlL09zFRWMKcCBtTkbbE',
       SHEETS: {
         BIKES_STATUS: this.cacheValues.bikesStatus,
         USER_STATUS: this.cacheValues.userStatus,

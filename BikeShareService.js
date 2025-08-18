@@ -2,9 +2,9 @@
 // MAIN SERVICE CLASS
 // =============================================================================
 class BikeShareService {
-  constructor() {
-    this.db = new DatabaseManager();
-    this.comm = new Communicator();
+  constructor(spreadsheetID) {
+    this.db = new DatabaseManager(spreadsheetID);
+    this.comm = new Communicator(spreadsheetID);
   }
 
   processCheckout(formResponse, range) {

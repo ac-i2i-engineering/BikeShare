@@ -2,8 +2,8 @@
 // NOTIFICATION,ERROR, AND ENTRY LABELLING MANAGER CLASS
 // =============================================================================
 class Communicator {
-  constructor() {
-    this.db = new DatabaseManager();
+  constructor(spreadsheetID) {
+    this.db = new DatabaseManager(spreadsheetID);
     this.success = false;
   }
   handleCommunication(commID, context){

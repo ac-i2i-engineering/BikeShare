@@ -37,7 +37,7 @@ function handleSettingsUpdate(e){
   const editedCol = editedRange.getLastColumn()
   const editedRow = editedRange.getLastRow()
   const newValue = editedRange.getValue()
-  const services = new BikeShareService()
+  const services = new BikeShareService(CACHED_SETTINGS.VALUES.MAIN_DASHBOARD_SS_ID)
   const curDate =  new Date()
   const commContext = {}
 

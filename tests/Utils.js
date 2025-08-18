@@ -1,6 +1,6 @@
 function quickTest(){
-  const sets = new Settings();
-  console.log(sets.cacheValues)
+  const services = new BikeShareService()
+  services.db.resetDatabase()
 }
 
 function printFormFieldInfo(formId){
