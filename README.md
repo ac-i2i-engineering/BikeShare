@@ -395,23 +395,23 @@ The main dashboard consists of five primary sheets that administrators use to mo
 graph TD
     A[User Scans QR Code on Bike] --> B["Opens Pre-filled Checkout Form<br/>with Bike Hash ID"]
     B --> C[User Submits Form]
-    D --> E["BikeShareService.processCheckout()"]
-    E --> F[Create CheckoutLog from Form Response]
-    F --> G[Find/Create User by Email]
-    G --> H{System Active?}
-    H -->|No| I["Send System Offline Error<br/>ERR_OPR_COR_001"]
-    H -->|Yes| J["User.checkoutBike()"]
-    J --> K{"User Has<br/>Unreturned Bike?"}
-    K -->|"Yes & Not Allowed"| L["Send Error: Already Have Bike<br/>ERR_USR_COT_002<br/>Include: unreturned bike name, date"]
-    K -->|"No or Allowed"| M[Find Bike by Hash ID]
-    M --> N{Bike Found?}
-    N -->|No| O["Send Error: Bike Not Found<br/>ERR_USR_COT_003"]
-    N -->|Yes| P{"Bike Ready<br/>for Checkout?"}
-    P -->|No| Q["Send Error: Bike Not Available<br/>ERR_USR_COT_001<br/>Check: maintenance & availability"]
-    P -->|Yes| R["Bike.checkout() - Update Status"]
-    R --> S["Update User Records:<br/>• First usage date if new user<br/>• hasUnreturnedBike = true<br/>• lastCheckoutName & Date<br/>• numberOfCheckouts++"]
-    S --> T["Send Confirmation Email<br/>CFM_USR_COT_001<br/>Use key labeled BIKE NAME<br/>Return within MAX_HOURS hours"]
-    T --> U[Auto-sort Checkout Logs Sheet]
+    C --> D["BikeShareService.processCheckout()"]
+    D --> E[Create CheckoutLog from Form Response]
+    E --> F[Find/Create User by Email]
+    F --> G{System Active?}
+    G -->|No| H["Send System Offline Error<br/>ERR_OPR_COR_001"]
+    G -->|Yes| I["User.checkoutBike()"]
+    I --> J{"User Has<br/>Unreturned Bike?"}
+    J -->|"Yes & Not Allowed"| K["Send Error: Already Have Bike<br/>ERR_USR_COT_002<br/>Include: unreturned bike name, date"]
+    J -->|"No or Allowed"| L[Find Bike by Hash ID]
+    L --> M{Bike Found?}
+    M -->|No| N["Send Error: Bike Not Found<br/>ERR_USR_COT_003"]
+    M -->|Yes| O{"Bike Ready<br/>for Checkout?"}
+    O -->|No| P["Send Error: Bike Not Available<br/>ERR_USR_COT_001<br/>Check: maintenance & availability"]
+    O -->|Yes| Q["Bike.checkout() - Update Status"]
+    Q --> R["Update User Records:<br/>• First usage date if new user<br/>• hasUnreturnedBike = true<br/>• lastCheckoutName & Date<br/>• numberOfCheckouts++"]
+    R --> S["Send Confirmation Email<br/>CFM_USR_COT_001<br/>Use key labeled BIKE NAME<br/>Return within MAX_HOURS hours"]
+    S --> T[Auto-sort Checkout Logs Sheet]
     
     H --> U[Mark Entry with Error Color]
     K --> U
