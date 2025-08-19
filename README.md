@@ -1,306 +1,679 @@
-# BikeShare
-The Bike Share System is a platform that leverages G-Suite automation through Google Apps Script to streamline bike checkouts, returns, and inventory management.
+# BikeShare System - Documentation
 
-# Design
-The database in relational model.
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Architecture & Design](#architecture--design)
+3. [Core Classes & Components](#core-classes--components)
+4. [Database Schema](#database-schema)
+5. [User Interface & Forms](#user-interface--forms)
+6. [Workflow Processes](#workflow-processes)
+7. [Configuration & Settings](#configuration--settings)
+8. [Communication System](#communication-system)
+9. [Testing & Utilities](#testing--utilities)
+10. [Deployment & Setup](#deployment--setup)
+11. [API Reference](#api-reference)
 
-## Tables and their Fields
-### Bikes Status
-Fields:
-- **Bike ID**
-- **Size**
-- **Maintenance status**
-- **Availability**
-- **Last checkout date**
-- **Last return date**
-- **Current Usage Timer**
-- **Total Usage Hours**
-- **Most Recent User**
-- **2nd Recent User**
-- **3rd Recent User**
-- **TempRecent (Hidden)**
-- **Hash-ID(Hidden)** 
-- **URL Link(Hidden)**
-- **QR Code(Hidden)**
+---
 
-### User status
-Fields:
-- **Email**
-- **Has unreturned bike**
-- **Last checkout ID & Date**
-- **Last return ID & Date**
-- **# of checkouts**
-- **# of returns**
-- **# of mismatches**
-- **# of usage hours**
-- **# of overdue returns**
-- **# first usage date**
+## System Overview
 
-### Checkout Logs
-Fields:
-- **Timestamp**
-- **Email Address**
-- **Scanned bike Hash-ID**
-- **Did you check if this bike’s key is available at the front desk before you check it out?**
-- **Confirm that this bike's condition is okay for you to ride before you submit this request**
+The **BikeShare System** is a comprehensive bike rental management platform built on Google Apps Script that leverages G-Suite automation for streamlined bike checkouts, returns, and inventory management. The system uses Google Sheets as a database backend and Google Forms for user interaction, providing a complete solution for educational institutions or organizations managing a fleet of shared bicycles.
 
-### Return Logs
-Fields:
-- **Timestamp**
-- **Email Address**
-- **Enter Bike Name**
-- **Confirm Bike Name**
-- **Did you ride the exact bike that you originally checked out?**
-- **If you did not or are not sure you rode the bike with the actual ID you checked out, please explain why.**
-- **Are you returning on behalf of a friend?**
-- **If you are returning on behalf of a friend, what is their name and/or email?**
-- **Are there any errors/issues/concerns you'd like us to know about?**
+### Key Features
+- **Automated Bike Checkout/Return Processing**: Real-time form submission handling with validation
+- **User Management**: Comprehensive tracking of user history, usage patterns, and compliance
+- **Bike Inventory Management**: Complete bike lifecycle tracking with maintenance status
+- **QR Code Integration**: Each bike has a unique hash ID and QR code for easy checkout
+- **Automated Reporting**: Periodic system snapshots
+- **Communication System**: Email notifications for users, admins, and developers
+- **Error Handling**: Comprehensive error management with color-coded entry marking
+- **Friend Return Feature**: Users can return bikes on behalf of others
+- **Overdue Tracking**: Automatic detection and reporting of late returns
+- **Maintenance Management**: Bike condition tracking and repair status management
 
+---
 
-### Report(system snapshots)
-Fields:
-- **Timestamp**
-- **Recorded By**
-- **Period**
-- **Total # of Bikes**
-- **Total # of Bikes in Repair**
-- **# of Checked Out**
-- **# of Overdue Bikes**
-- **Available Bikes**
-- **New users**
-- **Late returners**
-- **# of return mismatches**
-- **emails with mismatches**
-- **# of reported issues**
-- **Total # of usage hrs**
-- **Admin notes**
+## Architecture & Design
 
-### Entity Relationship Diagram (ERD)
-coming soon
+### Object-Oriented Programming Structure
+The system follows OOP principles with clear separation of concerns:
 
-## Object-Oriented Programming (OOP) Design
-
-#### Core Classes:
-1. **DatabaseManager** - Base class for all database operations with Google Sheets
-2. **Bike** - Represents individual bikes with their status and operations
-3. **User** - Represents system users with their checkout history and status
-4. **CheckoutLog** - Handles checkout form submissions and validation
-5. **ReturnLog** - Handles return form submissions and validation  
-6. **Report** - Generates system snapshots and analytics
-7. **BikeShareService** - Main service layer that orchestrates all operations
-
-## Bike Names to Hash Spreadsheet Formula
-To convert bike names to hash values, use the following formula in Google Sheets:
-```excel
-=UPPER(CONCAT(DEC2HEX(MOD(SUM(CODE(MID(A10,ROW(INDIRECT("1:"&LEN(A10))),1)))*13, 4096),3), DEC2HEX(MOD(SUM(CODE(MID(A10,ROW(INDIRECT("1:"&LEN(A10))),1)))*LEN(A10)*7, 4096),3)))
 ```
-## Pre-fill link creation for Google Forms
-To create pre-filled links for Google Forms, use the following format:
-```excel
-="https://docs.google.com/forms/d/e/FORM_ID/viewform?usp=pp_url&entry.FIELD_ID=" & A1
+                    ┌─────────────────────────┐
+                    │    CACHED_SETTINGS      │
+                    │   (Global Settings)     │
+                    │   ┌─────────────────┐   │
+                    │   │   Settings      │   │
+                    │   │     Class       │   │
+                    │   └─────────────────┘   │
+                    └───────────┬─────────────┘
+                                │ provides config to
+                                ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    BikeShareService                             │
+│                  (Main Orchestrator)                            │
+│  ┌─────────────┐    ┌─────────────────┐    ┌──────────────────┐│
+│  │     db      │    │      comm       │    │   Uses Settings  ││
+│  │(DatabaseMgr)│    │ (Communicator)  │    │   for all ops    ││
+│  └─────────────┘    └─────────────────┘    └──────────────────┘│
+└─────────────────┬─────────────┬─────────────────────────────────┘
+                  │             │
+        ┌─────────┼─────────────┼─────────┐
+        │         │             │         │
+   ┌────▼───┐ ┌───▼───┐     ┌───▼─────────┐
+   │ User   │ │ Bike  │     │DatabaseManager│
+   │        │ │       │     │              │
+   │ ┌────┐ │ │┌────┐ │     │  ┌─────────┐ │
+   │ │ db │ │ ││ db │ │     │  │manages  │ │
+   │ │comm│ │ ││comm│ │     │  │all data │ │
+   │ └────┘ │ │└────┘ │     │  │ sheets  │ │
+   └────┬───┘ └───┬───┘     └─────────────┘
+        │         │         
+   ┌────▼────┐ ┌──▼──────────┐ 
+   │CheckoutLog│ │   Report    │ 
+   │         │ │             │ 
+   │ ┌─────┐ │ │ ┌─────────┐ │ 
+   │ │ db  │ │ │ │   db    │ │ 
+   │ │comm │ │ │ │  bikes  │ │ 
+   │ └─────┘ │ │ │  users  │ │ 
+   └─────────┘ │ └─────────┘ │ 
+               └─────────────┘ 
+   ┌─────────┐                  ┌─────────────┐
+   │ReturnLog│                  │Communicator │
+   │         │                  │             │
+   │ ┌─────┐ │                  │ ┌─────────┐ │
+   │ │ db  │ │                  │ │   db    │ │
+   │ │comm │ │                  │ │ Gmail   │ │
+   │ └─────┘ │                  │ │MarkEntry│ │
+   └─────────┘                  │ └─────────┘ │
+                                └─────────────┘
+
+Legend:
+├── Composition/Ownership relationship
+├── Dependencies (uses services of)
+└── Inheritance/Extension relationship
 ```
-Replace `FORM_ID` with your form's ID and `FIELD_ID` with the specific field ID you want to pre-fill. The value in cell `A1` will be automatically filled in the form.
 
-## Generate QR Codes for URLS
-To generate QR codes for URLs, you can use the following Google Sheets formula:
-```excel
-=IMAGE("https://quickchart.io/qr?text="&ENCODEURL(N2))
-```
-Replace `N2` with the cell containing the URL you want to convert into a QR code. This will generate a QR code image that can be scanned to access the URL directly.
+### System Components
 
-## Development Notes:
-## Database Reset and Error Handling Design
+1. **Main Dashboard Spreadsheet**: Central data storage with multiple sheets
+2. **Management Spreadsheet**: Configuration and settings management
+3. **Google Forms**: User interfaces for checkout and return processes
+4. **Apps Script**: Server-side logic and automation
+5. **Email Integration**: Automated notifications via Gmail API
+6. **QR Code System**: Unique identifiers for each bike
 
-### 1. Clear Sheets Method & VALUES
-- **Purpose:** Reset the database to a clean state for maintenance or troubleshooting.
-- **Method:**  
-    - Implement a `clearSheets()` function in `DatabaseManager` to wipe all relevant tables' specified range for (Bikes Status, User Status, Checkout Logs, Return Logs, Reports).
-    - Use a configuration object (`RESET_CONFIG`) to specify which sheets/tables to clear and any exceptions (e.g., preserve admin notes, whether to clear all data or specific ranges).
-    - Log reset actions for audit purposes.
+---
 
-### 2. Mismatch Handling
-- **Current Approach:** Flag mismatches and add comments.
-- **Improved Approach: Validation logic**  
-    - There are two kinds of mismatches: 
-        1. When a user submits a return form response's bike name is different from confirm bike name entry. 
-            1. Action: use a dedicated string matching method to check if it was a tolerable typo and has closely similar bikeName in the system or obvious mismatch.   
-                1. If obvious mismatch, flag the record and notify the user to re-submit.
-                2. If it was a typo(misspelling of 2 characters), automatically correct the record if possible, then continue processing.
-        2. If the bike name submitted or derived from auto-spell correction is found is a valid bike name but it's not what the user checked out or they have no unreturned bikes, or they are first time user of the bike share program.
+## Core Classes & Components
 
-            1. case 1: different from checked out. Then, check related response for: "Did you ride the exact bike that you originally checked out?"
-                1. If "Yes",Then, send a notification to the user: "The bike you are trying to return is not the one you checked out. Please check your checkout confirmation email/ key you have if you forgot the bike name."
-                2. If "No" or "Not sure". Then, check related response for: "If you did not or are not sure you rode the checked-out bike, please explain why."
-                    - If response is "🧠 I forgot which bike I checked out", then send a notification to the user: "No worries! Please check your checkout confirmation email for the bike details."
-                    - If response is "🔁 I swapped bikes with a friend during use[check yes in next field, and provide their email]", then:
-                        1. If "Yes", then check related response for: "What is your friend's name and/or email?" 
-                            1. Swap the checkout records for both users and add a comment to both users' records indicating the swap happened.
-                            2. process user as returning their bike("new swapped bike").
-                        2. send notification to the user: "Thanks for letting us know! We update your checkout records accordingly. We confirm that you checked out a bike with the name [bike name], then swapped with [friend's name/email] who has checked out a bike with the name [friend's bike name]. So, our records swapped your checkouts and we expected your friend to return what you had checked out as you returned what he checked out."
-                    - If response is "🛠️ The original bike had a problem, so I rode a different one", then:
-                        1. check the actual bike they had checked out. Then mark it's maintenance status as "Has Issue", and "availability" as "Out of Service".
-                        2. Process the return as a successful return of the bike they checked out.
-                        3. send a notification to the user: "Thanks for letting us know! you successfully returned your bike, and we will fix soon the bike reported as having an issue."
-                        4. send a notification to the admin: "A bike with the name [bike name] has been reported by [user email]."
-            2. case 2: no unreturned bikes or first time user. Then, check related response for: "Are you returning on behalf of a friend?"
-                1. If "Yes",
-                    - check related response for: "If you are returning on behalf of a friend, what is their name and/or email?"
-                    - If the friend's name/email is found, update logs accordingly. 
-                    - Notify both parties: "you successfully returned a bike X on behalf of your friend [friend's name/email]." AND " (friend's name/email) successfully returned a bike X on your behalf".
-                2. If "No" and "is first time user",
-                    - send a notification: "It seems this is like you have never checked out recently. Are you sure you are returning a bike? If so, please check your checkout confirmation email or are you returning a bike for a friend? If so, re-submit the form with your friend's name/email."
-                3. If "No" and "has no unreturned bikes",
-                    - send a notification: "It seems like you were already cleared up with all previous checkouts. Are you sure you are returning a bike? If so, there might be a system error, please send us email with this format: SUBJECT: Bike Share System Error - Return Mismatch. BODY: I am trying to return a bike but the system says I have no unreturned bikes. My email is [your email]. The bike name I am trying to return is [bike name]."
-        2. Maintain a tolerance for minor input errors (slight name typos).
-    - Enforce strict matching for bike Hash-IDs to ensure the returned bike matches the checked-out bike.
-    - Allow minor input errors by applying fuzzy matching for bike names and user emails (e.g., small typos, misspellings, or case differences).
-    - If a correction has been made to the bike name or user email: 
-        - flag that corresponding entries.
-        - explicitly notify the user and ask them to report immediately if the correction is not what they expected.
+### 1. BikeShareService (Main Orchestrator)
+**Location**: `BikeShareService.js`
 
-### 4. Handling Returns on Behalf of Friends
-- **Detection:**  
-    - Parse return forms for indications that the user is returning a bike for someone else.
-    - Update logs to reflect both the actual user and the proxy returner.
-    - Notify both parties if necessary.
+The central service class that coordinates all system operations.
 
-### 5. Error Codes & Parsing System
-- **Error Convention:**  
-    - Define a set of error codes 
-    - Map each error code to a response action and notification template.
-    - Use error codes to categorize dashboard flags and automate comments.
-
-### 6. Notification System (Internal Structure)
-- **Design:**  
-    - Build a notification manager that triggers emails or dashboard alerts based on error codes.
-    - Centralize notification templates for easy updates.
-    - Link error codes to user-facing messages and admin comments for dynamic handling.
-
-# Dynamic Configuration System Integration
-
-## Overview
-The BikeShare system has been enhanced with a dynamic configuration management system that integrates cached configurations from Google Sheets with fallback static configurations.
-
-## Key Features
-
-### 1. Cached Configuration Structure
-The system now supports the following configuration categories from your sample:
-
-- **systemButtons**: System-wide toggle settings
-  - `SYSTEM_ACTIVE`: Controls if the system is operational
-  - `USER_NOTIFICATIONS_ENABLED`: Controls notification system
-  - `CAN_CHECKOUT_WITH_UNRETURNED_BIKE`: Checkout restriction setting
-
-- **systemTime**: Time-based system settings
-  - `NEXT_SYSTEM_TURN_OFF`: Scheduled system maintenance
-  - `NEXT_SYSTEM_TURN_ON`: System reactivation time
-  - `LAST_UPDATED`: Last configuration update timestamp
-
-- **coreConfig**: Core system parameters
-  - `ENABLE_FORCED_RESET`: Automatic system reset functionality
-  - `ADMIN_EMAIL`: Administrator contact
-  - `FUZZY_MATCHING_THRESHOLD`: String matching sensitivity
-  - `MAX_CHECKOUT_HOURS`: Maximum bike checkout duration
-
-- **Sheet Configurations**: Dynamic sheet settings for all major sheets
-  - `bikesStatus`, `reportSheet`, `checkoutLogs`, `userStatus`, `returnLogs`
-  - Each with NAME, SORT_COLUMN, SORT_ORDER, RESET_RANGE
-
-- **reportGenerationSettings**: Automated report configuration
-- **successMessages** & **errorMessages**: Dynamic notification templates
-
-### 2. Migration-Friendly API
-
-#### Convenience Functions
 ```javascript
-// System status checks
-isSystemActive()
-areNotificationsEnabled()
-canCheckoutWithUnreturnedBike()
-isAutoResetEnabled()
-
-// Configuration getters
-getMaxCheckoutHours()
-getFuzzyMatchingThreshold()
-getAdminEmail()
-getSheetConfig(sheetType)
-getReportGenerationSettings()
-getMessageConfig(messageCode)
-getSystemTime(key)
-```
-
-#### Universal Configuration Access
-```javascript
-// Direct path-based access
-const value = getConfig('systemButtons.SYSTEM_ACTIVE')
-const sheetName = getConfig('bikesStatus.NAME')
-
-// Unified configuration object (backwards compatible)
-const maxHours = UNIFIED_CONFIG.REGULATIONS.MAX_CHECKOUT_HOURS
-const bikesSheet = UNIFIED_CONFIG.SHEETS.BIKES_STATUS
-```
-
-### 3. Fallback System
-All dynamic configurations have fallback to the original static CACHED_SETTINGS.VALUES values, ensuring system stability during transitions.
-
-## Implementation Examples
-
-### Updated Code Examples
-
-**Before:**
-```javascript
-if (sheetName === CACHED_SETTINGS.VALUES.SHEETS.CHECKOUT_LOGS.NAME) {
-  // process checkout
+class BikeShareService {
+  constructor(spreadsheetID)
+  processCheckout(formResponse, range)
+  processReturn(formResponse, range) 
+  generatePeriodicReport()
+  calculateUsageHours(bikeName)
+  manageFormsAccessibility(action)
 }
-const maxHours = CACHED_SETTINGS.VALUES.REGULATIONS.MAX_CHECKOUT_HOURS;
 ```
 
-**After:**
+**Key Responsibilities**:
+- Form submission processing
+- User and bike interaction coordination
+- Report generation orchestration
+- System accessibility management
+
+### 2. DatabaseManager (Data Access Layer)
+**Location**: `DatabaseManager.js`
+
+Handles all Google Sheets database operations with a unified interface.
+
 ```javascript
-const checkoutLogsConfig = getSheetConfig('checkoutLogs') || UNIFIED_CONFIG.SHEETS.CHECKOUT_LOGS;
-if (sheetName === checkoutLogsConfig.NAME) {
-  // process checkout  
+class DatabaseManager {
+  constructor(spreadsheetId)
+  getSheet(sheetName)
+  getAllData(sheetName)
+  findRowByColumn(sheetName, columnIndex, value)
+  updateRow(sheetName, rowIndex, values)
+  appendRow(sheetName, values)
+  sortByColumn(sheet, sheetName)
+  resetDatabase()
+  markEntry(range, bgColor, note)
 }
-const maxHours = getMaxCheckoutHours() || UNIFIED_CONFIG.REGULATIONS.MAX_CHECKOUT_HOURS;
 ```
 
-### System Initialization
+**Features**:
+- Fuzzy matching for data lookup
+- Automatic sheet sorting
+- Database reset functionality
+- Entry marking for visual feedback
+
+### 3. User (User Management)
+**Location**: `User.js`
+
+Represents system users with comprehensive tracking capabilities.
+
 ```javascript
-// Initialize system and load dynamic configs
-initializeBikeShareSystem();
-
-// Refresh configuration from sheets
-refreshConfiguration();
-
-// Test configuration system
-testDynamicConfiguration();
+class User {
+  constructor(userEmail)
+  static findByEmail(userEmail)
+  checkoutBike(commContext)
+  returnBike(commContext)
+  checkIfReturningForFriend(returnLog)
+  save()
+}
 ```
 
-## Files Modified
+**User Attributes**:
+- Email address (unique identifier)
+- Unreturned bike status
+- Checkout/return history
+- Usage statistics
+- Mismatch tracking
+- Overdue return counts
 
-1. **dynamicConfig.js** - Complete rewrite with new API
-2. **SETTINGS.js** - Added UNIFIED_CONFIG bridge and utility functions  
-3. **Code.js** - Updated main handlers with system status checks
-4. **Bike.js** - Updated to use dynamic sheet configurations
-5. **tests/Utils.js** - Updated utility functions
+### 4. Bike (Inventory Management)
+**Location**: `Bike.js`
 
-## Benefits
+Represents individual bikes with status and operational methods.
 
-1. **Real-time Configuration**: Changes in Google Sheets take effect immediately
-2. **System Control**: Ability to enable/disable system remotely
-3. **Flexible Notifications**: Dynamic message templates
-4. **Sheet Management**: Runtime control of sheet configurations
-5. **Backwards Compatibility**: Existing code continues to work with fallbacks
-6. **Performance**: Cached configurations reduce sheet API calls
+```javascript
+class Bike {
+  constructor(bikeName, bikeHash, size, maintenanceStatus, availability)
+  static findByName(bikeName)
+  static findByHash(bikeHash)
+  checkout(commContext)
+  returnBike(commContext)
+  updateRecentUsers(newUser)
+  isOverdue(maxHours)
+  isReadyForCheckout()
+}
+```
 
-## Usage Instructions
+**Bike Attributes**:
+- Unique name and hash ID
+- Size classification (S, M, L, XL)
+- Maintenance status
+- Availability status
+- Usage tracking
+- Recent user history
 
-1. **For New Code**: Use the convenience functions (`getMaxCheckoutHours()`, etc.)
-2. **For Existing Code**: Gradually replace `CACHED_SETTINGS.VALUES.*` with `UNIFIED_CONFIG.*` or specific getters
-3. **For System Admin**: Use `initializeBikeShareSystem()` to verify configuration status
-4. **For Debugging**: Use `testDynamicConfiguration()` to inspect current settings
+### 5. Communicator (Notification System)
+**Location**: `Communicator.js`
 
-The system maintains full backward compatibility while providing a path to more flexible, runtime-configurable behavior.
+Manages all system communications including emails and visual feedback.
 
+```javascript
+class Communicator {
+  constructor(spreadsheetID)
+  handleCommunication(commID, context)
+  notifyUser(userEmail, subject, body)
+  notifyAdmin(subject, body)
+  notifyDeveloper(subject, body)
+  markEntry(range, color, note)
+}
+```
 
-### It's important to remember changing tableKeyMaps when adding, deleting or re-arranging the settings sheet.
+**Communication Features**:
+- Template-based email notifications
+- Multi-recipient support (user, admin, developer)
+- Visual entry marking with color codes
+- Context variable substitution
+
+### 6. Report (Analytics & Reporting)
+**Location**: `Report.js`
+
+Generates comprehensive system snapshots and analytics.
+
+```javascript
+class Report {
+  constructor()
+  generate()
+  save(reportData)
+  getAllBikes()
+  getAllUsers()
+  getPeriodNumber()
+  countNewUsersForPeriod()
+  countReportedIssuesFromUsers()
+}
+```
+
+**Report Metrics**:
+- Total bikes and availability breakdown
+- User statistics and new registrations
+- Usage hours and patterns
+- Maintenance issues and overdue returns
+- Mismatch tracking
+
+---
+
+## Database Schema
+
+The system uses Google Sheets as a relational database with the following structure:
+
+### Bikes Status Sheet
+| Column | Field Name | Type | Description |
+|--------|------------|------|-------------|
+| A | Bike ID | String | Unique bike identifier |
+| B | Size | Dropdown | S, M, L, XL |
+| C | Maintenance Status | Dropdown | Good, Has Issue, In Repair |
+| D | Availability | Dropdown | Available, Checked Out, Out of Service |
+| E | Last Checkout Date | Date | Timestamp of last checkout |
+| F | Last Return Date | Date | Timestamp of last return |
+| G | Current Usage Timer | Number | Hours since checkout |
+| H | Total Usage Hours | Number | Cumulative usage |
+| I | Most Recent User | Email | Last user email |
+| J | 2nd Recent User | Email | Second to last user |
+| K | 3rd Recent User | Email | Third to last user |
+| L | TempRecent (Hidden) | Email | Temporary storage for user rotation |
+| M | Hash-ID (Hidden) | String | Unique 6-character hash for QR codes |
+| N | URL Link (Hidden) | URL | Pre-filled checkout form link |
+| O | QR Code (Hidden) | Image | Generated QR code image |
+
+### User Status Sheet
+| Column | Field Name | Type | Description |
+|--------|------------|------|-------------|
+| A | Email | Email | Unique user identifier |
+| B | Has Unreturned Bike | Yes/No | Current checkout status |
+| C | Last Checkout Name | String | Name of last checked out bike |
+| D | Last Checkout Date | Date | Timestamp of last checkout |
+| E | Last Return Name | String | Name of last returned bike |
+| F | Last Return Date | Date | Timestamp of last return |
+| G | # of Checkouts | Number | Total checkout count |
+| H | # of Returns | Number | Total return count |
+| I | # of Mismatches | Number | Return/checkout mismatches |
+| J | # of Usage Hours | Number | Total usage time |
+| K | # of Overdue Returns | Number | Late return count |
+| L | First Usage Date | Date | Date of first system use |
+
+### Checkout Logs Sheet
+| Column | Field Name | Type | Description |
+|--------|------------|------|-------------|
+| A | Timestamp | Date | Form submission time |
+| B | Email Address | Email | User email from form |
+| C | Scanned Bike Hash-ID | String | QR code scan result |
+| D | Key Available Confirmation | Text | Pre-checkout verification |
+| E | Condition Confirmation | Text | Bike condition confirmation |
+
+### Return Logs Sheet
+| Column | Field Name | Type | Description |
+|--------|------------|------|-------------|
+| A | Timestamp | Date | Form submission time |
+| B | Email Address | Email | User email |
+| C | Enter Bike Name | String | User-entered bike name |
+| D | Confirm Bike Name | String | Confirmation field |
+| E | Rode Correct Bike | Text | Verification question |
+| F | Mismatch Explanation | Text | If bike mismatch occurred |
+| G | Returning for Friend | Yes/No | Friend return indicator |
+| H | Friend Name/Email | Text | Friend identifier |
+| I | Issues/Concerns | Text | Reported problems |
+
+### Reports Sheet
+| Column | Field Name | Type | Description |
+|--------|------------|------|-------------|
+| A | Timestamp | Date | Report generation time |
+| B | Recorded By | String | Report creator (automated) |
+| C | Period | Number | Period number since start |
+| D | Total # of Bikes | Number | Total bike count |
+| E | Total # of Bikes in Repair | Number | Bikes needing maintenance |
+| F | # of Checked Out | Number | Currently checked out |
+| G | # of Overdue Bikes | Number | Past due returns |
+| H | Available Bikes | Number | Ready for checkout |
+| I | New Users | Number | New users this period |
+| J | Late Returners | Number | Overdue returns this period |
+| K | # of Return Mismatches | Number | Mismatches this period |
+| L | Emails with Mismatches | Text | Users with mismatches |
+| M | # of Reported Issues | Number | Issues reported this period |
+| N | Total # of Usage Hours | Number | Usage hours this period |
+| O | Admin Notes | Text | Manual notes field |
+
+---
+
+## User Interface & Forms
+
+### Main Dashboard Spreadsheet Structure
+
+The main dashboard consists of five primary sheets that administrators use to monitor the system:
+
+#### 1. Bikes Status Dashboard
+- **Features**: 
+  - Color-coded availability status (Green=Available, various colors for other states)
+  - Size indicators with color coding (S, M, L, XL)
+  - Clickable QR codes and checkout links
+  - Real-time usage tracking
+  - Recent user history
+
+#### 2. User Status Dashboard  
+- **Features**:
+  - User activity summary
+  - Checkout/return balance tracking
+  - Overdue return flagging
+  - Usage statistics per user
+  - First-time user identification
+
+#### 3. Checkout Logs Dashboard
+- **Purpose**: Real-time checkout transaction log
+- **Features**: Chronological checkout history with validation status notes & labels
+
+#### 4. Return Logs Dashboard  
+- **Purpose**: Real-time return transaction log
+- **Features**: Chronological return history with validation status notes & labels
+
+#### 5. Reports Dashboard
+- **Purpose**: Periodic system analytics
+- **Features**: Automated snapshots, administrative insights
+
+### Google Forms Integration
+
+#### Checkout Form
+- **Access Method**: QR code scanning or direct link
+- **Pre-filled Data**: Bike hash ID from QR code
+
+#### Return Form  
+- **Manual Entry**: User types bike name twice for confirmation
+- **Advanced Features**:
+  - Friend return capability
+  - Issue reporting
+  - Mismatch handling
+- **Validation**: Bike name & confirmation matching
+
+---
+
+## Workflow Processes
+
+### Checkout Process Flow
+
+```mermaid
+graph TD
+    A[User Scans QR Code] --> B[Opens Pre-filled Checkout Form]
+    B --> C[Confirms Key Available]
+    C --> D[Confirms Bike Condition OK]
+    D --> E[Submits Form]
+    E --> F[System Validates Hash ID]
+    F --> G{Bike Available?}
+    G -->|Yes| H[Update Bike Status to 'Checked Out']
+    G -->|No| I[Send Error Notification]
+    H --> J[Update User Record]
+    J --> K[Send Confirmation Email]
+    K --> L[Mark Entry in Logs]
+    I --> M[Mark Error in Logs]
+```
+
+### Return Process Flow
+
+```mermaid
+graph TD
+    A[User Opens Return Form] --> B[Enters Bike Name Twice]
+    B --> C{Names Match?}
+    C -->|No| D[Send Error Notification]
+    C -->|Yes| E{Returning for Friend?}
+    E -->|Yes| F[Process Friend Return]
+    E -->|No| G[Process Direct Return]
+    F --> H[Update Friend's User Record]
+    G --> I[Update User's Record]
+    H --> J[Calculate Usage Hours]
+    I --> J
+    J --> K[Update Bike Status to 'Available']
+    K --> L{Issues Reported?}
+    L -->|Yes| M[Mark Bike 'Has Issue']
+    L -->|No| N[Keep Bike 'Good']
+    M --> O[Send Confirmation Email]
+    N --> O
+    D --> P[Mark Error in Logs]
+```
+
+### Report Generation Process
+
+```mermaid
+graph TD
+    A[Scheduled Trigger Fires] --> B[Check if Reports Enabled]
+    B -->|No| C[Exit Process]
+    B -->|Yes| D[Initialize Report Object]
+    D --> E[Collect All Bikes Data]
+    E --> F[Collect All Users Data]
+    F --> G[Calculate Period Statistics]
+    G --> H[Generate Report Data]
+    H --> I{Report for Period Exists?}
+    I -->|Yes| J[Update Existing Report]
+    I -->|No| K[Create New Report]
+    J --> L[Sort Reports Sheet]
+    K --> L
+```
+
+---
+
+## Configuration & Settings
+
+### Settings Management Architecture
+
+The system uses a centralized configuration management approach with the `Settings` class that caches configurations for optimal performance:
+
+#### Management Spreadsheet Structure
+
+1. **mainConfig Sheet**:
+   - **System Buttons**: ON/OFF controls for system operations
+   - **System Time**: Timezone and date configurations  
+   - **Core Config**: Fundamental system parameters
+   - **Report Generation Settings**: Automated reporting configuration
+
+2. **sheetsConfig Sheet**:
+   - **Individual Sheet Settings**: Sort orders, column mappings, reset ranges
+   - **Database Configuration**: Sheet names and structural definitions
+
+3. **notificationsConfig Sheet**:
+   - **Success Messages**: Confirmation communication templates
+   - **Error Messages**: Error handling and notification templates
+
+#### Key Configuration Parameters
+
+```javascript
+// System Control
+SYSTEM_ACTIVE: true/false
+FORCE_SYSTEM_RESET: "ON"/"OFF"  
+ENABLE_REPORT_GENERATION: true/false
+
+// Operational Rules  
+MAX_CHECKOUT_HOURS: 24
+CAN_CHECKOUT_WITH_UNRETURNED_BIKE: false
+ENABLE_USER_NOTIFICATIONS: true
+ENABLE_ADMIN_NOTIFICATIONS: true
+
+// Report Generation
+DAYS_INTERVAL: 7
+GENERATION_HOUR: 9
+FIRST_GENERATION_DATE: Date
+
+// Contact Information
+ADMIN_EMAIL: "admin@organization.com"
+DEVELOPER_EMAIL: "developer@organization.com"
+```
+
+#### Settings Cache System
+
+The system implements an intelligent caching mechanism to optimize performance:
+
+- **Cache Initialization**: Settings loaded once at startup
+- **Cache Refresh**: Manual refresh capability for configuration updates
+- **Cache Invalidation**: Automatic refresh on settings changes
+- **Performance Benefits**: Eliminates repeated spreadsheet API calls
+
+---
+
+## Communication System
+
+### Communication Architecture
+
+The system implements a comprehensive communication framework using standardized communication codes and template-based messaging.
+
+#### Communication Code Structure
+Format: `commType_involvedEntity_relatedAction_commID`
+
+Examples:
+- `CFM_USR_COT_001`: Confirm User Checkout 001
+- `ERR_USR_RET_002`: Error User Return 002  
+- `CFM_ADMIN_RESET_001`: Confirm Admin Reset 001
+
+#### Communication Types
+
+1. **Confirmation Messages (CFM)**:
+   - Successful checkout confirmations
+   - Return acknowledgments  
+   - Friend return notifications
+   - Administrative action confirmations
+
+2. **Error Messages (ERR)**:
+   - Validation failures
+   - System operation errors
+   - User action errors
+   - Critical system alerts
+
+#### Template System
+
+Communications use a template system with placeholder substitution:
+
+```javascript
+// Template Example
+notifyUser: {
+  subject: 'Bike Checkout Confirmation',
+  body: 'Your bike checkout is confirmed. Use key "{{bikeName}}" and return within {{maxCheckoutHours}} hours.'
+}
+
+// Context Variables Available
+// {{userEmail}}, {{bikeName}}, {{timestamp}}, {{usageHours}}, {{maxCheckoutHours}}, etc.
+```
+
+#### Multi-Channel Notifications
+
+Each communication can trigger multiple notification channels:
+- **User Email**: Direct notification to user
+- **Admin Email**: Administrative alerts  
+- **Developer Email**: Technical notifications
+- **Visual Marking**: Color-coded entry marking in spreadsheets
+
+---
+
+## Testing & Utilities
+
+### Testing Infrastructure
+
+The system includes comprehensive testing utilities for development and maintenance:
+
+#### Test Files Structure
+- `tests/CheckoutSimulator.js`: Automated checkout scenario testing
+- `tests/ReturnSimulator.js`: Return process simulation and validation  
+- `tests/Utils.js`: General utility functions and system management
+
+#### Utility Functions
+
+```javascript
+// System Management
+function clearCache()                    // Clear cached settings
+function quickTest()                     // Quick one-time script for debugging
+
+// Trigger Management  
+function installOnSubmitTrigger()        // Form submission handling
+function installExecuteReportGenerationTrigger()  // Automated reporting
+function installHandleSettingsUpdateTrigger()     // Settings change handling
+function installScheduleSystemShutdownAndActivationTrigger()  // System scheduling
+
+// Development Tools
+function printFormFieldInfo(formId)      // Form structure analysis
+```
+
+#### Trigger Management System
+
+The system uses a sophisticated trigger management approach for automation:
+
+1. **Form Submission Triggers**: Real-time form processing
+2. **Time-based Triggers**: Scheduled report generation  
+3. **Change Triggers**: Configuration update handling
+4. **System Lifecycle Triggers**: Automated shutdown/activation
+
+#### Development & Debugging Tools
+
+- **Cache Management**: Tools for cache debugging and refresh
+- **Form Analysis**: Utilities for form field mapping and validation
+- **System State Inspection**: Functions for system health checks
+- **Automated Testing**: Simulation tools for checkout/return scenarios
+
+---
+
+## Deployment & Setup
+
+### System Requirements
+
+1. **Google Workspace Account**: Required for Apps Script and G-Suite integration
+2. **Google Sheets**: Main dashboard and management spreadsheets
+3. **Google Forms**: Checkout and return forms
+4. **Gmail Integration**: For automated email notifications
+
+### Setup Process
+
+#### 1. Spreadsheet Creation & Configuration
+
+1. Create main dashboard spreadsheet with required sheets:
+   - Bikes Status, User Status, Checkout Logs, Return Logs, Reports
+
+2. Create management spreadsheet with configuration sheets:  
+   - mainConfig, sheetsConfig, notificationsConfig
+
+3. Configure sheet headers according to database schema
+4. Set up data validation and formatting rules
+
+#### 2. Apps Script Deployment
+
+1. Create new Apps Script project
+2. Import all JavaScript files maintaining file structure
+3. Set up required permissions for:
+   - Spreadsheet access
+   - Gmail sending
+   - Form handling
+   - Drive access (for QR codes)
+
+#### 3. Form Setup & Integration
+
+1. Create checkout and return Google Forms
+2. Configure form questions according to database schema
+3. Link forms to appropriate spreadsheet sheets
+4. Set up form triggers for automated processing
+
+#### 4. QR Code & Hash System
+
+1. Generate unique hash IDs for each bike using provided formula:
+   ```excel
+   =UPPER(CONCAT(DEC2HEX(MOD(SUM(CODE(MID(A10,ROW(INDIRECT("1:"&LEN(A10))),1)))*13, 4096),3), 
+   DEC2HEX(MOD(SUM(CODE(MID(A10,ROW(INDIRECT("1:"&LEN(A10))),1)))*LEN(A10)*7, 4096),3)))
+   ```
+
+2. Create pre-filled form URLs:
+   ```
+   https://docs.google.com/forms/d/e/FORM_ID/viewform?usp=pp_url&entry.FIELD_ID=HASH_VALUE
+   ```
+
+3. Generate QR codes pointing to pre-filled URLs
+4. Print and attach QR codes to physical bikes
+
+#### 5. System Configuration
+
+1. Configure settings in management spreadsheet:
+   - Set admin and developer email addresses
+   - Configure operational parameters (checkout hours, etc.)
+   - Set up notification preferences
+   - Configure report generation schedule
+
+2. Initialize system with bike inventory data
+3. Test all workflows with sample data
+4. Set up automated triggers for production
+
+#### 6. Security & Access Control
+
+1. Configure spreadsheet sharing permissions
+2. Set up form access controls
+3. Implement user email domain restrictions if required
+4. Set up backup and recovery procedures
