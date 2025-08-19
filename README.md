@@ -391,25 +391,25 @@ The main dashboard consists of five primary sheets that administrators use to mo
 
 ```mermaid
 graph TD
-    A[User Scans QR Code on Bike] --> B[Opens Pre-filled Checkout Form<br/>with Bike Hash ID]
-    B --> C[User Confirms:<br/>✓ Key Available at Front Desk<br/>✓ Bike Condition OK]
+    A[User Scans QR Code on Bike] --> B["Opens Pre-filled Checkout Form<br/>with Bike Hash ID"]
+    B --> C["User Confirms:<br/>✓ Key Available at Front Desk<br/>✓ Bike Condition OK"]
     C --> D[User Submits Form]
-    D --> E[BikeShareService.processCheckout()]
+    D --> E["BikeShareService.processCheckout()"]
     E --> F[Create CheckoutLog from Form Response]
     F --> G[Find/Create User by Email]
     G --> H{System Active?}
-    H -->|No| I[Send System Offline Error<br/>ERR_OPR_COR_001]
-    H -->|Yes| J[User.checkoutBike()]
-    J --> K{User Has<br/>Unreturned Bike?}
-    K -->|Yes & Not Allowed| L[Send Error: Already Have Bike<br/>ERR_USR_COT_002<br/>Include: unreturned bike name, date]
-    K -->|No or Allowed| M[Find Bike by Hash ID]
+    H -->|No| I["Send System Offline Error<br/>ERR_OPR_COR_001"]
+    H -->|Yes| J["User.checkoutBike()"]
+    J --> K{"User Has<br/>Unreturned Bike?"}
+    K -->|"Yes & Not Allowed"| L["Send Error: Already Have Bike<br/>ERR_USR_COT_002<br/>Include: unreturned bike name, date"]
+    K -->|"No or Allowed"| M[Find Bike by Hash ID]
     M --> N{Bike Found?}
-    N -->|No| O[Send Error: Bike Not Found<br/>ERR_USR_COT_003]
-    N -->|Yes| P{Bike Ready<br/>for Checkout?}
-    P -->|No| Q[Send Error: Bike Not Available<br/>ERR_USR_COT_001<br/>Check: maintenance & availability]
-    P -->|Yes| R[Bike.checkout() - Update Status]
-    R --> S[Update User Records:<br/>• First usage date if new user<br/>• hasUnreturnedBike = true<br/>• lastCheckoutName & Date<br/>• numberOfCheckouts++]
-    S --> T[Send Confirmation Email<br/>CFM_USR_COT_001<br/>"Use key labeled '[BIKE NAME]'<br/>Return within [MAX_HOURS] hours"]
+    N -->|No| O["Send Error: Bike Not Found<br/>ERR_USR_COT_003"]
+    N -->|Yes| P{"Bike Ready<br/>for Checkout?"}
+    P -->|No| Q["Send Error: Bike Not Available<br/>ERR_USR_COT_001<br/>Check: maintenance & availability"]
+    P -->|Yes| R["Bike.checkout() - Update Status"]
+    R --> S["Update User Records:<br/>• First usage date if new user<br/>• hasUnreturnedBike = true<br/>• lastCheckoutName & Date<br/>• numberOfCheckouts++"]
+    S --> T["Send Confirmation Email<br/>CFM_USR_COT_001<br/>Use key labeled BIKE NAME<br/>Return within MAX_HOURS hours"]
     T --> U[Auto-sort Checkout Logs Sheet]
     
     I --> V[Mark Entry with Error Color]
@@ -422,49 +422,49 @@ graph TD
 
 ```mermaid
 graph TD
-    A[User Opens Return Form] --> B[User Enters:<br/>• Bike Name<br/>• Confirm Bike Name<br/>• Rode Correct Bike?<br/>• Friend Return Info<br/>• Issues/Concerns]
+    A[User Opens Return Form] --> B["User Enters:<br/>• Bike Name<br/>• Confirm Bike Name<br/>• Rode Correct Bike?<br/>• Friend Return Info<br/>• Issues/Concerns"]
     B --> C[User Submits Form]
-    C --> D[BikeShareService.processReturn()]
+    C --> D["BikeShareService.processReturn()"]
     D --> E[Create ReturnLog from Form Response]
-    E --> F[ReturnLog.validate()]
-    F --> G{Bike Names<br/>Match?<br/>(Fuzzy Match)}
-    G -->|No| H[Send Error: Names Don't Match<br/>ERR_USR_RET_001]
+    E --> F["ReturnLog.validate()"]
+    F --> G{"Bike Names<br/>Match?<br/>(Fuzzy Match)"}
+    G -->|No| H["Send Error: Names Don't Match<br/>ERR_USR_RET_001"]
     G -->|Yes| I[Find/Create User by Email]
     I --> J[Check if Returning for Friend]
     J --> K[Calculate Usage Hours]
     K --> L{System Active?}
-    L -->|No| M[Send System Offline Error<br/>ERR_OPR_COR_001]
-    L -->|Yes| N[User.returnBike()]
+    L -->|No| M["Send System Offline Error<br/>ERR_OPR_COR_001"]
+    L -->|Yes| N["User.returnBike()"]
     N --> O[Find Bike by Name]
     O --> P{Bike Found?}
-    P -->|No| Q{Fuzzy Match with<br/>User's Last Checkout?}
+    P -->|No| Q{"Fuzzy Match with<br/>User's Last Checkout?"}
     Q -->|Yes| R[Use Last Checkout Bike]
-    Q -->|No| S[Send Error: Bike Not Found<br/>ERR_USR_RET_002]
-    P -->|Yes| T{Returning<br/>for Friend?}
+    Q -->|No| S["Send Error: Bike Not Found<br/>ERR_USR_RET_002"]
+    P -->|Yes| T{"Returning<br/>for Friend?"}
     R --> T
-    T -->|Yes| U{User Has<br/>Unreturned Bike?}
+    T -->|Yes| U{"User Has<br/>Unreturned Bike?"}
     U -->|No| V[Check Friend's Status]
-    V --> W{Friend Has<br/>Unreturned Bike?}
-    W -->|No| X[Send Error: Friend No Unreturned<br/>ERR_USR_RET_003]
-    W -->|Yes| Y[Process Friend Return<br/>• Create friend return log<br/>• Update friend's user record]
-    U -->|Yes| Z[Send Error: User Has Unreturned<br/>ERR_USR_RET_006]
-    T -->|No| AA{User Has<br/>Unreturned Bike?}
-    AA -->|No & First User| BB[Send Error: No Checkout Record<br/>ERR_USR_RET_005]
-    AA -->|No & Returning User| CC[Send Error: No Unreturned Bike<br/>ERR_USR_RET_006]
-    AA -->|Yes| DD{Bike Name Matches<br/>Last Checkout?}
-    DD -->|No| EE[Record Mismatch<br/>• numberOfMismatches++<br/>• Use last checkout bike]
+    V --> W{"Friend Has<br/>Unreturned Bike?"}
+    W -->|No| X["Send Error: Friend No Unreturned<br/>ERR_USR_RET_003"]
+    W -->|Yes| Y["Process Friend Return<br/>• Create friend return log<br/>• Update friend's user record"]
+    U -->|Yes| Z["Send Error: User Has Unreturned<br/>ERR_USR_RET_006"]
+    T -->|No| AA{"User Has<br/>Unreturned Bike?"}
+    AA -->|"No & First User"| BB["Send Error: No Checkout Record<br/>ERR_USR_RET_005"]
+    AA -->|"No & Returning User"| CC["Send Error: No Unreturned Bike<br/>ERR_USR_RET_006"]
+    AA -->|Yes| DD{"Bike Name Matches<br/>Last Checkout?"}
+    DD -->|No| EE["Record Mismatch<br/>• numberOfMismatches++<br/>• Use last checkout bike"]
     DD -->|Yes| FF[Direct Return Process]
     EE --> FF
     Y --> FF
-    FF --> GG[Calculate & Update:<br/>• Usage hours<br/>• Check if overdue<br/>• Update bike status to Available]
+    FF --> GG["Calculate & Update:<br/>• Usage hours<br/>• Check if overdue<br/>• Update bike status to Available"]
     GG --> HH{Issues Reported?}
-    HH -->|Yes| II[Set Bike Maintenance:<br/>"Has Issue"]
-    HH -->|No| JJ[Keep Bike Status: "Good"]
+    HH -->|Yes| II["Set Bike Maintenance:<br/>Has Issue"]
+    HH -->|No| JJ["Keep Bike Status: Good"]
     II --> KK{Return Type?}
     JJ --> KK
-    KK -->|Friend Return| LL[Send Confirmation to Friend Helper<br/>CFM_USR_RET_003<br/>"Returned bike for friend"]
-    KK -->|Direct Return| MM[Send Confirmation to User<br/>CFM_USR_RET_001<br/>"Thank you for returning"]
-    KK -->|Mismatch Return| NN[Send Mismatch Confirmation<br/>CFM_USR_RET_004<br/>Include mismatch details]
+    KK -->|"Friend Return"| LL["Send Confirmation to Friend Helper<br/>CFM_USR_RET_003<br/>Returned bike for friend"]
+    KK -->|"Direct Return"| MM["Send Confirmation to User<br/>CFM_USR_RET_001<br/>Thank you for returning"]
+    KK -->|"Mismatch Return"| NN["Send Mismatch Confirmation<br/>CFM_USR_RET_004<br/>Include mismatch details"]
     LL --> OO[Update User Records & Sort Sheet]
     MM --> OO
     NN --> OO
