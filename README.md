@@ -7,8 +7,10 @@
 4. [Database Schema](#database-schema)
 5. [User Interface & Forms](#user-interface--forms)
 6. [Workflow Processes](#workflow-processes)
-7. [Configuration & Settings](#configuration--settings)
-8. [Communication System](#communication-system)
+7. [Configuration & Settings](#configuration--settings    C --> D["BikeShareService.processCheckout()"]
+    D --> E[Create CheckoutLog from Form Response]
+    E --> F[Find/Create User by Email]
+    F --> G{System Active?}[Communication System](#communication-system)
 9. [Testing & Utilities](#testing--utilities)
 10. [Deployment & Setup](#deployment--setup)
 11. [API Reference](#api-reference)
@@ -392,8 +394,7 @@ The main dashboard consists of five primary sheets that administrators use to mo
 ```mermaid
 graph TD
     A[User Scans QR Code on Bike] --> B["Opens Pre-filled Checkout Form<br/>with Bike Hash ID"]
-    B --> C["User Confirms:<br/>✓ Key Available at Front Desk<br/>✓ Bike Condition OK"]
-    C --> D[User Submits Form]
+    B --> C[User Submits Form]
     D --> E["BikeShareService.processCheckout()"]
     E --> F[Create CheckoutLog from Form Response]
     F --> G[Find/Create User by Email]
@@ -412,10 +413,10 @@ graph TD
     S --> T["Send Confirmation Email<br/>CFM_USR_COT_001<br/>Use key labeled BIKE NAME<br/>Return within MAX_HOURS hours"]
     T --> U[Auto-sort Checkout Logs Sheet]
     
-    I --> V[Mark Entry with Error Color]
-    L --> V
-    O --> V
-    Q --> V
+    H --> U[Mark Entry with Error Color]
+    K --> U
+    N --> U
+    P --> U
 ```
 
 ### Return Process Flow
