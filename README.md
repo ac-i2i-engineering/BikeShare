@@ -710,19 +710,68 @@ The system uses a sophisticated trigger management approach for automation:
 
 #### 5. System Configuration
 
-1. Configure settings in management spreadsheet:
-   - Set admin and developer email addresses
-   - Configure operational parameters (checkout hours, etc.)
-   - Set up notification preferences
-   - Configure report generation schedule
+**Critical: Update Project-Dependent Settings in Settings.js**
 
-2. Initialize system with bike inventory data
-3. Test all workflows with sample data
-4. Set up automated triggers for production
+Before deploying, you must customize the following hard-coded values in the `Settings` class constructor:
 
-#### 6. Security & Access Control
+```javascript
+// In Settings.js - Update these IDs for your project:
+this.management_ss_ID = "YOUR_MANAGEMENT_SPREADSHEET_ID";
 
-1. Configure spreadsheet sharing permissions
-2. Set up form access controls
-3. Implement user email domain restrictions if required
-4. Set up backup and recovery procedures
+// In the VALUES object, update:
+MAIN_DASHBOARD_SS_ID: 'YOUR_MAIN_DASHBOARD_SPREADSHEET_ID',
+FORMS: {
+  CHECKOUT_FORM_ID: "YOUR_CHECKOUT_FORM_ID",
+  RETURN_FORM_ID: "YOUR_RETURN_FORM_ID",
+  CHECKOUT_FIELD_IDS: {
+    EMAIL: YOUR_EMAIL_FIELD_ID,
+    BIKE_HASH: YOUR_BIKE_HASH_FIELD_ID,
+    KEY_AVAILABLE: YOUR_KEY_FIELD_ID,
+    CONDITION_OK: YOUR_CONDITION_FIELD_ID,
+  },
+  RETURN_FIELD_IDS: {
+    EMAIL: YOUR_EMAIL_FIELD_ID,
+    BIKE_NAME: YOUR_BIKE_NAME_FIELD_ID,
+    CONFIRM_BIKE_NAME: YOUR_CONFIRM_FIELD_ID,
+    ASSURE_RODE_BIKE: YOUR_ASSURE_FIELD_ID,
+    BIKE_MISMATCH_EXPLANATION: YOUR_EXPLANATION_FIELD_ID,
+    RETURNING_FOR_FRIEND: YOUR_FRIEND_FIELD_ID,
+    FRIEND_EMAIL: YOUR_FRIEND_EMAIL_FIELD_ID,
+    ISSUES_CONCERNS: YOUR_ISSUES_FIELD_ID,
+  },
+},
+```
+
+**How to get these values:**
+- **Spreadsheet IDs**: From the URL of your Google Sheets (the long string between `/d/` and `/edit`)
+- **Form IDs**: From your Google Forms URLs (after `/forms/d/e/` and before `/viewform`)
+- **Field IDs**: Use the utility function `printFormFieldInfo(formId)` provided in `tests/Utils.js`. This function will log all form field IDs and titles to help you identify the correct values.
+
+**Range Configuration:**
+The `settingRangeMap` in Settings.js defines cell ranges for configuration sheets. Update these if you modify the management spreadsheet structure:
+
+```javascript
+settingRangeMap: {
+  mainConfig: {
+    systemButtons: "A7:C14",     // System ON/OFF controls
+    systemTime: "F7:H9",         // Timezone settings
+    coreConfig: "F14:H16",       // Core parameters
+    reportGenerationSettings: "F21:H23", // Report config
+  },
+  sheetsConfig: {
+    bikesStatus: "A10:C13",      // Bikes sheet config
+    checkoutLogs: "A21:C24",     // Checkout logs config
+    userStatus: "F21:H24",       // User status config
+    returnLogs: "A32:C35",       // Return logs config
+  },
+  // ... additional ranges
+}
+```
+
+**Management Spreadsheet Configuration:**
+
+1. Configure settings in management spreadsheet sheets (see [Configuration & Settings](#configuration--settings) for details):
+   - **mainConfig**: Set admin/developer emails, operational parameters, report schedules
+   - **sheetsConfig**: Configure sheet names, sort orders, column mappings
+   - **notificationsConfig**: Set up email templates and notification preferences
+2. Set up automated triggers for production
