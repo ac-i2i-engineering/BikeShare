@@ -20,8 +20,8 @@ class Settings {
         returnLogs: "A32:C35",
       },
       notificationsConfig: {
-        successMessages: "A13:H18",
-        errorMessages: "A26:H36",
+        successMessages: "A9:H14",
+        errorMessages: "A22:H32",
       },
     };
     if (!this.refreshCache(false)) {
