@@ -202,7 +202,7 @@ Several system parameters have **automatic cascading effects** when changed:
 
 #### `ADMIN_EMAIL`
 - **Type**: Email address
-- **Current Value**: `ndayishimiyeemile96@gmail.com`
+- **Current Value**: `studentEmail@gmail.com`
 - **Purpose**: Primary email for administrative notifications
 - **Impact**: All admin alerts, error reports, and system notifications go here
 - **When to Update**: 

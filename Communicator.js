@@ -31,7 +31,7 @@ class Communicator {
   }
   notifyUser(userEmail, subject, body) {
     try {
-      GmailApp.sendEmail(userEmail, subject, "Hi,\n\n"+body+"\n\nThank you,\nBike Share Team",{from: "endayishimiye28@amherst.edu"});
+      GmailApp.sendEmail(userEmail, subject, "Hi,\n\n"+body+"\n\nThank you,\nBike Share Team",{from: "estudent28@college.edu"});
     } catch (error) {
       console.error('Error sending email to user:', error.message);
     }
@@ -39,7 +39,7 @@ class Communicator {
 
   notifyAdmin(subject, body) {
     try {
-      GmailApp.sendEmail(CACHED_SETTINGS.VALUES.ADMIN_EMAIL, subject, "Hi,\n\n"+body+"\n\nThank you,\nBike Share Team",{from: "endayishimiye28@amherst.edu"});
+      GmailApp.sendEmail(CACHED_SETTINGS.VALUES.ADMIN_EMAIL, subject, "Hi,\n\n"+body+"\n\nThank you,\nBike Share Team",{from: "estudent28@college.edu"});
     } catch (error) {
       console.error('Error sending email to admin:', error.message);
     }
@@ -47,7 +47,7 @@ class Communicator {
 
   notifyDeveloper(subject, body) {
     try {
-      GmailApp.sendEmail(CACHED_SETTINGS.VALUES.DEVELOPER_EMAIL, subject, "Hi,\n\n"+body+"\n\nThank you,\nBike Share Team",{from: "endayishimiye28@amherst.edu"});
+      GmailApp.sendEmail(CACHED_SETTINGS.VALUES.DEVELOPER_EMAIL, subject, "Hi,\n\n"+body+"\n\nThank you,\nBike Share Team",{from: "estudent28@college.edu"});
     } catch (error) {
       console.error('Error sending email to developer:', error.message);
     }

@@ -25,7 +25,7 @@ class ReturnFullSimulator {
   simulateReturn(responseData = null) {
     // Default response data
     const defaultResponse = {
-      userEmail: 'test002@amherst.edu',
+      userEmail: 'test002@college.edu',
       bikeName: 'King',
       confirmBikeName: 'King',
       assureRodeBike: 'Yes',
@@ -116,7 +116,7 @@ class ReturnFullSimulator {
     const results = [];
     for (let i = 0; i < num; i++) {
         let finalPart = i < 10 ? '00' + i : i < 100 ? '0' + i : i;
-        let userEmail = root + finalPart + '@amherst.edu';
+        let userEmail = root + finalPart + '@college.edu';
         const randomIndex = Math.floor(Math.random() * CACHED_SETTINGS.VALUES.BIKE_NAMES.length);
         const bikeName = isRandom ? CACHED_SETTINGS.VALUES.BIKE_NAMES[randomIndex] : defaultBike;
         console.log(`\n-----Email:${userEmail}-------Bike:${bikeName}--------`);
@@ -183,14 +183,14 @@ class ReturnVirtualSimulator {
 function simulateFullReturn() {
   const simulator = new ReturnFullSimulator();
   // return simulator.simulateReturn();
-  // return simulator.createCustomReturn('test103@amherst.edu','King','Moore','Yes','🔁 I swapped bikes with a friend during use','Yes','friend103@amherst.edu','Wheel was loose')
+  // return simulator.createCustomReturn('test103@college.edu','King','Moore','Yes','🔁 I swapped bikes with a friend during use','Yes','friend103@college.edu','Wheel was loose')
   return simulator.simulateMultipleReturns(num=5);
 }
 
 function simulateVirtualReturn() {
   const simulator = new ReturnVirtualSimulator();
   const response = simulator.createReturnEntry(
-    'test101@amherst.edu',
+    'test101@college.edu',
     'Meiklejohn',
     'Meiklejohn',
     'Yes',

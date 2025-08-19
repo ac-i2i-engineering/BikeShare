@@ -18,7 +18,7 @@ class CheckoutFullSimulator {
   simulateCheckout(responseData = null) {
     // Default response data
     const defaultResponse = {
-      userEmail: 'test003@amherst.edu',
+      userEmail: 'test003@college.edu',
       bikeHash: '3A8BD0',
       conditionOk: ['I consent']
     };
@@ -75,7 +75,7 @@ class CheckoutFullSimulator {
     const results = [];
     for(let i=0;i<num;i++){
       let finalPart = i < 10 ? '00'+i : i < 100 ? '0'+i : i.toString();
-      let userEmail = root + finalPart+'@amherst.edu'
+      let userEmail = root + finalPart+'@college.edu'
       let randomIndex = Math.floor(Math.random() * CACHED_SETTINGS.VALUES.BIKE_HASHES.length);
       let bikeHash = isRandom ? CACHED_SETTINGS.VALUES.BIKE_HASHES[randomIndex] : defaultBike;
 
@@ -118,12 +118,12 @@ class CheckoutVirtualSimulator{
 
 function simulateFullCheckout() {
   const simulator = new CheckoutFullSimulator();
-  return simulator.createCustomCheckout('test111@amherst.edu','4038A4');
+  return simulator.createCustomCheckout('test111@college.edu','4038A4');
   // return simulator.simulateMultipleCheckouts(5);
 }
 
 function simulateVirtualCheckout() {
   const simulator = new CheckoutVirtualSimulator();
-  const response = simulator.createCheckoutEntry('test312@amherst.edu','3A8BD0');  
+  const response = simulator.createCheckoutEntry('test312@college.edu','3A8BD0');  
   simulateHandleOnFormSubmit(CACHED_SETTINGS.VALUES.SHEETS.CHECKOUT_LOGS.NAME, response)
 }

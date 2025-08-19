@@ -145,7 +145,7 @@ class Settings {
   getAdminEmail() {
     return (
       this.cacheValues.coreConfig?.ADMIN_EMAIL ??
-      "ndayishimiyeemile96@gmail.com"
+      "studentEmail@gmail.com"
     );
   }
 
