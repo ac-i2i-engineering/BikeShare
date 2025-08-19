@@ -7,10 +7,8 @@
 4. [Database Schema](#database-schema)
 5. [User Interface & Forms](#user-interface--forms)
 6. [Workflow Processes](#workflow-processes)
-7. [Configuration & Settings](#configuration--settings    C --> D["BikeShareService.processCheckout()"]
-    D --> E[Create CheckoutLog from Form Response]
-    E --> F[Find/Create User by Email]
-    F --> G{System Active?}[Communication System](#communication-system)
+7. [Configuration & Settings](#configuration--settings)
+8. [Communication System](#communication-system)
 9. [Testing & Utilities](#testing--utilities)
 10. [Deployment & Setup](#deployment--setup)
 11. [API Reference](#api-reference)
