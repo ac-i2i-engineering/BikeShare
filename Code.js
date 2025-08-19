@@ -38,32 +38,56 @@ function handleSettingsUpdate(e){
   const editedRow = editedRange.getLastRow()
   const newValue = editedRange.getValue()
   const services = new BikeShareService(CACHED_SETTINGS.VALUES.MAIN_DASHBOARD_SS_ID)
+  const settingsUpdateDateCol = CACHED_SETTINGS.getValueCellByKeyName('LAST_SETTINGS_UPDATED_DATE','systemTime')
   const curDate =  new Date()
   const commContext = {}
 
   //Process systemButtons
-  if(editedCol == 3 && curSheetName == "mainConfig"){
-    const editedParam = editedSheet.getRange(editedRow,1).getValue()
-    //process the database reset
-    if(editedParam === "FORCE_SYSTEM_RESET" && newValue === "ON"){
-      services.db.resetDatabase()
-      //send success confirmation to the administrator
-      commContext['resetDate'] = curDate
-      services.comm.handleCommunication('CFM_ADMIN_RESET_001',commContext)
-      curCell.setValue("OFF")
-      curCell.setNote(`Last reset on ${curDate}`)
+  if(curSheetName == "mainConfig"){
+    if(editedCol == 3){
+      const editedParam = editedSheet.getRange(editedRow,1).getValue()
+      //process the database reset
+      if(editedParam === "FORCE_SYSTEM_RESET" && newValue === "ON"){
+        services.db.resetDatabase()
+        //send success confirmation to the administrator
+        commContext['resetDate'] = curDate
+        services.comm.handleCommunication('CFM_ADMIN_RESET_001',commContext)
+        curCell.setValue("OFF")
+        curCell.setNote(`Last reset on ${curDate}`)
+        CACHED_SETTINGS.getValueCellByKeyName('FIRST_GENERATION_DATE','reportGenerationSettings').setValue(curDate)
+      }
+
+      //process system operations pause or resume by disabling/enabling all forms
+      if(editedParam === "SYSTEM_ACTIVE"){
+        const action = newValue === "ON" ? "resume" : "pause";
+        services.manageFormsAccessibility(action);
+        curCell.setNote(`System ${action}d on ${curDate}`);
+        CACHED_SETTINGS.getValueCellByKeyName('ENABLE_REPORT_GENERATION','systemButtons').setValue(newValue)
+      }
+      CACHED_SETTINGS.getValueCellByKeyName('FIRST_GENERATION_DATE','reportGenerationSettings').setValue(curDate)
     }
 
-    //process system operations pause or resume by disabling/enabling all forms
-    if(editedParam === "SYSTEM_ACTIVE"){
-      const action = newValue === "ON" ? "resume" : "pause";
-      services.manageFormsAccessibility(action);
-      curCell.setNote(`System ${action}d on ${curDate}`);
+    //Process SystemTime, CoreConfig & reportGenerationSettings
+    if(editedCol == 8){
+      const editedParam = editedSheet.getRange(editedRow,6).getValue()
+      //NEXT_SYSTEM_SHUTDOWN_DATE
+      if(editedParam === "NEXT_SYSTEM_SHUTDOWN_DATE" || editedParam == "NEXT_SYSTEM_SHUTDOWN_DATE"){
+        reInstallAllTriggers()
+      }
     }
+  }
+
+
+  //update settings last update tracker
+  const delay = 1000*6
+  if((curDate - settingsUpdateDateCol.getValue()) > delay){
+    settingsUpdateDateCol.setValue(curDate)
+    settingsUpdateDateCol.setNote(`Affected Range ${editedRange.getA1Notation()}`)
   }
 }
 
 //next: report generation... && automated on and off scheduling
+//auto update time colums after certain acttions.
 
 
 // =============================================================================

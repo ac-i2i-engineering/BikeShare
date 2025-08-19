@@ -150,7 +150,7 @@ class Settings {
   }
 
   isAutoResetEnabled() {
-    return this.cacheValues.coreConfig?.AUTO_RESET_ENABLED ?? true;
+    return this.cacheValues.coreConfig?.ENABLE_FORCED_RESET ?? true;
   }
 
   getReportGenerationSettings() {
@@ -167,8 +167,10 @@ class Settings {
   setGlobalConfigs() {
   this.VALUES = {
       DEBUG_MODE: true,
-      AUTO_RESET_ENABLED: true,
+      ENABLE_FORCED_RESET: true,
       SYSTEM_ACTIVE: this.isSystemActive(),
+      NEXT_SYSTEM_SHUTDOWN_DATE:this.cacheValues.systemTime.NEXT_SYSTEM_SHUTDOWN_DATE,
+      NEXT_SYSTEM_ACTIVATION_DATE:this.cacheValues.systemTime.NEXT_SYSTEM_ACTIVATION_DATE,
       ADMIN_EMAIL: this.getAdminEmail(),
       MANAGEMENT_SS_ID: this.management_ss_ID,
       MAIN_DASHBOARD_SS_ID: '1XE9b58isw2MreAvcNSDiCTIIlL09zFRWMKcCBtTkbbE',
@@ -219,13 +221,40 @@ class Settings {
         ENABLE_ADMIN_NOTIFICATIONS: this.cacheValues.systemButtons?.ENABLE_ADMIN_NOTIFICATIONS,
         ENABLE_DEV_NOTIFICATIONS: this.cacheValues.systemButtons?.ENABLE_DEV_NOTIFICATIONS,
       },
-      REPORT_GENERATION: this.getReportGenerationSettings(),
+      REPORT_GENERATION: {...this.getReportGenerationSettings(),
+      ENABLE_REPORT_GENERATION: this.cacheValues.systemButtons?.ENABLE_REPORT_GENERATION === "ON",
+      },
       COMM_CODES: {
         ...this.cacheValues.successMessages,
         ...this.cacheValues.errorMessages,
       },
     }
   }
+
+  getValueCellByKeyName(key, tableName) {
+    for (const sheetName in this.settingRangeMap) {
+      for (const table in this.settingRangeMap[sheetName]) {
+        if (table === tableName) {
+          const sheet = this.management_ss.getSheetByName(sheetName);
+          const range = this.settingRangeMap[sheetName][table];
+          const tableRange = sheet.getRange(range);
+          const tableValues = tableRange.getValues();
+          for (let i = 0; i < tableValues.length; i++) {
+            if (tableValues[i][0] === key) {
+              // Value is always in the 3rd column (index 3 in A1 notation)
+              return sheet.getRange(
+                tableRange.getRow() + i,
+                tableRange.getColumn() + 2
+              );
+            }
+          }
+          return null;
+        }
+      }
+    }
+    return null;
+  }
+
 }
 
 // =============================================================================

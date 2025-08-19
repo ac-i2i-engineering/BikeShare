@@ -1,6 +1,5 @@
 function quickTest(){
-  const services = new BikeShareService()
-  services.db.resetDatabase()
+  // CACHED_SETTINGS.refreshCache()
 }
 
 function printFormFieldInfo(formId){
@@ -34,6 +33,18 @@ function installExecuteReportGenerationTrigger(){
     .create();
 }
 
+function installScheduleSystemShutdownAndActivationTrigger(){
+  const activationDate = CACHED_SETTINGS.VALUES.NEXT_SYSTEM_ACTIVATION_DATE
+  const shutdownDate = CACHED_SETTINGS.VALUES.NEXT_SYSTEM_SHUTDOWN_DATE
+  const curDate = new Date()
+  const sheet = SpreadsheetApp.openById(CACHED_SETTINGS.VALUES.MAIN_DASHBOARD_SS_ID)
+  if(activationDate > curDate){
+    ScriptApp.newTrigger('activateSystem').forSpreadsheet(sheet).timeBased().at(activationDate).create()
+  }
+  if(shutdownDate > curDate){
+    ScriptApp.newTrigger('shutdownSystem').forSpreadsheet(sheet).timeBased().at(activationDate).create()
+  }
+}
 function installHandleSettingsUpdateTrigger(){
   ScriptApp.newTrigger('handleSettingsUpdate').forSpreadsheet(CACHED_SETTINGS.management_ss).onChange().create();
 }
@@ -51,6 +62,17 @@ function reInstallAllTriggers(){
   installOnSubmitTrigger();
   installExecuteReportGenerationTrigger();
   installHandleSettingsUpdateTrigger()
+  installScheduleSystemShutdownAndActivationTrigger()
+}
+
+function shutdownSystem(){
+  FormApp.openById(CACHED_SETTINGS.VALUES.FORMS.CHECKOUT_FORM_ID).setAcceptingResponses(false)
+  FormApp.openById(CACHED_SETTINGS.VALUES.FORMS.RETURN_FORM_ID).setAcceptingResponses(false);
+}
+
+function activateSystem(){
+  FormApp.openById(CACHED_SETTINGS.VALUES.FORMS.CHECKOUT_FORM_ID).setAcceptingResponses(true)
+  FormApp.openById(CACHED_SETTINGS.VALUES.FORMS.RETURN_FORM_ID).setAcceptingResponses(true);
 }
 
 function levenshteinDistance(str1, str2) {

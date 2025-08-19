@@ -50,6 +50,9 @@ class BikeShareService {
   }
 
   generatePeriodicReport() {
+    if(!CACHED_SETTINGS.VALUES.REPORT_GENERATION.ENABLE_REPORT_GENERATION){
+      return // disable report generation
+    }
     const report = new Report();
     const reportData = report.generate();
     report.save(reportData);
@@ -66,9 +69,7 @@ class BikeShareService {
 
   manageFormsAccessibility(action){
     // stop accepting responses for return and checkout form
-    const state = action === "resume";
-    FormApp.openById(CACHED_SETTINGS.VALUES.FORMS.CHECKOUT_FORM_ID).setAcceptingResponses(state);
-    FormApp.openById(CACHED_SETTINGS.VALUES.FORMS.RETURN_FORM_ID).setAcceptingResponses(state);
+    const state = action === "resume" ? activateSystem() : shutdownSystem();
   }
 }
 // =============================================================================
