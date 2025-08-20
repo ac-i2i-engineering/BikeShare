@@ -172,6 +172,7 @@ class Settings {
       NEXT_SYSTEM_SHUTDOWN_DATE:this.cacheValues.systemTime.NEXT_SYSTEM_SHUTDOWN_DATE,
       NEXT_SYSTEM_ACTIVATION_DATE:this.cacheValues.systemTime.NEXT_SYSTEM_ACTIVATION_DATE,
       ADMIN_EMAIL: this.getAdminEmail(),
+      ORG_EMAIL: 'orgEmail@company.com',
       MANAGEMENT_SS_ID: this.management_ss_ID,
       MAIN_DASHBOARD_SS_ID: '1XE9b58isw2MreAvcNSDiCTIIlL09zFRWMKcCBtTkbbE',
       SHEETS: {
