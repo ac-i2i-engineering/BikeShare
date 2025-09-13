@@ -207,6 +207,7 @@ class User {
       this.comm.handleCommunication('CFM_USR_RET_002', commContext);
     } else if (commContext.isCollectedMismatch) {
       commContext['lastCheckoutName'] = this.lastCheckoutName
+      commContext['bikeName'] = bike.bikeName;
       this.comm.handleCommunication('CFM_USR_RET_004', commContext);
     } else {
       this.comm.handleCommunication('CFM_USR_RET_001', commContext);

@@ -82,7 +82,7 @@ class Bike {
   }
 
   returnBike(commContext) {
-    if(commContext.issuesConcerns != ""){
+    if(!CACHED_SETTINGS.VALUES.IGNORED_REPORT_STMTS_ON_RFORM.includes(commContext.issuesConcerns.trim().toLowerCase())){
       this.maintenanceStatus = "Has Issue"
     }
     this.availability = 'Available';

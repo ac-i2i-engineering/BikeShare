@@ -85,7 +85,7 @@ class Report {
   countReportedIssuesFromUsers() {
     const logsInRange = this.returnLogsInCoverage();
     // count return logs with issues
-    return logsInRange.filter(log => log.issuesConcerns != null && log.issuesConcerns.trim().length > 0).length;
+    return logsInRange.filter(log => !CACHED_SETTINGS.VALUES.IGNORED_REPORT_STMTS_ON_RFORM.includes(log.issuesConcerns.trim().toLowerCase())).length;
   }
 
   countOverdueReturns() {

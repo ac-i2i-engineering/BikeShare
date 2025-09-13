@@ -11,6 +11,7 @@ class Settings {
         systemTime: "F7:H9",
         coreConfig: "F14:H16",
         reportGenerationSettings: "F21:H23",
+        miscellaneous: "A20:C21",
       },
       sheetsConfig: {
         bikesStatus: "A10:C13",
@@ -38,6 +39,13 @@ class Settings {
         return value.toString().toUpperCase() === "ON";
       case "datetime":
         return new Date(value);
+      case "array":
+        if (typeof value !== "string") return [];
+        const separator = "___";
+        const cleaned = value
+          .split(separator)
+          .map(item => item.trim().toLowerCase())
+        return cleaned;
       case "string":
       case "range":
       default:
@@ -172,7 +180,7 @@ class Settings {
       NEXT_SYSTEM_SHUTDOWN_DATE:this.cacheValues.systemTime.NEXT_SYSTEM_SHUTDOWN_DATE,
       NEXT_SYSTEM_ACTIVATION_DATE:this.cacheValues.systemTime.NEXT_SYSTEM_ACTIVATION_DATE,
       ADMIN_EMAIL: this.getAdminEmail(),
-      ORG_EMAIL: 'orgEmail@company.com',
+      ORG_EMAIL: 'ndayishimiyeemile96@gmail.com',
       MANAGEMENT_SS_ID: this.management_ss_ID,
       MAIN_DASHBOARD_SS_ID: '1XE9b58isw2MreAvcNSDiCTIIlL09zFRWMKcCBtTkbbE',
       SHEETS: {
@@ -225,6 +233,7 @@ class Settings {
       REPORT_GENERATION: {...this.getReportGenerationSettings(),
       ENABLE_REPORT_GENERATION: this.cacheValues.systemButtons?.ENABLE_REPORT_GENERATION === "ON",
       },
+      IGNORED_REPORT_STMTS_ON_RFORM: this.cacheValues.miscellaneous?.IGNORED_REPORT_STMTS_ON_RFORM || [],
       COMM_CODES: {
         ...this.cacheValues.successMessages,
         ...this.cacheValues.errorMessages,

@@ -41,7 +41,7 @@ class ReturnLog {
     log.mismatchExplanation = `Friend said: ${friendReturnLog.mismatchExplanation}`;
     log.returningForFriend = false;
     log.friendEmail = friendReturnLog.userEmail;
-    log.issuesConcerns = `Friend said: ${friendReturnLog.issuesConcerns}`;
+    log.issuesConcerns = !CACHED_SETTINGS.VALUES.IGNORED_REPORT_STMTS_ON_RFORM.includes(friendReturnLog.issuesConcerns.trim().toLowerCase()) ? `Friend said: ${friendReturnLog.issuesConcerns}` : '';
     log.isDirectReturn = false; // Mark as indirect return
     return log;
   }

@@ -1,25 +1,28 @@
 # Ignore node_modules
 node_modules/
 node_modules/**
-#development files
-templates/
-endUserManuals/
+
+# Development files
+templates/**
+endUserManuals/**
 tasks.txt
 *.md
+
 # Ignore git files
-.git/
+.git/**
 .gitignore
 LICENSE
 README.md
+
 # Ignore Mac system files
 .DS_Store
+**/.DS_Store
 
 # Ignore log files
 *.log
 
 # Ignore test files
-test/
-tests/
+# tests/**
 *.spec.js
 *.test.js
 
@@ -31,6 +34,3 @@ out/
 # Ignore environment files
 .env
 .env.*
-
-# Ignore clasp itself
-.
