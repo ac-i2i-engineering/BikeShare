@@ -231,8 +231,7 @@ class Settings {
         ENABLE_DEV_NOTIFICATIONS: this.cacheValues.systemButtons?.ENABLE_DEV_NOTIFICATIONS,
       },
       REPORT_GENERATION: {...this.getReportGenerationSettings(),
-      ENABLE_REPORT_GENERATION: this.cacheValues.systemButtons?.ENABLE_REPORT_GENERATION === "ON",
-      },
+      ENABLE_REPORT_GENERATION: this.cacheValues.systemButtons?.ENABLE_REPORT_GENERATION},
       IGNORED_REPORT_STMTS_ON_RFORM: this.cacheValues.miscellaneous?.IGNORED_REPORT_STMTS_ON_RFORM || [],
       COMM_CODES: {
         ...this.cacheValues.successMessages,
