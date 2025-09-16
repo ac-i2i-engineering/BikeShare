@@ -82,14 +82,13 @@ class Bike {
   }
 
   returnBike(commContext) {
-    // commContext['usageHours'] = this.currentUsageTimer;
     let concernsMsg = commContext.issuesConcerns.trim().toLowerCase()
     if(!CACHED_SETTINGS.VALUES.IGNORED_REPORT_STMTS_ON_RFORM.includes(concernsMsg) && commContext.issuesConcerns.trim().toLowerCase() != "" ){
       this.maintenanceStatus = "Has Issue"
     }
     this.availability = 'Available';
     this.lastReturnDate = commContext.timestamp;
-    this.currentUsageTimer = 0;
+    this.currentUsageTimer = null;
     this.totalUsageHours += commContext.usageHours;
     this.save();
   }

@@ -194,13 +194,13 @@ class User {
       this.overdueReturns++;
     }
 
+    commContext['usageHours'] = bike.getUsageHours();
     bike.returnBike(commContext);
     this.hasUnreturnedBike = false;
     this.lastReturnName = commContext.bikeName;
     this.lastReturnDate = commContext.timestamp;
     this.numberOfReturns++;
-    this.usageHours += bike.getUsageHours();
-    commContext['usageHours'] = this.usageHours;
+    this.usageHours += commContext.usageHours;
     this.save();
 
     // send confirmation userEmail
