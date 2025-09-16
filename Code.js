@@ -2,6 +2,10 @@
  * BikeShare System - Object-Oriented Design
  * Uses Google Sheets as database and Google Forms for user interaction
  */
+// ============================================================================
+// GLOBAL CONSTANTS & IMPORTS
+// ============================================================================
+const CUR_DATE = new Date();
 // =============================================================================
 // FORM TRIGGER & SCHEDULED & EVENTHANDLER FUNCTIONS
 // =============================================================================
@@ -86,6 +90,10 @@ function handleSettingsUpdate(e){
   }
 }
 
+function executeUsageTimerUpdate(){
+  const service = new BikeShareService();
+  service.updateUsageTimersForAllCheckedoutBikes();
+}
 //next: report generation... && automated on and off scheduling
 //auto update time colums after certain acttions.
 

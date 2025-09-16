@@ -30,6 +30,7 @@ class Communicator {
     }
   }
   notifyUser(userEmail, subject, body) {
+    const nowDate = Utilities.formatDate(new Date(), 'America/New_York', 'MM/dd/yyyy');
     try {
       GmailApp.sendEmail(userEmail, subject, "Hi,\n\n"+body+"\n\nThank you,\nBike Share Team",{from: CACHED_SETTINGS.VALUES.ORG_EMAIL});
     } catch (error) {

@@ -63,6 +63,15 @@ function reInstallAllTriggers(){
   installExecuteReportGenerationTrigger();
   installHandleSettingsUpdateTrigger()
   installScheduleSystemShutdownAndActivationTrigger()
+  installUpdateUsageTimersTrigger();
+}
+
+function installUpdateUsageTimersTrigger() {
+  const intervalMinutes = CACHED_SETTINGS.VALUES.USAGE_TIMER_UPDATE_INTERVAL_MINUTES || 5;
+  ScriptApp.newTrigger('executeUsageTimerUpdate')
+    .timeBased()
+    .everyMinutes(intervalMinutes)
+    .create();
 }
 
 function shutdownSystem(){

@@ -199,7 +199,8 @@ class User {
     this.lastReturnName = commContext.bikeName;
     this.lastReturnDate = commContext.timestamp;
     this.numberOfReturns++;
-    this.usageHours += commContext.usageHours;
+    this.usageHours += bike.getUsageHours();
+    commContext['usageHours'] = this.usageHours;
     this.save();
 
     // send confirmation userEmail

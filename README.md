@@ -118,7 +118,6 @@ class BikeShareService {
   processCheckout(formResponse, range)
   processReturn(formResponse, range) 
   generatePeriodicReport()
-  calculateUsageHours(bikeName)
   manageFormsAccessibility(action)
 }
 ```

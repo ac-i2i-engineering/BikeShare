@@ -82,7 +82,9 @@ class Bike {
   }
 
   returnBike(commContext) {
-    if(!CACHED_SETTINGS.VALUES.IGNORED_REPORT_STMTS_ON_RFORM.includes(commContext.issuesConcerns.trim().toLowerCase())){
+    // commContext['usageHours'] = this.currentUsageTimer;
+    let concernsMsg = commContext.issuesConcerns.trim().toLowerCase()
+    if(!CACHED_SETTINGS.VALUES.IGNORED_REPORT_STMTS_ON_RFORM.includes(concernsMsg) && commContext.issuesConcerns.trim().toLowerCase() != "" ){
       this.maintenanceStatus = "Has Issue"
     }
     this.availability = 'Available';
@@ -132,6 +134,20 @@ class Bike {
       }
     }
     return null;
+  }
+
+  updateCurrentUsageTimer(hours) {
+    if (typeof hours !== 'number' || hours < 0) {
+      throw new Error('Invalid hours value');
+    }
+    this.currentUsageTimer = hours;
+    this.save();
+  }
+
+  getUsageHours() {
+    if (!this.lastCheckoutDate) return 0;
+    const checkoutTime = new Date(this.lastCheckoutDate);
+    return (CUR_DATE.getTime() - checkoutTime.getTime()) / (1000 * 60 * 60);
   }
 }
 // =============================================================================

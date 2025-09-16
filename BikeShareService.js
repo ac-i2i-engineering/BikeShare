@@ -32,10 +32,8 @@ class BikeShareService {
       returnLog.validate(range);
       const user = User.findByEmail(returnLog.userEmail);
       user.checkIfReturningForFriend(returnLog);
-      const usageHours = this.calculateUsageHours(returnLog.bikeName);
       const commContext = {
         ...returnLog,
-        usageHours: usageHours,
         range: range
       };
       if (CACHED_SETTINGS.VALUES.SYSTEM_ACTIVE) {
@@ -58,18 +56,20 @@ class BikeShareService {
     report.save(reportData);
     return reportData;
   }
-  calculateUsageHours(bikeName) {
-    const bike = Bike.findByName(bikeName);
-    if (!bike || !bike.lastCheckoutDate) return 0;
-    
-    const now = new Date();
-    const checkoutTime = new Date(bike.lastCheckoutDate);
-    return Math.round((now - checkoutTime) / (1000 * 60 * 60) * 100) / 100;
-  }
 
   manageFormsAccessibility(action){
     // stop accepting responses for return and checkout form
     const state = action === "resume" ? activateSystem() : shutdownSystem();
+  }
+
+  updateUsageTimersForAllCheckedoutBikes(){
+    const bikesData = this.db.getAllData(CACHED_SETTINGS.VALUES.SHEETS.BIKES_STATUS.NAME);
+    const bikes = bikesData.filter(row => row[3] === 'Checked Out');
+    const checkedOutBikes = bikes.map(row => Bike.fromSheetRow(row));
+    checkedOutBikes.forEach(bike => {
+      const usageDays = bike.getUsageHours()  / 24; // returns in days to be able to work with spreadsheet formatting (e.g: [h]" hrs" m" mins")
+      bike.updateCurrentUsageTimer(usageDays);
+    });
   }
 }
 // =============================================================================
