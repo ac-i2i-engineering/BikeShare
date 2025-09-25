@@ -1,3 +1,7 @@
+// =============================================================================
+// UTILITY FUNCTIONS - Pure helper functions for the functional system
+// =============================================================================
+
 function quickTest(){
   CACHED_SETTINGS.refreshCache()
   console.log(CACHED_SETTINGS.VALUES)
