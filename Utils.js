@@ -44,10 +44,10 @@ function installScheduleSystemShutdownAndActivationTrigger(){
   const curDate = new Date()
   const sheet = SpreadsheetApp.openById(CACHED_SETTINGS.VALUES.MAIN_DASHBOARD_SS_ID)
   if(activationDate > curDate){
-    ScriptApp.newTrigger('activateSystem').forSpreadsheet(sheet).timeBased().at(activationDate).create()
+    ScriptApp.newTrigger('handleSystemActivation').forSpreadsheet(sheet).timeBased().at(activationDate).create()
   }
   if(shutdownDate > curDate){
-    ScriptApp.newTrigger('shutdownSystem').forSpreadsheet(sheet).timeBased().at(activationDate).create()
+    ScriptApp.newTrigger('handleSystemShutdown').forSpreadsheet(sheet).timeBased().at(shutdownDate).create()
   }
 }
 function installHandleSettingsUpdateTrigger(){
@@ -79,15 +79,9 @@ function installUpdateUsageTimersTrigger() {
     .create();
 }
 
-function shutdownSystem(){
-  FormApp.openById(CACHED_SETTINGS.VALUES.FORMS.CHECKOUT_FORM_ID).setAcceptingResponses(false)
-  FormApp.openById(CACHED_SETTINGS.VALUES.FORMS.RETURN_FORM_ID).setAcceptingResponses(false);
-}
-
-function activateSystem(){
-  FormApp.openById(CACHED_SETTINGS.VALUES.FORMS.CHECKOUT_FORM_ID).setAcceptingResponses(true)
-  FormApp.openById(CACHED_SETTINGS.VALUES.FORMS.RETURN_FORM_ID).setAcceptingResponses(true);
-}
+// Form management functions moved to Code.js as manageFormsAccessibility()
+// Use manageFormsAccessibility('pause') instead of shutdownSystem()
+// Use manageFormsAccessibility('resume') instead of activateSystem()
 
 function levenshteinDistance(str1, str2) {
   const matrix = Array(str2.length + 1).fill().map(() => Array(str1.length + 1).fill(0));

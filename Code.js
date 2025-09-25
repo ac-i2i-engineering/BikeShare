@@ -1,6 +1,7 @@
 /**
- * BikeShare System - Object-Oriented Design
+ * BikeShare System - Functional Programming Design
  * Uses Google Sheets as database and Google Forms for user interaction
+ * Pure functions with immutable data transformations
  */
 // ============================================================================
 // GLOBAL CONSTANTS & IMPORTS
@@ -10,7 +11,6 @@ const CUR_DATE = new Date();
 // FORM TRIGGER & SCHEDULED & EVENTHANDLER FUNCTIONS
 // =============================================================================
 function handleOnFormSubmit(e) {
-  // NEW FUNCTIONAL APPROACH
   const result = processBikeShareEvent(e);
   
   if (result.success) {
@@ -22,24 +22,9 @@ function handleOnFormSubmit(e) {
   return result;
 }
 
-// LEGACY OOP APPROACH (kept for reference/fallback)
-function handleOnFormSubmitLegacy(e) {
-  const service = new BikeShareService();
-  const sheetName = e.source.getActiveSheet().getName();
-  const responses = e.values;
-  const range = e.range;
-  // Check if the edit is in the 'Checkout Logs' or 'Return Logs' sheet
-  if (sheetName === CACHED_SETTINGS.VALUES.SHEETS.CHECKOUT_LOGS.NAME) {
-    service.processCheckout(responses, range);
-    service.db.sortByColumn(null, CACHED_SETTINGS.VALUES.SHEETS.CHECKOUT_LOGS.NAME);
-  } else if (sheetName === CACHED_SETTINGS.VALUES.SHEETS.RETURN_LOGS.NAME) {
-    service.processReturn(responses, range);
-    service.db.sortByColumn(null, CACHED_SETTINGS.VALUES.SHEETS.RETURN_LOGS.NAME);
-  }
-}
+
 
 function executeReportGeneration() {
-  // NEW FUNCTIONAL APPROACH
   const result = generatePeriodicReportFunctional();
   
   if (result.success) {
@@ -51,12 +36,7 @@ function executeReportGeneration() {
   return result;
 }
 
-// LEGACY OOP APPROACH (kept for reference/fallback)
-function executeReportGenerationLegacy() {
-  const service = new BikeShareService();
-  Logger.log(service.generatePeriodicReport());
-  service.db.sortByColumn(null, CACHED_SETTINGS.VALUES.SHEETS.REPORTS.NAME);
-}
+
 
 function handleSettingsUpdate(e){
   if(!CACHED_SETTINGS.refreshCache(true)){
@@ -120,8 +100,6 @@ function handleSettingsUpdate(e){
 function executeUsageTimerUpdate(){
   updateUsageTimersForAllCheckedoutBikes();
 }
-//next: report generation... && automated on and off scheduling
-//auto update time colums after certain acttions.
 
 
 // =============================================================================
@@ -230,4 +208,18 @@ function simulateHandleOnFormSubmit(sheetName, responses) {
   
   // Use functional pipeline
   return processBikeShareEvent(mockEvent);
+}
+
+/**
+ * Trigger handler for system activation
+ */
+function handleSystemActivation() {
+  return manageFormsAccessibility('resume');
+}
+
+/**
+ * Trigger handler for system shutdown  
+ */
+function handleSystemShutdown() {
+  return manageFormsAccessibility('pause');
 }
