@@ -40,7 +40,7 @@ class User {
 
   static findByEmail(userEmail) {
     const db = new DatabaseManager();
-    const userRecord = db.findRowByColumn(CACHED_SETTINGS.VALUES.SHEETS.USER_STATUS.NAME, 0, userEmail);
+    const userRecord = db.findRowByColumn(CACHED_SETTINGS.VALUES.SHEETS.USER_STATUS.NAME, 0, userEmail,true);
     return userRecord ? User.fromSheetRow(userRecord.data) : new User(userEmail);
   }
 
@@ -60,7 +60,7 @@ class User {
       this.firstUsageDate
     ];
 
-    const existing = this.db.findRowByColumn(CACHED_SETTINGS.VALUES.SHEETS.USER_STATUS.NAME, 0, this.userEmail);
+    const existing = this.db.findRowByColumn(CACHED_SETTINGS.VALUES.SHEETS.USER_STATUS.NAME, 0, this.userEmail,true);
     if (existing) {
       this.db.updateRow(CACHED_SETTINGS.VALUES.SHEETS.USER_STATUS.NAME, existing.row, values);
     } else {
@@ -111,6 +111,8 @@ class User {
 
     // send confirmation userEmail
     commContext['bikeName'] = bike.bikeName;
+    const nowDate = Utilities.formatDate(CUR_DATE, 'America/New_York', 'MM/dd/yyyy');
+    commContext['nowDate'] = nowDate;
     this.comm.handleCommunication('CFM_USR_COT_001', commContext);
   }
 
@@ -183,7 +185,7 @@ class User {
       return;
     }
 
-    if (this.lastCheckoutName !== bike.bikeName && commContext.isDirectReturn) {
+    if (!fuzzyMatch(this.lastCheckoutName, bike.bikeName) && commContext.isDirectReturn) {
       this.numberOfMismatches++;
       bike = Bike.findByName(this.lastCheckoutName);
       commContext['bikeName'] = bike.bikeName; // re-assign context to collect mismatch
@@ -208,7 +210,6 @@ class User {
       this.comm.handleCommunication('CFM_USR_RET_002', commContext);
     } else if (commContext.isCollectedMismatch) {
       commContext['lastCheckoutName'] = this.lastCheckoutName
-      commContext['bikeName'] = bike.bikeName;
       this.comm.handleCommunication('CFM_USR_RET_004', commContext);
     } else {
       this.comm.handleCommunication('CFM_USR_RET_001', commContext);

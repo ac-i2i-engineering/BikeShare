@@ -10,6 +10,18 @@ class BikeShareService {
   processCheckout(formResponse, range) {
     try {
       const checkoutLog = CheckoutLog.fromFormResponse(formResponse);
+
+      // Validate email domain before processing
+      if (!isValidEmailDomain(checkoutLog.userEmail)) {
+        const commContext = {
+          ...checkoutLog,
+          range: range,
+          errorMessage: 'Only amherst.edu email addresses are allowed'
+        };
+        this.comm.handleCommunication('ERR_USR_EMAIL_001', commContext);
+        throw new Error('Invalid email domain');
+      }
+
       const user = User.findByEmail(checkoutLog.userEmail);
       const commContext = {
         ...checkoutLog,
@@ -29,6 +41,18 @@ class BikeShareService {
   processReturn(formResponse, range) {
     try {
       const returnLog = ReturnLog.fromFormResponse(formResponse);
+
+      // Validate email domain before processing
+      if (!isValidEmailDomain(returnLog.userEmail)) {
+        const commContext = {
+          ...returnLog,
+          range: range,
+          errorMessage: 'Only amherst.edu email addresses are allowed'
+        };
+        this.comm.handleCommunication('ERR_USR_EMAIL_001', commContext);
+        throw new Error('Invalid email domain');
+      }
+      
       returnLog.validate(range);
       const user = User.findByEmail(returnLog.userEmail);
       user.checkIfReturningForFriend(returnLog);

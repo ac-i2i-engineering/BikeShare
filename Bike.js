@@ -41,7 +41,7 @@ class Bike {
 
   static findByHash(bikeHash) {
     const db = new DatabaseManager();
-    const result = db.findRowByColumn(CACHED_SETTINGS.VALUES.SHEETS.BIKES_STATUS.NAME, 12, bikeHash);
+    const result = db.findRowByColumn(CACHED_SETTINGS.VALUES.SHEETS.BIKES_STATUS.NAME, 12, bikeHash,true);
     return result ? Bike.fromSheetRow(result.data) : null;
   }
 

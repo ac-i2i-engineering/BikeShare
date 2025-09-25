@@ -17,10 +17,10 @@ class DatabaseManager {
     return sheet.getDataRange().getValues();
   }
 
-  findRowByColumn(sheetName, columnIndex, value) {
+  findRowByColumn(sheetName, columnIndex, value,exactMatch=false) {
     const data = this.getAllData(sheetName);
     for (let i = 1; i < data.length; i++) {
-      if (fuzzyMatch(data[i][columnIndex], value)) {
+      if (fuzzyMatch(data[i][columnIndex], value,exactMatch)) {
         return { row: i + 1, data: data[i] };
       }
     }

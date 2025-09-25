@@ -1,5 +1,6 @@
 function quickTest(){
-  // CACHED_SETTINGS.refreshCache()
+  CACHED_SETTINGS.refreshCache()
+  console.log(CACHED_SETTINGS.VALUES)
 }
 
 function printFormFieldInfo(formId){
@@ -67,7 +68,7 @@ function reInstallAllTriggers(){
 }
 
 function installUpdateUsageTimersTrigger() {
-  const intervalMinutes = 5; // Update every 5 minutes
+  const intervalMinutes = 5;
   ScriptApp.newTrigger('executeUsageTimerUpdate')
     .timeBased()
     .everyMinutes(intervalMinutes)
@@ -101,14 +102,34 @@ function levenshteinDistance(str1, str2) {
   return matrix[str2.length][str1.length];
 }
 
-function fuzzyMatch(target, comp){
-  if (typeof(target) === 'number' && typeof(comp) === 'number'){
+function fuzzyMatch(target, comp, isNotFuzzy=false){
+  if (target == null || comp == null) return false;
+  // Numbers: direct match
+  if (typeof target === 'number' && typeof comp === 'number') {
     return target === comp;
   }
-  if (!target || !comp) return false;
-  if (target.toLowerCase() === comp.toLowerCase()) return true;
-  if (target.length < 3 || comp.length < 3) return false;
-  const distance = levenshteinDistance(target, comp);
-  const maxLen = Math.max(target.length, comp.length);
-  return distance / maxLen < CACHED_SETTINGS.VALUES.FUZZY_MATCHING_THRESHOLD;
+  // Strings: normalize and compare
+  if (typeof target === 'string') target = target.trim().toLowerCase();
+  if (typeof comp === 'string') comp = comp.trim().toLowerCase();
+  if (isNotFuzzy) {
+    return target === comp;
+  }
+  if (target === comp) return true;
+  if (typeof target === 'string' && typeof comp === 'string') {
+    if (target.length < 3 || comp.length < 3) return false;
+    const distance = levenshteinDistance(target, comp);
+    const maxLen = Math.max(target.length, comp.length);
+    return distance / maxLen < CACHED_SETTINGS.VALUES.FUZZY_MATCHING_THRESHOLD;
+  }
+  return false;
+}
+
+function isValidEmailDomain(email, allowedDomain = 'amherst.edu') {
+  if (!email || typeof email !== 'string') return false;
+  
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) return false;
+  
+  const domain = email.split('@')[1];
+  return domain.toLowerCase() === allowedDomain.toLowerCase();
 }
