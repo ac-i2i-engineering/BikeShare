@@ -26,6 +26,7 @@ README.md
 # tests/**
 *.spec.js
 *.test.js
+fncalProgrammingBasics.js
 
 # Ignore build artifacts
 dist/
