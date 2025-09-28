@@ -181,7 +181,7 @@ function loadAllSheetData() {
     Logger.log(`Batch loading failed, falling back to individual loads: ${error.message}`);
     return {
       bikes: DB.getAllData(CACHED_SETTINGS.VALUES.SHEETS.BIKES_STATUS.NAME),
-      users: DB.getAllData(CACHED_SETTINGS.VALUES.SHEETS.USERS_STATUS.NAME)
+      users: DB.getAllData(CACHED_SETTINGS.VALUES.SHEETS.USER_STATUS.NAME)
     };
   }
 }
