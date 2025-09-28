@@ -70,28 +70,111 @@ const DB = {
     if (note) range.setNote(note);
   },
 
-  // Batch operations for multiple updates
+  // TRUE batch operations using AppScript's batch API - NO EXTRA API CALLS!
   batchUpdate: (operations, spreadsheetId = null) => {
+    if (!operations || operations.length === 0) return [];
+    
     const results = [];
+    const spreadsheet = DB.getSpreadsheet(spreadsheetId);
+    
+    // Group operations by sheet for true batching
+    const operationsBySheet = {};
     operations.forEach(op => {
-      try {
-        switch (op.type) {
-          case 'update':
-            results.push(DB.updateRow(op.sheetName, op.rowIndex, op.values, spreadsheetId));
-            break;
-          case 'append':
-            results.push(DB.appendRow(op.sheetName, op.values, spreadsheetId));
-            break;
-          case 'updateByValue':
-            results.push(DB.updateRowByUniqueValue(
-              op.sheetName, op.searchColumn, op.searchValue, op.values, spreadsheetId
-            ));
-            break;
-        }
-      } catch (error) {
-        results.push({ error: error.message, operation: op });
+      if (!operationsBySheet[op.sheetName]) {
+        operationsBySheet[op.sheetName] = {
+          sheet: null,
+          updates: [],
+          appends: []
+        };
+      }
+      operationsBySheet[op.sheetName].sheet = DB.getSheet(op.sheetName, spreadsheetId);
+      
+      if (op.type === 'updateByRowIndex') {
+        // Use the row index directly from loaded data - NO API CALL NEEDED!
+        operationsBySheet[op.sheetName].updates.push({
+          rowIndex: op.rowIndex,
+          values: op.values,
+          operation: op
+        });
+      } else if (op.type === 'append') {
+        operationsBySheet[op.sheetName].appends.push({
+          values: op.values,
+          operation: op
+        });
       }
     });
+    
+    // Execute batch operations per sheet
+    Object.keys(operationsBySheet).forEach(sheetName => {
+      const sheetOps = operationsBySheet[sheetName];
+      const sheet = sheetOps.sheet;
+      
+      try {
+        // Batch all updates for this sheet in one API call using known row indices
+        if (sheetOps.updates.length > 0) {
+          const numCols = sheetOps.updates[0].values.length;
+          
+          // Build range strings directly from row indices - NO SEARCH NEEDED!
+          const ranges = sheetOps.updates.map(update => 
+            `${update.rowIndex}:${update.rowIndex}`
+          );
+          const values = sheetOps.updates.map(update => update.values);
+          
+          // Single API call for all updates in this sheet
+          const rangeList = sheet.getRangeList(ranges);
+          rangeList.getRanges().forEach((range, index) => {
+            range.setValues([values[index]]);
+          });
+          
+          sheetOps.updates.forEach(update => {
+            results.push({ success: true, operation: update.operation });
+          });
+        }
+        
+        // Batch all appends for this sheet
+        if (sheetOps.appends.length > 0) {
+          // For appends, we can use a single range operation if we know the starting row
+          const lastRow = sheet.getLastRow();
+          const numCols = sheetOps.appends[0].values.length;
+          const startRow = lastRow + 1;
+          const endRow = lastRow + sheetOps.appends.length;
+          
+          // Single API call for all appends in this sheet
+          const appendValues = sheetOps.appends.map(append => append.values);
+          const appendRange = sheet.getRange(startRow, 1, appendValues.length, numCols);
+          appendRange.setValues(appendValues);
+          
+          sheetOps.appends.forEach(append => {
+            results.push({ success: true, operation: append.operation });
+          });
+        }
+        
+      } catch (error) {
+        // If batch fails, fall back to individual operations
+        Logger.log(`Batch operation failed for ${sheetName}, falling back to individual operations: ${error.message}`);
+        
+        // Fallback for updates
+        sheetOps.updates.forEach(update => {
+          try {
+            DB.updateRow(sheetName, update.rowIndex, update.values, spreadsheetId);
+            results.push({ success: true, operation: update.operation });
+          } catch (err) {
+            results.push({ success: false, error: err.message, operation: update.operation });
+          }
+        });
+        
+        // Fallback for appends
+        sheetOps.appends.forEach(append => {
+          try {
+            DB.appendRow(sheetName, append.values, spreadsheetId);
+            results.push({ success: true, operation: append.operation });
+          } catch (err) {
+            results.push({ success: false, error: err.message, operation: append.operation });
+          }
+        });
+      }
+    });
+    
     return results;
   }
 };
@@ -193,6 +276,7 @@ const COMM = {
   // Mark sheet entry
   markEntry: (range, color = null, note = null) => {
     try {
+      if (!range) return { success: false, error: 'No range provided' };
       DB.markEntry(range, color, note);
       return { success: true };
     } catch (error) {

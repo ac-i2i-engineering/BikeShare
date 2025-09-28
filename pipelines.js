@@ -17,7 +17,8 @@ function processFormSubmissionEvent(triggerEvent) {
       ? checkoutPipeline 
       : returnPipeline;
     
-    const result = pipeline(formData, currentState, context);
+    const rawData = { formData: formData, currentState:currentState, context:context};
+    const result = pipeline(rawData);
     
     // Persist state changes and send notifications
     const finalResult = commitStateChanges(result);
@@ -31,15 +32,10 @@ function processFormSubmissionEvent(triggerEvent) {
 
 /**
  * Checkout processing pipeline
- * @param {Object} formData - Parsed form submission data
- * @param {Object} currentState - Current system state (bikes, users, settings)
- * @param {Object} context - Additional context (range, sheet name, etc.)
+ * @param {Object} rawData - (Parsed form submission data, context, and currentState)
  * @returns {Object} Processing result with state changes and notifications
  */
-function checkoutPipeline(formData, currentState, context) {
-  // Add context to formData for error handling
-  const rawData = { formData: formData, currentState:currentState, context:context};
-  
+function checkoutPipeline(rawData) {
   return pipe(
     // Validation steps
     validateEmailDomain,
@@ -52,7 +48,6 @@ function checkoutPipeline(formData, currentState, context) {
     processCheckoutTransaction,
     updateBikeStatus,
     updateUserStatus,
-    createCheckoutRecord,
     
     // Communication steps
     generateNotifications,
@@ -62,15 +57,10 @@ function checkoutPipeline(formData, currentState, context) {
 
 /**
  * Return processing pipeline
- * @param {Object} formData - Parsed form submission data
- * @param {Object} currentState - Current system state (bikes, users, settings)
- * @param {Object} context - Additional context (range, sheet name, etc.)
+ * @param {Object} rawData - (Parsed form submission data, context, and currentState)
  * @returns {Object} Processing result with state changes and notifications
  */
-function returnPipeline(formData, currentState, context) {
-  // Add context to formData for error handling
-  const rawData = { formData: formData, currentState:currentState, context:context};
-  
+function returnPipeline(rawData) {
   return pipe(
     // Validation steps
     validateEmailDomain,
@@ -83,7 +73,6 @@ function returnPipeline(formData, currentState, context) {
     updateBikeStatus,
     updateUserStatus,
     calculateUsageHours,
-    createReturnRecord,
     
     // Communication steps
     generateNotifications,
@@ -152,26 +141,59 @@ function parseFormResponse(context) {
 }
 
 /**
- * Load current system state from sheets
+ * Load current system state from sheets using batch operations
  * @returns {Object} Current state object
  */
 function loadSystemState() {
+  // Batch load all required sheet data in minimal API calls
+  const sheetData = loadAllSheetData();
+  
   return {
-    bikes: loadBikesData(),
-    users: loadUsersData(),
+    bikes: processBikesData(sheetData.bikes),
+    users: processUsersData(sheetData.users),
     settings: CACHED_SETTINGS.VALUES,
     timestamp: new Date()
   };
 }
 
 /**
- * Load bikes data and convert to functional format
- * @param {DatabaseManager} db - Database manager instance
+ * Load all required sheet data efficiently using minimal API calls
+ * @returns {Object} Raw 2D arrays from sheet data (not processed objects yet)
+ */
+function loadAllSheetData() {
+  try {
+    const spreadsheet = DB.getSpreadsheet(); // Single spreadsheet context
+    
+    // Get both sheets in single context 
+    const bikesSheet = spreadsheet.getSheetByName(CACHED_SETTINGS.VALUES.SHEETS.BIKES_STATUS.NAME);
+    const usersSheet = spreadsheet.getSheetByName(CACHED_SETTINGS.VALUES.SHEETS.USERS_STATUS.NAME);
+    
+    // Get raw sheet data as 2D arrays
+    const bikesData = bikesSheet.getDataRange().getValues();
+    const usersData = usersSheet.getDataRange().getValues();
+    
+    return {
+      bikes: bikesData,    
+      users: usersData   
+    };
+  } catch (error) {
+    // Fallback to individual loads if batch fails
+    Logger.log(`Batch loading failed, falling back to individual loads: ${error.message}`);
+    return {
+      bikes: DB.getAllData(CACHED_SETTINGS.VALUES.SHEETS.BIKES_STATUS.NAME),
+      users: DB.getAllData(CACHED_SETTINGS.VALUES.SHEETS.USERS_STATUS.NAME)
+    };
+  }
+}
+
+/**
+ * Process bikes data from pre-loaded sheet data
+ * @param {Array} bikesData - Raw sheet data
  * @returns {Array} Array of bike objects
  */
-function loadBikesData() {
-  const bikesData = DB.getAllData(CACHED_SETTINGS.VALUES.SHEETS.BIKES_STATUS.NAME);
-  return bikesData.map(row => ({
+function processBikesData(bikesData) {
+  // Skip header row (index 0) and filter out empty rows
+  return bikesData.slice(1).filter(row => row[0] && row[12]).map((row, index) => ({
     bikeName: row[0],
     size: row[1],
     maintenanceStatus: row[2],
@@ -184,18 +206,19 @@ function loadBikesData() {
     secondRecentUser: row[9] || '',
     thirdRecentUser: row[10] || '',
     tempRecent: row[11] || '',
-    bikeHash: row[12]
+    bikeHash: row[12],
+    _rowIndex: index + 2 // +2 because we skip header (index 0) and arrays are 0-based but sheets are 1-based
   }));
 }
 
 /**
- * Load users data and convert to functional format
- * @param {DatabaseManager} db - Database manager instance
+ * Process users data from pre-loaded sheet data
+ * @param {Array} usersData - Raw sheet data
  * @returns {Array} Array of user objects
  */
-function loadUsersData() {
-  const usersData = DB.getAllData(CACHED_SETTINGS.VALUES.SHEETS.USERS_STATUS.NAME);
-  return usersData.map(row => ({
+function processUsersData(usersData) {
+  // Skip header row (index 0) and filter out empty rows
+  return usersData.slice(1).filter(row => row[0]).map((row, index) => ({
     userEmail: row[0],
     hasUnreturnedBike: row[1] === 'Yes',
     lastCheckoutName: row[2] || '',
@@ -207,7 +230,8 @@ function loadUsersData() {
     numberOfMismatches: row[8] || 0,
     usageHours: row[9] || 0,
     overdueReturns: row[10] || 0,
-    firstUsageDate: row[11]
+    firstUsageDate: row[11],
+    _rowIndex: index + 2 // +2 because we skip header (index 0) and arrays are 0-based but sheets are 1-based
   }));
 }
 
@@ -221,14 +245,28 @@ function loadUsersData() {
  * @returns {Object} Data with validation result
  */
 function validateEmailDomain(data) {
+  if (data.error) return data; // Skip if already has error
   
   const email = data.formData.userEmail
-  if (!email || typeof email !== 'string') return false;
+  if (!email || typeof email !== 'string') {
+    return {
+      ...data,
+      error: 'ERR_USR_EMAIL_001',
+      errorMessage: 'Invalid email format'
+    };
+  }
   
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) return false;
+  if (!emailRegex.test(email)) {
+    return {
+      ...data,
+      error: 'ERR_USR_EMAIL_001',
+      errorMessage: 'Invalid email format'
+    };
+  }
   
   const domain = email.split('@')[1];
+  const allowedDomain = 'amherst.edu'; // Define the allowed domain
   const isValid = domain.toLowerCase() === allowedDomain.toLowerCase();
   if (!isValid) {
     return {
@@ -263,7 +301,17 @@ function validateSystemActive(data) {
  * @returns {Object} Data with bike information
  */
 function validateBikeExists(data) {
-  const bike = findBikeByHash(data.currentState.bikes, data.formData.bikeHash);
+  let bike;
+  
+  // For checkout operations, find by hash
+  if (data.formData.bikeHash) {
+    bike = findBikeByHash(data.currentState.bikes, data.formData.bikeHash);
+  } 
+  // For return operations, find by name (with fuzzy matching)
+  else if (data.formData.bikeName) {
+    bike = findBikeByName(data.currentState.bikes, data.formData.bikeName);
+  }
+  
   if (!bike) {
     return {
       ...data,
@@ -375,6 +423,26 @@ function validateReturnEligible(data) {
  */
 function findBikeByHash(bikes, bikeHash) {
   return bikes.find(bike => bike.bikeHash === bikeHash) || null;
+}
+
+/**
+ * Find bike by name (with fuzzy matching)
+ * @param {Array} bikes - Array of bike objects
+ * @param {string} bikeName - Bike name to search for
+ * @returns {Object|null} Bike object or null if not found
+ */
+function findBikeByName(bikes, bikeName) {
+  // First try exact match
+  let bike = bikes.find(bike => 
+    bike.bikeName.toLowerCase().trim() === bikeName.toLowerCase().trim()
+  );
+  
+  // If no exact match, try fuzzy matching
+  if (!bike) {
+    bike = bikes.find(bike => fuzzyMatch(bike.bikeName, bikeName));
+  }
+  
+  return bike || null;
 }
 
 /**

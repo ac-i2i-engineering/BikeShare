@@ -113,12 +113,12 @@ function updateUserStatus(data) {
     ...data.user,
     hasUnreturnedBike: isCheckout ? true : false,
     lastCheckoutName: isCheckout ? data.bike.bikeName : data.user.lastCheckoutName,
-    lastCheckoutDate: isCheckout ? data.timestamp : data.user.lastCheckoutDate,
+    lastCheckoutDate: isCheckout ? data.currentState.timestamp : data.user.lastCheckoutDate,
     lastReturnName: isReturn ? data.bike.bikeName : data.user.lastReturnName,
-    lastReturnDate: isReturn ? data.timestamp : data.user.lastReturnDate,
+    lastReturnDate: isReturn ? data.currentState.timestamp : data.user.lastReturnDate,
     numberOfCheckouts: isCheckout ? (data.user.numberOfCheckouts + 1) : data.user.numberOfCheckouts,
     numberOfReturns: isReturn ? (data.user.numberOfReturns + 1) : data.user.numberOfReturns,
-    firstUsageDate: data.user.firstUsageDate || data.timestamp
+    firstUsageDate: data.user.firstUsageDate || data.currentState.timestamp
   };
   
   // Add to state changes
@@ -126,7 +126,7 @@ function updateUserStatus(data) {
     action: data.user.isNewUser ? 'create' : 'update',
     sheetName: CACHED_SETTINGS.VALUES.SHEETS.USERS_STATUS.NAME,
     searchKey: 'userEmail',
-    searchValue: data.userEmail,
+    searchValue: data.formData.userEmail,
     updatedData: updatedUser
   }];
   
@@ -188,73 +188,9 @@ function calculateUsageHours(data) {
   };
 }
 
-/**
- * Create checkout record
- * @param {Object} data - Current processing data
- * @returns {Object} Data with log record
- */
-function createCheckoutRecord(data) {
-  if (data.error) return data; // Skip if already has error
-  
-  const logRecord = {
-    timestamp: data.currentState.timestamp,
-    userEmail: data.user.userEmail,
-    bikeHash: data.bike.bikeHash,
-    conditionConfirmation: data.conditionConfirmation,
-    status: 'Processed'
-  };
-  
-  const logChanges = [...(data.stateChanges?.logs || []), {
-    action: 'create',
-    sheetName: CACHED_SETTINGS.VALUES.SHEETS.CHECKOUT_LOGS.NAME,
-    range: data.context.range,
-    data: logRecord
-  }];
-  
-  return {
-    ...data,
-    logRecord: logRecord,
-    stateChanges: {
-      ...data.stateChanges,
-      logs: logChanges
-    }
-  };
-}
 
-/**
- * Create return record
- * @param {Object} data - Current processing data
- * @param {Object} context - Processing context
- * @returns {Object} Data with log record
- */
-function createReturnRecord(data) {
-  if (data.error) return data; // Skip if already has error
-  
-  const logRecord = {
-    timestamp: data.timestamp,
-    userEmail: data.userEmail,
-    bikeHash: data.bikeHash,
-    usageHours: data.usageHours || 0,
-    isReturningForFriend: data.isReturningForFriend,
-    status: 'Processed'
-  };
-  
-  const logChanges = [...(data.stateChanges?.logs || []), {
-    action: 'create',
-    sheetName: CACHED_SETTINGS.VALUES.SHEETS.RETURN_LOGS.NAME,
-    range: data.context.range,
-    data: logRecord
-  }];
-  
-  return {
-    ...data,
-    logRecord: logRecord,
-    stateChanges: {
-      ...data.stateChanges,
-      logs: logChanges
-    }
-  };
-}
+
+
 
 /**
  * Generate notifications based on transaction type and result
@@ -291,7 +227,8 @@ function generateNotifications(data) {
         bikeName: data.bike.bikeName,
         bikeHash: data.bike.bikeHash,
         timestamp: data.currentState.timestamp,
-        usageHours: data.user.usageHours
+        usageHours: data.usageHours || 0,
+        range: data.context.range // Add range for success marking
       }
     });
   }
@@ -305,21 +242,39 @@ function generateNotifications(data) {
 /**
  * Mark sheet entry with status/color
  * @param {Object} data - Current processing data
- * @param {Object} context - Processing context
  * @returns {Object} Data with entry marking info
  */
 function markSheetEntry(data) {
-  if(!data.error) return data
-  const entryMark = {
-    range: data.context.range,
-    bgColor: '#ffcccc', // Red for error,
-    note: data.error.errorMessage 
-  };
-  
-  return {
-    ...data,
-    entryMark: entryMark
-  };
+  if (!data.context?.range) {
+    // No range to mark, skip marking
+    return data;
+  }
+
+  if (data.error) {
+    // Mark error entries with red background and error message
+    const entryMark = {
+      range: data.context.range,
+      bgColor: '#ffcccc', // Red for error
+      note: `ERROR: ${data.errorMessage || 'Processing error'}`
+    };
+    
+    return {
+      ...data,
+      entryMark: entryMark
+    };
+  } else {
+    // Mark successful entries with green background
+    const entryMark = {
+      range: data.context.range,
+      bgColor: '#ccffcc', // Light green for success
+      note: `SUCCESS: ${data.transaction.type} processed for ${data.user.userEmail}`
+    };
+    
+    return {
+      ...data,
+      entryMark: entryMark
+    };
+  }
 }
 
 // =============================================================================
@@ -333,19 +288,37 @@ function markSheetEntry(data) {
  */
 function commitStateChanges(result) {
   try {
-    // Apply bike changes
-    if (result.stateChanges?.bikes) {
+    // Defensive check - ensure we have a valid result object
+    if (!result || typeof result !== 'object') {
+      throw new Error('Invalid result object provided to commitStateChanges');
+    }
+    
+    // Prepare all database operations for batch processing
+    const allOperations = [];
+    
+    // Add bike changes to batch
+    if (result.stateChanges?.bikes && Array.isArray(result.stateChanges.bikes)) {
       result.stateChanges.bikes.forEach(change => {
-        applyBikeStateChange(change);
+        if (change && change.updatedData) {
+          allOperations.push(prepareBikeOperation(change));
+        }
       });
     }
     
-    // Apply user changes
-    if (result.stateChanges?.users) {
+    // Add user changes to batch  
+    if (result.stateChanges?.users && Array.isArray(result.stateChanges.users)) {
       result.stateChanges.users.forEach(change => {
-        applyUserStateChange(db, change);
+        if (change && change.updatedData) {
+          allOperations.push(prepareUserOperation(change));
+        }
       });
     }
+    
+    // Note: No log operations needed - Google Forms handles log creation
+    // We only mark entries for errors (handled separately)
+    
+    // Execute all operations in batch for better performance
+    const batchResults = DB.batchUpdate(allOperations);
     
     // Send notifications
     if (result.notifications) {
@@ -354,21 +327,29 @@ function commitStateChanges(result) {
       });
     }
     
-    // Mark sheet entry
-    if (result.entryMark) {
-      COMM.markEntry(result.entryMark.range, result.entryMark.bgColor, result.entryMark.note);
+    // Mark sheet entry (both success and error cases)
+    if (result.entryMark && result.entryMark.range) {
+      try {
+        DB.markEntry(result.entryMark.range, result.entryMark.bgColor, result.entryMark.note);
+      } catch (markError) {
+        Logger.log(`Warning: Could not mark entry - ${markError.message}`);
+        // Don't fail the entire transaction for marking issues
+      }
     }
     
-    // Sort sheets
-    const sheetToSort = result.transaction?.type === 'checkout' 
-      ? CACHED_SETTINGS.VALUES.SHEETS.CHECKOUT_LOGS.NAME
-      : CACHED_SETTINGS.VALUES.SHEETS.RETURN_LOGS.NAME;
-    DB.sortByColumn(sheetToSort);
+    // Sort sheets (only if we have operations)
+    if (allOperations.length > 0) {
+      const sheetToSort = result.transaction?.type === 'checkout' 
+        ? CACHED_SETTINGS.VALUES.SHEETS.CHECKOUT_LOGS.NAME
+        : CACHED_SETTINGS.VALUES.SHEETS.RETURN_LOGS.NAME;
+      DB.sortByColumn(sheetToSort);
+    }
     
     return {
       ...result,
       success: true,
-      persistenceStatus: 'committed'
+      persistenceStatus: 'committed',
+      batchResults: batchResults
     };
     
   } catch (error) {
@@ -383,71 +364,73 @@ function commitStateChanges(result) {
 }
 
 /**
- * Apply bike state change to database
+ * Prepare bike operation for batch processing
  * @param {Object} change - Change specification
+ * @returns {Object} Batch operation object
  */
-function applyBikeStateChange(change) {
-  if (change.action === 'update') {
-    const bikeRowData = [
-      change.updatedData.bikeName,
-      change.updatedData.size,
-      change.updatedData.maintenanceStatus,
-      change.updatedData.availability,
-      change.updatedData.lastCheckoutDate,
-      change.updatedData.lastReturnDate,
-      change.updatedData.currentUsageTimer,
-      change.updatedData.totalUsageHours,
-      change.updatedData.mostRecentUser,
-      change.updatedData.secondRecentUser,
-      change.updatedData.thirdRecentUser,
-      change.updatedData.tempRecent,
-      change.updatedData.bikeHash
-    ];
-    
-    // Map search key to column index (bikeHash is in column 12, index 12)
-    const searchColumnIndex = change.searchKey === 'bikeHash' ? 12 : 0;
-    DB.updateRowByUniqueValue(
-      change.sheetName,
-      searchColumnIndex,
-      change.searchValue,
-      bikeRowData
-    );
+function prepareBikeOperation(change) {
+  if (!change || !change.updatedData) {
+    throw new Error('Invalid bike change object');
   }
+  
+  const bikeRowData = [
+    change.updatedData.bikeName || '',
+    change.updatedData.size || '',
+    change.updatedData.maintenanceStatus || 'Good',
+    change.updatedData.availability || 'Available',
+    change.updatedData.lastCheckoutDate || '',
+    change.updatedData.lastReturnDate || '',
+    change.updatedData.currentUsageTimer || 0,
+    change.updatedData.totalUsageHours || 0,
+    change.updatedData.mostRecentUser || '',
+    change.updatedData.secondRecentUser || '',
+    change.updatedData.thirdRecentUser || '',
+    change.updatedData.tempRecent || '',
+    change.updatedData.bikeHash || ''
+  ];
+  
+  return {
+    type: 'updateByRowIndex',
+    sheetName: change.sheetName || CACHED_SETTINGS.VALUES.SHEETS.BIKES_STATUS.NAME,
+    rowIndex: change.updatedData._rowIndex, // Use the row index from loaded data!
+    values: bikeRowData
+  };
 }
 
 /**
- * Apply user state change to database
+ * Prepare user operation for batch processing
  * @param {Object} change - Change specification
+ * @returns {Object} Batch operation object
  */
-function applyUserStateChange(change) {
+function prepareUserOperation(change) {
+  if (!change || !change.updatedData) {
+    throw new Error('Invalid user change object');
+  }
+  
   const userRowData = [
-    change.updatedData.userEmail,
+    change.updatedData.userEmail || '',
     change.updatedData.hasUnreturnedBike ? 'Yes' : 'No',
-    change.updatedData.lastCheckoutName,
-    change.updatedData.lastCheckoutDate,
-    change.updatedData.lastReturnName,
-    change.updatedData.lastReturnDate,
-    change.updatedData.numberOfCheckouts,
-    change.updatedData.numberOfReturns,
-    change.updatedData.numberOfMismatches,
-    change.updatedData.usageHours,
-    change.updatedData.overdueReturns,
-    change.updatedData.firstUsageDate
+    change.updatedData.lastCheckoutName || '',
+    change.updatedData.lastCheckoutDate || '',
+    change.updatedData.lastReturnName || '',
+    change.updatedData.lastReturnDate || '',
+    change.updatedData.numberOfCheckouts || 0,
+    change.updatedData.numberOfReturns || 0,
+    change.updatedData.numberOfMismatches || 0,
+    change.updatedData.usageHours || 0,
+    change.updatedData.overdueReturns || 0,
+    change.updatedData.firstUsageDate || ''
   ];
   
-  if (change.action === 'create') {
-    DB.appendRow(change.sheetName, userRowData);
-  } else if (change.action === 'update') {
-    // Map search key to column index (userEmail is in column 0, index 0)
-    const searchColumnIndex = change.searchKey === 'userEmail' ? 0 : 0;
-    DB.updateRowByUniqueValue(
-      change.sheetName,
-      searchColumnIndex,
-      change.searchValue,
-      userRowData
-    );
-  }
+  return {
+    type: change.action === 'create' ? 'append' : 'updateByRowIndex',
+    sheetName: change.sheetName || CACHED_SETTINGS.VALUES.SHEETS.USERS_STATUS.NAME,
+    rowIndex: change.updatedData._rowIndex, // Use the row index from loaded data!
+    values: userRowData
+  };
 }
+
+
 
 /**
  * Handle pipeline errors

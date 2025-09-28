@@ -5,7 +5,7 @@ node_modules/**
 # Development files
 templates/**
 endUserManuals/**
-legacy_classes/**
+old_versions/**
 tasks.txt
 *.md
 

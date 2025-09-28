@@ -23,6 +23,6 @@ out/
 # Dev folders
 endUserManuals/
 templates/
-legacy_classes/
+old_versions/
 
 fncalProgrammingBasics.js
