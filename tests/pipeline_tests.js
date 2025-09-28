@@ -93,7 +93,7 @@ function testReturnProcess() {
     },
     source: {
       getActiveSheet: () => ({
-        getName: () => CACHED_SETTINGS.VALUES.SHEETS.RETURN_LOGS.NAME
+        getName: () => CACHED_SETTINGS.VALUES?.SHEETS?.RETURN_LOGS?.NAME || 'Return Logs'
       })
     }
   };
@@ -134,7 +134,7 @@ function testErrorHandling() {
     },
     source: {
       getActiveSheet: () => ({
-        getName: () => CACHED_SETTINGS.VALUES.SHEETS.CHECKOUT_LOGS.NAME
+        getName: () => CACHED_SETTINGS.VALUES?.SHEETS?.CHECKOUT_LOGS?.NAME || 'Checkout Logs'
       })
     }
   };

@@ -166,7 +166,7 @@ function loadAllSheetData() {
     
     // Get both sheets in single context 
     const bikesSheet = spreadsheet.getSheetByName(CACHED_SETTINGS.VALUES.SHEETS.BIKES_STATUS.NAME);
-    const usersSheet = spreadsheet.getSheetByName(CACHED_SETTINGS.VALUES.SHEETS.USERS_STATUS.NAME);
+    const usersSheet = spreadsheet.getSheetByName(CACHED_SETTINGS.VALUES.SHEETS.USER_STATUS.NAME);
     
     // Get raw sheet data as 2D arrays
     const bikesData = bikesSheet.getDataRange().getValues();
@@ -313,9 +313,10 @@ function validateBikeExists(data) {
   }
   
   if (!bike) {
+    const errorCode = data.formData.bikeHash ? 'ERR_USR_COT_003' : 'ERR_USR_RET_002';
     return {
       ...data,
-      error: 'ERR_BIK_NOT_001',
+      error: errorCode,
       errorMessage: 'Bike not found'
     };
   }
@@ -336,8 +337,8 @@ function validateBikeAvailable(data) {
   if (data.bike.availability !== 'Available') {
     return {
       ...data,
-      error: 'ERR_BIK_AVL_001',
-      errorMessage: 'Bike is not available for checkout'
+      error: 'ERR_USR_COT_001',
+      errorMessage: 'Bike is not ready for checkout'
     };
   }
   return data;
@@ -356,7 +357,7 @@ function validateUserEligible(data) {
   if (user.hasUnreturnedBike) {
     return {
       ...data,
-      error: 'ERR_USR_UNR_001',
+      error: 'ERR_USR_COT_002',
       errorMessage: 'User already has an unreturned bike'
     };
   }
@@ -380,8 +381,8 @@ function validateReturnEligible(data) {
   if (data.bike.availability !== 'Checked Out') {
     return {
       ...data,
-      error: 'ERR_BIK_NOT_CHK_001',
-      errorMessage: 'Bike is not currently checked out'
+      error: 'ERR_USR_RET_006',
+      errorMessage: 'User has no unreturned bike'
     };
   }
   
@@ -404,10 +405,21 @@ function validateReturnEligible(data) {
     }
   }
   
+  // Check for bike name mismatch (user returned different bike than checked out)
+  const actualLastCheckoutName = user.lastCheckoutName;
+  const isCollectedMismatch = actualLastCheckoutName && 
+    !fuzzyMatch(actualLastCheckoutName, data.bike.bikeName) && 
+    data.formData.isDirectReturn !== false;
+
+  // Detect if this is a direct return (user returning their own bike directly)
+  const isDirectReturn = data.formData.isDirectReturn !== false;
+
   return {
     ...data,
     user: user,
-    isReturningForFriend: isReturningForFriend
+    isReturningForFriend: isReturningForFriend,
+    isCollectedMismatch: isCollectedMismatch,
+    isDirectReturn: isDirectReturn
   };
 }
 

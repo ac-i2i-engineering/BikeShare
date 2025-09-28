@@ -215,9 +215,21 @@ function generateNotifications(data) {
     });
   } else {
     // Success notifications
-    const successCommID = data.transaction.type === 'checkout' 
-      ? 'SUC_CHK_001' 
-      : 'SUC_RET_001';
+    let successCommID;
+    if (data.transaction.type === 'checkout') {
+      successCommID = 'CFM_USR_COT_001';
+    } else {
+      // Return success codes based on scenario
+      if (data.isReturningForFriend) {
+        successCommID = 'CFM_USR_RET_003'; // returning for friend
+      } else if (data.isCollectedMismatch) {
+        successCommID = 'CFM_USR_RET_004'; // mismatch return
+      } else if (data.isDirectReturn === false) {
+        successCommID = 'CFM_USR_RET_002'; // indirect return
+      } else {
+        successCommID = 'CFM_USR_RET_001'; // normal return
+      }
+    }
       
     notifications.push({
       type: 'success',
