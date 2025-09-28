@@ -7,6 +7,15 @@ function quickTest(){
   console.log(CACHED_SETTINGS.VALUES)
 }
 
+// Simple test runner
+function runTests() {
+  try {
+    runAllTests(); // Calls the test function from pipeline_tests.js
+  } catch (error) {
+    Logger.log(`❌ Test failed: ${error.message}`);
+  }
+}
+
 function printFormFieldInfo(formId){
   const form = FormApp.openById(formId);
   form.getItems().forEach(item=>{
