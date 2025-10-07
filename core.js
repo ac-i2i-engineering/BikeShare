@@ -251,46 +251,7 @@ function generateNotifications(data) {
   };
 }
 
-/**
- * Mark sheet entry with status/color
- * @param {Object} data - Current processing data
- * @returns {Object} Data with entry marking info
- */
-function markSheetEntry(data) {
-  if (!data.context?.range) {
-    // No range to mark, skip marking
-    return data;
-  }
 
-  if (data.error) {
-    // Mark error entries with red background and error message
-    const entryMark = {
-      range: data.context.range,
-      bgColor: '#ffcccc', // Red for error
-      note: `ERROR: ${data.errorMessage || 'Processing error'}`
-    };
-    
-    return {
-      ...data,
-      entryMark: entryMark
-    };
-  } else if (data.transaction && data.user) {
-    // Mark successful entries with green background - only if we have required data
-    const entryMark = {
-      range: data.context.range,
-      bgColor: '#ccffcc', // Light green for success
-      note: `SUCCESS: ${data.transaction.type} processed for ${data.user.userEmail}`
-    };
-    
-    return {
-      ...data,
-      entryMark: entryMark
-    };
-  } else {
-    // No marking if we don't have sufficient data
-    return data;
-  }
-}
 
 // =============================================================================
 // STATE PERSISTENCE FUNCTIONS (Side Effects)
@@ -351,21 +312,7 @@ function commitStateChanges(result) {
     } else {
       Logger.log('No notifications to send');
     }
-    
-    // Mark sheet entry (both success and error cases)
-    if (result.entryMark && result.entryMark.range) {
-      try {
-        Logger.log(`Marking entry with color: ${result.entryMark.bgColor}, note: ${result.entryMark.note}`);
-        DB.markEntry(result.entryMark.range, result.entryMark.bgColor, result.entryMark.note);
-        Logger.log(`Successfully marked entry`);
-      } catch (markError) {
-        Logger.log(`Warning: Could not mark entry - ${markError.message}`);
-        // Don't fail the entire transaction for marking issues
-      }
-    } else {
-      Logger.log(`No entry marking needed - entryMark: ${!!result.entryMark}, range: ${!!result.entryMark?.range}`);
-    }
-    
+        
     // Sort only sheets that had new rows appended
     if (allOperations.length > 0) {
       const sheetsToSort = new Set();

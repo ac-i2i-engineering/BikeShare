@@ -53,7 +53,7 @@ const COMM = {
     }
 
     if (comm.markEntry && context.range) {
-      Logger.log(`Marking entry with color: ${comm.markEntry.bgColor}, note: ${comm.markEntry.note}`);
+      Logger.log(`Marking entry per admin config - Code: ${commID}, Color: ${comm.markEntry.bgColor}, Note: ${comm.markEntry.note}`);
       const markResult = COMM.markEntry(
         context.range,
         comm.markEntry.bgColor,
@@ -62,7 +62,7 @@ const COMM = {
       Logger.log(`Mark entry result: ${JSON.stringify(markResult)}`);
       results.push(markResult);
     } else {
-      Logger.log(`Skipping entry marking - markEntry: ${!!comm.markEntry}, range: ${!!context.range}`);
+      Logger.log(`Skipping entry marking - markEntry: ${comm.markEntry ? 'configured as null' : 'not configured'}, range: ${!!context.range}`);
     }
 
     return results;

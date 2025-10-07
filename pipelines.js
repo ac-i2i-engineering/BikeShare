@@ -59,8 +59,7 @@ function checkoutPipeline(rawData) {
     updateUserStatus,
     
     // Communication steps
-    generateNotifications,
-    markSheetEntry
+    generateNotifications
   )(rawData);
 }
 
@@ -84,8 +83,7 @@ function returnPipeline(rawData) {
     calculateUsageHours,
     
     // Communication steps
-    generateNotifications,
-    markSheetEntry
+    generateNotifications
   )(rawData);
 }
 
