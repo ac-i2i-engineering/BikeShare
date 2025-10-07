@@ -397,8 +397,12 @@ function validateReturnEligible(data) {
   
   const user = findUserByEmail(data.currentState.users, data.formData.userEmail) || createNewUser(data.formData.userEmail);
   
-  // Check if returning for friend (bike not checked out by this user)
-  const isReturningForFriend = data.bike.mostRecentUser !== data.formData.userEmail && data.formData.friendEmail !== "";
+  // Check if returning for friend (bike not checked out by this user) - case-insensitive comparison
+  const normalizedMostRecentUser = (data.bike.mostRecentUser || '').toLowerCase().trim();
+  const normalizedUserEmail = (data.formData.userEmail || '').toLowerCase().trim();
+  const isReturningForFriend = normalizedMostRecentUser !== normalizedUserEmail && data.formData.friendEmail !== "";
+  
+  Logger.log(`🔍 Friend return check: mostRecentUser='${normalizedMostRecentUser}', currentUser='${normalizedUserEmail}', friendEmail='${data.formData.friendEmail}', isReturningForFriend=${isReturningForFriend}`);
   
   // If returning for friend, validate they have permission or bike is overdue
   if (isReturningForFriend) {
@@ -467,23 +471,46 @@ function findBikeByName(bikes, bikeName) {
 }
 
 /**
- * Find user by email
+ * Find user by email (case-insensitive)
  * @param {Array} users - Array of user objects
  * @param {string} email - Email to search for
  * @returns {Object|null} User object or null if not found
  */
 function findUserByEmail(users, email) {
-  return users.find(user => user.userEmail === email) || null;
+  if (!email || typeof email !== 'string') {
+    Logger.log(`⚠️ findUserByEmail: Invalid email provided: ${email}`);
+    return null;
+  }
+  
+  const normalizedEmail = email.toLowerCase().trim();
+  const foundUser = users.find(user => {
+    if (!user.userEmail || typeof user.userEmail !== 'string') {
+      Logger.log(`⚠️ findUserByEmail: Invalid user email in database: ${user.userEmail}`);
+      return false;
+    }
+    return user.userEmail.toLowerCase().trim() === normalizedEmail;
+  }) || null;
+  
+  if (foundUser) {
+    Logger.log(`✅ User found: ${normalizedEmail} (original: ${foundUser.userEmail})`);
+  } else {
+    Logger.log(`❌ User not found: ${normalizedEmail}`);
+  }
+  
+  return foundUser;
 }
 
 /**
- * Create new user object
+ * Create new user object with normalized email
  * @param {string} email - User email
  * @returns {Object} New user object
  */
 function createNewUser(email) {
+  const normalizedEmail = (email || '').toLowerCase().trim();
+  Logger.log(`🆕 Creating new user with normalized email: ${normalizedEmail} (original: ${email})`);
+  
   return {
-    userEmail: email,
+    userEmail: normalizedEmail,
     hasUnreturnedBike: false,
     lastCheckoutName: '',
     lastCheckoutDate: null,

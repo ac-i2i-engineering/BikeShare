@@ -289,9 +289,9 @@ const DB = {
       const sheet = DB.getSheet(sheetConfig.NAME);
       if (sheet) {
         const lastRow = sheet.getLastRow()
+        const startRow = 2
+        const numRows = lastRow
         try{
-          const startRow = 2
-          const numRows = lastRow
           sheet.deleteRows(startRow,numRows-1) 
           Logger.log(`successfully deleted rows ${startRow}-${numRows} in ${key}`)
         }catch(error){

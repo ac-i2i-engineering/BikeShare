@@ -70,12 +70,12 @@ function updateBikeStatus(data) {
     availability: newStatus,
     lastCheckoutDate: newStatus === 'Checked Out' ? data.currentState.timestamp : data.bike.lastCheckoutDate,
     lastReturnDate: newStatus === 'Available' ? data.currentState.timestamp : data.bike.lastReturnDate,
-    // Update recent users for checkout - safely handle null/undefined values
+    // Update recent users for checkout - safely handle null/undefined values with normalized email
     ...(newStatus === 'Checked Out' && {
       tempRecent: data.bike.thirdRecentUser || '',
       thirdRecentUser: data.bike.secondRecentUser || '',
       secondRecentUser: data.bike.mostRecentUser || '',
-      mostRecentUser: data.formData.userEmail,
+      mostRecentUser: (data.formData.userEmail || '').toLowerCase().trim(),
     })
   };
   
@@ -126,7 +126,7 @@ function updateUserStatus(data) {
     action: data.user.isNewUser ? 'create' : 'update',
     sheetName: CACHED_SETTINGS.VALUES.SHEETS.USER_STATUS.NAME,
     searchKey: 'userEmail',
-    searchValue: data.formData.userEmail,
+    searchValue: data.user.userEmail, // Use normalized email from user object
     updatedData: updatedUser
   }];
   
@@ -173,7 +173,7 @@ function calculateUsageHours(data) {
         : change
     ),
     users: data.stateChanges.users.map(change => 
-      change.searchValue === data.formData.userEmail 
+      change.searchValue === data.user.userEmail // Use normalized email from user object
         ? { ...change, updatedData: updatedUser }
         : change
     )
@@ -206,7 +206,7 @@ function generateNotifications(data) {
       type: 'error',
       commID: data.error,
       context: {
-        userEmail: data.formData.userEmail,
+        userEmail: data.user?.userEmail || (data.formData.userEmail || '').toLowerCase().trim(), // Use normalized email
         errorMessage: data.errorMessage,
         bikeHash: data.formData.bikeHash,
         timestamp: data.currentState.timestamp,
