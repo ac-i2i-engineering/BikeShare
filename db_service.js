@@ -11,54 +11,26 @@ const DB = {
   getAllData: (sheetName, spreadsheetId = null) => 
     DB.getSheet(sheetName, spreadsheetId).getDataRange().getValues(),
 
-  // Find row by column value with fuzzy matching
-  findRowByColumn: (sheetName, columnIndex, value, exactMatch = false, spreadsheetId = null) => {
-    const data = DB.getAllData(sheetName, spreadsheetId);
-    for (let i = 1; i < data.length; i++) {
-      if (fuzzyMatch(data[i][columnIndex], value, exactMatch)) {
-        return { row: i + 1, data: data[i] };
-      }
-    }
-    return null;
-  },
-
-  // Update single row (batch operation)
-  updateRow: (sheetName, rowIndex, values, spreadsheetId = null) => {
-    const sheet = DB.getSheet(sheetName, spreadsheetId);
-    sheet.getRange(rowIndex, 1, 1, values.length).setValues([values]);
-  },
-
-  // Append single row
-  appendRow: (sheetName, values, spreadsheetId = null) => {
-    DB.getSheet(sheetName, spreadsheetId).appendRow(values);
-  },
-
-  // Update row by unique value
-  updateRowByUniqueValue: (sheetName, searchColumn, searchValue, newValues, spreadsheetId = null) => {
-    const colIndex = typeof searchColumn === 'string' ? 
-      DB.getColumnIndex(sheetName, searchColumn, spreadsheetId) : searchColumn;
-    const found = DB.findRowByColumn(sheetName, colIndex, searchValue, true, spreadsheetId);
-    if (found) {
-      DB.updateRow(sheetName, found.row, newValues, spreadsheetId);
-      return true;
-    }
-    return false;
-  },
-
-  // Get column index by header name
-  getColumnIndex: (sheetName, columnName, spreadsheetId = null) => {
-    const data = DB.getAllData(sheetName, spreadsheetId);
-    if (data.length > 0) {
-      return data[0].indexOf(columnName);
-    }
-    return -1;
-  },
-
   // Sort sheet using cached settings (API optimized)
   sortByColumn: (sheetName, spreadsheetId = null) => {
     try {
-      // Get sheet config from cache
-      const sheetConfig = DB.getSheetConfig(sheetName);
+      // Get sheet config from cache - inline the getSheetConfig functionality
+      let sheetConfig = null;
+      try {
+        const sheets = CACHED_SETTINGS?.VALUES?.SHEETS;
+        if (sheets) {
+          // Find sheet config by name (case-insensitive)
+          for (const [key, config] of Object.entries(sheets)) {
+            if (config?.NAME === sheetName) {
+              sheetConfig = config;
+              break;
+            }
+          }
+        }
+      } catch (error) {
+        Logger.log(`Error getting sheet config for '${sheetName}': ${error.message}`);
+      }
+      
       if (!sheetConfig || sheetConfig.SORT_COLUMN === undefined) {
         Logger.log(`Skipping sort for '${sheetName}' - no sort config found`);
         return;
@@ -94,25 +66,6 @@ const DB = {
     }
   },
 
-  // Helper to get sheet configuration from cache
-  getSheetConfig: (sheetName) => {
-    try {
-      const sheets = CACHED_SETTINGS?.VALUES?.SHEETS;
-      if (!sheets) return null;
-      
-      // Find sheet config by name (case-insensitive)
-      for (const [key, config] of Object.entries(sheets)) {
-        if (config?.NAME === sheetName) {
-          return config;
-        }
-      }
-      return null;
-    } catch (error) {
-      Logger.log(`Error getting sheet config for '${sheetName}': ${error.message}`);
-      return null;
-    }
-  },
-
   // Mark entry with color and note
   markEntry: (range, bgColor = null, note = null) => {
     if (!range) {
@@ -139,7 +92,6 @@ const DB = {
     if (!operations || operations.length === 0) return [];
     
     const results = [];
-    const spreadsheet = DB.getSpreadsheet(spreadsheetId);
     
     // Group operations by sheet for true batching
     const operationsBySheet = {};
@@ -235,20 +187,20 @@ const DB = {
         // If batch fails, fall back to individual operations
         Logger.log(`Batch operation failed for ${sheetName}, falling back to individual operations: ${error.message}`);
         
-        // Fallback for updates
+        // Fallback for updates - inline the updateRow functionality
         sheetOps.updates.forEach(update => {
           try {
-            DB.updateRow(sheetName, update.rowIndex, update.values, spreadsheetId);
+            sheet.getRange(update.rowIndex, 1, 1, update.values.length).setValues([update.values]);
             results.push({ success: true, operation: update.operation });
           } catch (err) {
             results.push({ success: false, error: err.message, operation: update.operation });
           }
         });
         
-        // Fallback for appends
+        // Fallback for appends - inline the appendRow functionality
         sheetOps.appends.forEach(append => {
           try {
-            DB.appendRow(sheetName, append.values, spreadsheetId);
+            sheet.appendRow(append.values);
             results.push({ success: true, operation: append.operation });
           } catch (err) {
             results.push({ success: false, error: err.message, operation: append.operation });
