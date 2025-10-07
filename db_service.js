@@ -290,9 +290,13 @@ const DB = {
       if (sheet) {
         const lastRow = sheet.getLastRow()
         const startRow = 2
-        const numRows = lastRow
+        const numRows = lastRow-1
+        if(numRows < 1){
+          Logger.log(`couldn't rest ${key} : it's already empty`)
+          continue;
+        }
         try{
-          sheet.deleteRows(startRow,numRows-1) 
+          sheet.deleteRows(startRow,numRows) 
           Logger.log(`successfully deleted rows ${startRow}-${numRows} in ${key}`)
         }catch(error){
           Logger.log(`Error deleting rows ${startRow}-${numRows} in ${key}: ${error.message}`)
