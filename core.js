@@ -328,11 +328,12 @@ function commitStateChanges(result) {
         }
       });
     }
-    
-    // Note: No log operations needed - Google Forms handles log creation
-    // We only mark entries for errors (handled separately)
-    
+        
     // Execute all operations in batch for better performance
+    Logger.log(`Prepared ${allOperations.length} operations for batch update:`);
+    allOperations.forEach((op, index) => {
+      Logger.log(`Operation ${index + 1}: type=${op.type}, sheet=${op.sheetName}, rowIndex=${op.rowIndex || 'N/A'}, values=${op.values.length} columns`);
+    });
     const batchResults = DB.batchUpdate(allOperations);
     
     // Send notifications
@@ -365,16 +366,40 @@ function commitStateChanges(result) {
       Logger.log(`No entry marking needed - entryMark: ${!!result.entryMark}, range: ${!!result.entryMark?.range}`);
     }
     
-    // Sort sheets (only if we have operations and transaction exists)
-    if (allOperations.length > 0 && result.transaction?.type) {
-      try {
-        const sheetToSort = result.transaction.type === 'checkout' 
+    // Sort only sheets that had new rows appended
+    if (allOperations.length > 0) {
+      const sheetsToSort = new Set();
+      
+      // Only sort sheets where we appended new rows
+      allOperations.forEach(operation => {
+        if (operation.type === 'append' && operation.sheetName) {
+          sheetsToSort.add(operation.sheetName);
+          Logger.log(`Will sort '${operation.sheetName}' - new row appended`);
+        }
+      });
+      
+      // So they always need sorting after transactions
+      if (result.transaction?.type) {
+        const logSheet = result.transaction.type === 'checkout' 
           ? CACHED_SETTINGS.VALUES.SHEETS.CHECKOUT_LOGS.NAME
           : CACHED_SETTINGS.VALUES.SHEETS.RETURN_LOGS.NAME;
-        DB.sortByColumn(sheetToSort);
-      } catch (sortError) {
-        Logger.log(`Warning: Could not sort sheet - ${sortError.message}`);
-        // Don't fail the entire transaction for sorting issues
+        sheetsToSort.add(logSheet);
+        Logger.log(`Will sort '${logSheet}' - transaction log appended`);
+      }
+      
+      // Sort each sheet that had appends
+      if (sheetsToSort.size > 0) {
+        Logger.log(`Sorting ${sheetsToSort.size} sheets with new rows`);
+        sheetsToSort.forEach(sheetName => {
+          try {
+            DB.sortByColumn(sheetName);
+          } catch (sortError) {
+            Logger.log(`Warning: Could not sort sheet ${sheetName} - ${sortError.message}`);
+            // Don't fail the entire transaction for sorting issues
+          }
+        });
+      } else {
+        Logger.log('No sheets need sorting - only updates performed');
       }
     }
     
@@ -464,12 +489,18 @@ function prepareUserOperation(change) {
     change.updatedData.firstUsageDate || ''
   ];
   
-  return {
+  const operation = {
     type: change.action === 'create' ? 'append' : 'updateByRowIndex',
     sheetName: change.sheetName || CACHED_SETTINGS.VALUES.SHEETS.USER_STATUS.NAME,
-    rowIndex: change.updatedData._rowIndex, // Use the row index from loaded data!
     values: userRowData
   };
+  
+  // Only add rowIndex for update operations, not for append operations
+  if (change.action !== 'create') {
+    operation.rowIndex = change.updatedData._rowIndex;
+  }
+  
+  return operation;
 }
 
 

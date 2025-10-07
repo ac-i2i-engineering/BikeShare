@@ -27,7 +27,6 @@ function handleSettingsUpdate(e){
   const editedCol = editedRange.getLastColumn()
   const editedRow = editedRange.getLastRow()
   const newValue = editedRange.getValue()
-  const services = new BikeShareService(CACHED_SETTINGS.VALUES.MAIN_DASHBOARD_SS_ID)
   const settingsUpdateDateCol = CACHED_SETTINGS.getValueCellByKeyName('LAST_SETTINGS_UPDATED_DATE','systemTime')
   const curDate =  new Date()
   const commContext = {}
@@ -38,10 +37,10 @@ function handleSettingsUpdate(e){
       const editedParam = editedSheet.getRange(editedRow,1).getValue()
       //process the database reset
       if(editedParam === "FORCE_SYSTEM_RESET" && newValue === "ON"){
-        services.db.resetDatabase()
+        DB.resetDatabase()
         //send success confirmation to the administrator
         commContext['resetDate'] = curDate
-        services.comm.handleCommunication('CFM_ADMIN_RESET_001',commContext)
+        COMM.handleCommunication('CFM_ADMIN_RESET_001',commContext)
         curCell.setValue("OFF")
         curCell.setNote(`Last reset on ${curDate}`)
         CACHED_SETTINGS.getValueCellByKeyName('FIRST_GENERATION_DATE','reportGenerationSettings').setValue(curDate)
@@ -50,7 +49,7 @@ function handleSettingsUpdate(e){
       //process system operations pause or resume by disabling/enabling all forms
       if(editedParam === "SYSTEM_ACTIVE"){
         const action = newValue === "ON" ? "resume" : "pause";
-        services.manageFormsAccessibility(action);
+        manageFormsAccessibility(action);
         curCell.setNote(`System ${action}d on ${curDate}`);
         CACHED_SETTINGS.getValueCellByKeyName('ENABLE_REPORT_GENERATION','systemButtons').setValue(newValue)
       }
@@ -73,5 +72,49 @@ function handleSettingsUpdate(e){
   if((curDate - settingsUpdateDateCol.getValue()) > delay){
     settingsUpdateDateCol.setValue(curDate)
     settingsUpdateDateCol.setNote(`Affected Range ${editedRange.getA1Notation()}`)
+  }
+}
+
+function manageFormsAccessibility(action){
+    // stop accepting responses for return and checkout form
+    const state = action === "resume" ? activateSystem() : shutdownSystem();
+  }
+
+/**
+ * Debug function to test sorting logic for log sheets only
+ * This simulates what happens after form submissions (API optimized)
+ */
+function debugSortLogSheets() {
+  try {
+    if (!CACHED_SETTINGS.refreshCache(false)) {
+      throw new Error('Failed to refresh settings cache');
+    }
+    
+    // Only sort log sheets (the ones that get new rows from forms)
+    const logSheets = [
+      CACHED_SETTINGS.VALUES?.SHEETS?.CHECKOUT_LOGS?.NAME,
+      CACHED_SETTINGS.VALUES?.SHEETS?.RETURN_LOGS?.NAME
+    ].filter(name => name); // Remove undefined values
+    
+    Logger.log(`Testing sort for log sheets: ${logSheets.join(', ')}`);
+    
+    let results = [];
+    logSheets.forEach(sheetName => {
+      try {
+        Logger.log(`Sorting ${sheetName}...`);
+        DB.sortByColumn(sheetName);
+        results.push({ sheet: sheetName, success: true });
+        Logger.log(`✅ ${sheetName} sorted successfully`);
+      } catch (error) {
+        results.push({ sheet: sheetName, success: false, error: error.message });
+        Logger.log(`❌ ${sheetName} failed: ${error.message}`);
+      }
+    });
+    
+    return { success: true, results: results };
+    
+  } catch (error) {
+    Logger.log(`Error in debugSortLogSheets: ${error.message}`);
+    return { success: false, error: error.message };
   }
 }

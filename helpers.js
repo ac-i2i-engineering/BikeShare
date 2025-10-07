@@ -24,7 +24,8 @@ function printFormFieldInfo(formId){
 }
 
 function cleanDatabase(){
-  DB.resetDatabase()
+  // DB.resetDatabase()
+  DB.hardRestDatabase()
 }
 
 function clearCache(){
@@ -91,10 +92,6 @@ function installUpdateUsageTimersTrigger() {
     .everyMinutes(intervalMinutes)
     .create();
 }
-
-// Form management functions moved to Code.js as manageFormsAccessibility()
-// Use manageFormsAccessibility('pause') instead of shutdownSystem()
-// Use manageFormsAccessibility('resume') instead of activateSystem()
 
 function levenshteinDistance(str1, str2) {
   const matrix = Array(str2.length + 1).fill().map(() => Array(str1.length + 1).fill(0));

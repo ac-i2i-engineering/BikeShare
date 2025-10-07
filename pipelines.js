@@ -4,7 +4,13 @@
  * @returns {Object} Result with success status and any notifications sent
  */
 function processFormSubmissionEvent(triggerEvent) {
+  // Acquire lock to prevent race conditions
+  const lock = LockService.getScriptLock();
+  
   try {
+    // Wait up to 30 seconds for the lock
+    lock.waitLock(30000);
+    
     // Extract input
     const context = extractEventContext(triggerEvent);
     const formData = parseFormResponse(context);
@@ -27,6 +33,9 @@ function processFormSubmissionEvent(triggerEvent) {
     
   } catch (error) {
     return handlePipelineError(error, triggerEvent);
+  } finally {
+    // Always release the lock
+    lock.releaseLock();
   }
 }
 
