@@ -23,6 +23,10 @@ function printFormFieldInfo(formId){
   });
 }
 
+function cleanDatabase(){
+  DB.resetDatabase()
+}
+
 function clearCache(){
   let cache = PropertiesService.getScriptProperties();
   cache.deleteAllProperties(); // Clears the cached data associated with the key "data"

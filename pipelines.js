@@ -192,8 +192,8 @@ function loadAllSheetData() {
  * @returns {Array} Array of bike objects
  */
 function processBikesData(bikesData) {
-  // Skip header row (index 0) and filter out empty rows
-  return bikesData.slice(1).filter(row => row[0] && row[12]).map((row, index) => ({
+  // Skip header row (index 0) and filter out empty rows (only check bike name)
+  return bikesData.slice(1).filter(row => row[0] && row[0].toString().trim() !== '').map((row, index) => ({
     bikeName: row[0],
     size: row[1],
     maintenanceStatus: row[2],

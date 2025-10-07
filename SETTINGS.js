@@ -22,7 +22,7 @@ class Settings {
       },
       notificationsConfig: {
         successMessages: "A9:H14",
-        errorMessages: "A22:H32",
+        errorMessages: "A22:H34",
       },
     };
     if (!this.refreshCache(false)) {
@@ -74,14 +74,23 @@ class Settings {
   }
 
   setSettingsCache() {
-    let loadedConfigs = {};
-    for (const sheetName in this.settingRangeMap) {
-      const sheet = this.management_ss.getSheetByName(sheetName);
-      for (const tableName in this.settingRangeMap[sheetName]) {
-        const tableRange = sheet.getRange(
-          this.settingRangeMap[sheetName][tableName]
-        );
-        const table = tableRange.getValues();
+    try {
+      let loadedConfigs = {};
+      Logger.log('Starting to load settings from sheets...');
+      
+      for (const sheetName in this.settingRangeMap) {
+        Logger.log(`Loading settings from sheet: ${sheetName}`);
+        const sheet = this.management_ss.getSheetByName(sheetName);
+        if (!sheet) {
+          throw new Error(`Sheet '${sheetName}' not found in management spreadsheet`);
+        }
+        
+        for (const tableName in this.settingRangeMap[sheetName]) {
+          Logger.log(`Loading table: ${tableName} from range: ${this.settingRangeMap[sheetName][tableName]}`);
+          const tableRange = sheet.getRange(
+            this.settingRangeMap[sheetName][tableName]
+          );
+          const table = tableRange.getValues();
 
         if (sheetName === "notificationsConfig") {
           let rowCounter = tableRange.getRow();
@@ -107,27 +116,56 @@ class Settings {
           return acc;
         }, {});
       }
+      }
+      
+      // Validate loaded configs
+      if (!loadedConfigs || Object.keys(loadedConfigs).length === 0) {
+        throw new Error('No configuration data loaded from spreadsheet');
+      }
+      
+      Logger.log(`Loaded ${Object.keys(loadedConfigs).length} configuration sections`);
+      CacheService.getDocumentCache().put(
+        this.cacheName,
+        JSON.stringify(loadedConfigs)
+      );
+      Logger.log('Settings cached successfully');
+    } catch (error) {
+      Logger.log(`Error in setSettingsCache: ${error.message}`);
+      throw error;
     }
-    CacheService.getDocumentCache().put(
-      this.cacheName,
-      JSON.stringify(loadedConfigs)
-    );
   }
   // New unified method
   refreshCache(forceRefresh = false) {
     try {
+      Logger.log(`Settings refresh started - forceRefresh: ${forceRefresh}`);
       let configs = null;
-      configs = CacheService.getDocumentCache().get(this.cacheName);
-      if(forceRefresh || !configs){
-         // Load from management spreadsheet
+      
+      if (!forceRefresh) {
+        configs = CacheService.getDocumentCache().get(this.cacheName);
+        Logger.log(`Cache retrieval result: ${configs ? 'found' : 'not found'}`);
+      }
+      
+      if (forceRefresh || !configs) {
+        Logger.log('Loading settings from management spreadsheet...');
         this.setSettingsCache();
         configs = CacheService.getDocumentCache().get(this.cacheName);
+        if (!configs) {
+          throw new Error('Failed to cache settings after loading from spreadsheet');
+        }
       }
+      
       this.cacheValues = JSON.parse(configs);
+      Logger.log('Settings parsed successfully');
+      
+      if (!this.cacheValues || typeof this.cacheValues !== 'object') {
+        throw new Error('Invalid cache values format');
+      }
+      
       this.setGlobalConfigs();
+      Logger.log('Global configs set successfully');
       return true;
     } catch (error) {
-      console.error("Error managing cache:", error);
+      Logger.log(`Error managing cache: ${error.message}`);
       return false;
     }
   }
@@ -173,22 +211,33 @@ class Settings {
   }
 
   setGlobalConfigs() {
-  this.VALUES = {
-      DEBUG_MODE: true,
-      ENABLE_FORCED_RESET: true,
-      SYSTEM_ACTIVE: this.isSystemActive(),
-      NEXT_SYSTEM_SHUTDOWN_DATE:this.cacheValues.systemTime.NEXT_SYSTEM_SHUTDOWN_DATE,
-      NEXT_SYSTEM_ACTIVATION_DATE:this.cacheValues.systemTime.NEXT_SYSTEM_ACTIVATION_DATE,
+    try {
+      Logger.log('Setting global configurations...');
+      
+      // Validate required cache sections
+      const requiredSections = ['systemButtons', 'systemTime', 'coreConfig'];
+      for (const section of requiredSections) {
+        if (!this.cacheValues[section]) {
+          Logger.log(`Warning: Missing required config section: ${section}`);
+        }
+      }
+      
+      this.VALUES = {
+        DEBUG_MODE: true,
+        ENABLE_FORCED_RESET: true,
+        SYSTEM_ACTIVE: this.isSystemActive(),
+        NEXT_SYSTEM_SHUTDOWN_DATE: this.cacheValues.systemTime?.NEXT_SYSTEM_SHUTDOWN_DATE || null,
+        NEXT_SYSTEM_ACTIVATION_DATE: this.cacheValues.systemTime?.NEXT_SYSTEM_ACTIVATION_DATE || null,
       ADMIN_EMAIL: this.getAdminEmail(),
       ORG_EMAIL: 'ndayishimiyeemile96@gmail.com',
       MANAGEMENT_SS_ID: this.management_ss_ID,
       MAIN_DASHBOARD_SS_ID: '1XE9b58isw2MreAvcNSDiCTIIlL09zFRWMKcCBtTkbbE',
       SHEETS: {
-        BIKES_STATUS: this.cacheValues.bikesStatus,
-        USER_STATUS: this.cacheValues.userStatus,
-        CHECKOUT_LOGS: this.cacheValues.checkoutLogs,
+        BIKES_STATUS: this.cacheValues.bikesStatus || { NAME: 'Bikes Status', RESET_RANGE: 'E2:L' },
+        USER_STATUS: this.cacheValues.userStatus || { NAME: 'User Status', RESET_RANGE: 'A2:L' },
+        CHECKOUT_LOGS: this.cacheValues.checkoutLogs || { NAME: 'Checkout Logs', RESET_RANGE: 'A2:D' },
         RETURN_LOGS: {
-          ...this.cacheValues.returnLogs,
+          ...(this.cacheValues.returnLogs || { NAME: 'Return Logs', RESET_RANGE: 'A2:I' }),
           DATE_COLUMN: 0,
         },
         REPORTS: {
@@ -234,10 +283,35 @@ class Settings {
       ENABLE_REPORT_GENERATION: this.cacheValues.systemButtons?.ENABLE_REPORT_GENERATION},
       IGNORED_REPORT_STMTS_ON_RFORM: this.cacheValues.miscellaneous?.IGNORED_REPORT_STMTS_ON_RFORM || [],
       COMM_CODES: {
-        ...this.cacheValues.successMessages,
-        ...this.cacheValues.errorMessages,
+        ...(this.cacheValues.successMessages || {}),
+        ...(this.cacheValues.errorMessages || {}),
       },
+    };
+    
+    Logger.log('Global configurations set successfully');
+  } catch (error) {
+    Logger.log(`Error in setGlobalConfigs: ${error.message}`);
+    throw error;
+  }
+}
+
+  // Debug method to check cache status
+  debugCacheStatus() {
+    Logger.log('=== CACHE DEBUG INFO ===');
+    Logger.log(`Cache name: ${this.cacheName}`);
+    Logger.log(`Cache values exists: ${!!this.cacheValues}`);
+    
+    if (this.cacheValues) {
+      Logger.log(`Cache sections: ${Object.keys(this.cacheValues).join(', ')}`);
+      Logger.log(`System buttons: ${JSON.stringify(this.cacheValues.systemButtons)}`);
     }
+    
+    Logger.log(`VALUES exists: ${!!this.VALUES}`);
+    if (this.VALUES) {
+      Logger.log(`COMM_CODES count: ${Object.keys(this.VALUES.COMM_CODES || {}).length}`);
+      Logger.log(`Notification settings: ${JSON.stringify(this.VALUES.NOTIFICATION_SETTINGS)}`);
+    }
+    Logger.log('=== END CACHE DEBUG ===');
   }
 
   getValueCellByKeyName(key, tableName) {

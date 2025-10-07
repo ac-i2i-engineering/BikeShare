@@ -65,9 +65,23 @@ const DB = {
 
   // Mark entry with color and note
   markEntry: (range, bgColor = null, note = null) => {
-    if (!bgColor && !note) return;
-    if (bgColor) range.setBackground(bgColor);
-    if (note) range.setNote(note);
+    if (!range) {
+      Logger.log('DB.markEntry: No range provided');
+      return;
+    }
+    if (!bgColor && !note) {
+      Logger.log('DB.markEntry: No color or note provided');
+      return;
+    }
+    
+    try {
+      if (bgColor) range.setBackground(bgColor);
+      if (note) range.setNote(note);
+      Logger.log(`DB.markEntry: Successfully marked range with color: ${bgColor}, note: ${note}`);
+    } catch (error) {
+      Logger.log(`DB.markEntry: Error marking range - ${error.message}`);
+      throw error;
+    }
   },
 
   // TRUE batch operations using AppScript's batch API - NO EXTRA API CALLS!
@@ -176,135 +190,23 @@ const DB = {
     });
     
     return results;
-  }
-};
+  },
 
-// =============================================================================
-// FUNCTIONAL COMMUNICATION OPERATIONS
-// Pure functions for notifications and messaging
-// =============================================================================
-
-const COMM = {
-  // Handle communication by ID
-  handleCommunication: (commID, context) => {
-    const comm = COMM.getCommunication(commID);
-    if (!comm) throw new Error(`Communication ID ${commID} not found`);
-
-    const results = [];
+  // Reset database by clearing specified ranges in all configured sheets
+  resetDatabase: () => {
+    if (!CACHED_SETTINGS.VALUES.ENABLE_FORCED_RESET || !CACHED_SETTINGS.VALUES.DEBUG_MODE) {
+      throw new Error("Auto reset is disabled or debug mode is off.");
+    }
     
-    if (comm.notifyUser && CACHED_SETTINGS.VALUES.NOTIFICATION_SETTINGS.ENABLE_USER_NOTIFICATIONS) {
-      results.push(COMM.notifyUser(
-        context.userEmail,
-        COMM.fillPlaceholders(comm.notifyUser.subject, context),
-        COMM.fillPlaceholders(comm.notifyUser.body, context)
-      ));
-    }
-
-    if (comm.notifyAdmin && CACHED_SETTINGS.VALUES.NOTIFICATION_SETTINGS.ENABLE_ADMIN_NOTIFICATIONS) {
-      results.push(COMM.notifyAdmin(
-        COMM.fillPlaceholders(comm.notifyAdmin.subject, context),
-        COMM.fillPlaceholders(comm.notifyAdmin.body, context)
-      ));
-    }
-
-    if (comm.notifyDeveloper && CACHED_SETTINGS.VALUES.NOTIFICATION_SETTINGS.ENABLE_DEV_NOTIFICATIONS) {
-      results.push(COMM.notifyDeveloper(
-        COMM.fillPlaceholders(comm.notifyDeveloper.subject, context),
-        COMM.fillPlaceholders(comm.notifyDeveloper.body, context)
-      ));
-    }
-
-    if (comm.markEntry && context.range) {
-      results.push(COMM.markEntry(
-        context.range,
-        comm.markEntry.bgColor,
-        COMM.fillPlaceholders(comm.markEntry.note, context)
-      ));
-    }
-
-    return results;
-  },
-
-  // Send user notification
-  notifyUser: (userEmail, subject, body) => {
-    try {
-      GmailApp.sendEmail(
-        userEmail,
-        subject,
-        `Hi,\n\n${body}\n\nThank you,\nBike Share Team`,
-        { from: CACHED_SETTINGS.VALUES.ORG_EMAIL }
-      );
-      return { success: true, recipient: userEmail };
-    } catch (error) {
-      Logger.log(`Error sending email to user: ${error.message}`);
-      return { success: false, error: error.message };
-    }
-  },
-
-  // Send admin notification
-  notifyAdmin: (subject, body) => {
-    try {
-      GmailApp.sendEmail(
-        CACHED_SETTINGS.VALUES.ADMIN_EMAIL,
-        subject,
-        `Hi,\n\n${body}\n\nThank you,\nBike Share Team`,
-        { from: CACHED_SETTINGS.VALUES.ORG_EMAIL }
-      );
-      return { success: true, recipient: 'admin' };
-    } catch (error) {
-      Logger.log(`Error sending email to admin: ${error.message}`);
-      return { success: false, error: error.message };
-    }
-  },
-
-  // Send developer notification
-  notifyDeveloper: (subject, body) => {
-    try {
-      GmailApp.sendEmail(
-        CACHED_SETTINGS.VALUES.DEVELOPER_EMAIL,
-        subject,
-        `Hi,\n\n${body}\n\nThank you,\nBike Share Team`,
-        { from: CACHED_SETTINGS.VALUES.ORG_EMAIL }
-      );
-      return { success: true, recipient: 'developer' };
-    } catch (error) {
-      Logger.log(`Error sending email to developer: ${error.message}`);
-      return { success: false, error: error.message };
-    }
-  },
-
-  // Mark sheet entry
-  markEntry: (range, color = null, note = null) => {
-    try {
-      if (!range) return { success: false, error: 'No range provided' };
-      DB.markEntry(range, color, note);
-      return { success: true };
-    } catch (error) {
-      Logger.log(`Error marking entry: ${error.message}`);
-      return { success: false, error: error.message };
-    }
-  },
-
-  // Get communication config by ID
-  getCommunication: (commID) => CACHED_SETTINGS.VALUES.COMM_CODES[commID] || null,
-
-  // Fill template placeholders
-  fillPlaceholders: (template, context) => 
-    template.replace(/{{(.*?)}}/g, (match, key) => context[key.trim()] || ''),
-
-  // Batch send notifications
-  batchNotify: (notifications) => {
-    return notifications.map(notification => {
-      switch (notification.type) {
-        case 'user':
-          return COMM.notifyUser(notification.email, notification.subject, notification.body);
-        case 'admin':
-          return COMM.notifyAdmin(notification.subject, notification.body);
-        case 'developer':
-          return COMM.notifyDeveloper(notification.subject, notification.body);
-        default:
-          return { success: false, error: 'Unknown notification type' };
+    for (const key in CACHED_SETTINGS.VALUES.SHEETS) {
+      const sheetConfig = CACHED_SETTINGS.VALUES.SHEETS[key];
+      const sheet = DB.getSheet(sheetConfig.NAME);
+      if (sheet) {
+        const range = sheet.getRange(sheetConfig.RESET_RANGE);
+        range.clearContent();
+        range.setBackground(null);
+        range.setNote('');  
       }
-    });
+    }
   }
 };

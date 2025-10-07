@@ -33,11 +33,25 @@ function testCheckoutProcess() {
   Logger.log('Testing checkout process...');
   
   // Create mock event that simulates Google Apps Script form submission
+  const randomized = true;
+  const timestamp = new Date();
+  const bikeHashes = ['53BE15','3A8BD0','548998','3A8FC0','3E950E','589EE7','4038A4','437D9E','437FE3','562E7E','3CF834'];
+  const bikeNames = ['gates','Harris','hitchcock','Humphrey','Meiklejohn','moore','Olds','Seelye','Stearns','james','Kate'];
+  // Create a dictionary mapping bike names to their hashes
+  const bikeHashesByNames = bikeNames.reduce((acc, name, idx) => {
+    acc[name] = bikeHashes[idx];
+    return acc;
+  }, {});
+
+  // Select a random bike name and get its hash
+  const selectedBikeName = randomized ? bikeNames[Math.floor(Math.random() * bikeNames.length)] : '';
+  const bike = randomized ? bikeHashesByNames[selectedBikeName] : bikeHashesByNames['Harris'];
+  const studentEmail = randomized ? timestamp.getMilliseconds()+"@amherst.edu"  : 'endayishimiye28@amherst.edu'
   const mockEvent = {
     values: [
-      new Date(), // timestamp
-      'student@amherst.edu', // userEmail
-      'BIKE001', // bikeHash
+      timestamp, // timestamp
+      studentEmail, // userEmail
+      bike, // bikeHash
       'Good' // conditionConfirmation
     ],
     range: {

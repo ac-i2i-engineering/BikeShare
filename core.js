@@ -70,11 +70,11 @@ function updateBikeStatus(data) {
     availability: newStatus,
     lastCheckoutDate: newStatus === 'Checked Out' ? data.currentState.timestamp : data.bike.lastCheckoutDate,
     lastReturnDate: newStatus === 'Available' ? data.currentState.timestamp : data.bike.lastReturnDate,
-    // Update recent users for checkout
+    // Update recent users for checkout - safely handle null/undefined values
     ...(newStatus === 'Checked Out' && {
-      tempRecent: data.bike.thirdRecentUser,
-      thirdRecentUser: data.bike.secondRecentUser,
-      secondRecentUser: data.bike.mostRecentUser,
+      tempRecent: data.bike.thirdRecentUser || '',
+      thirdRecentUser: data.bike.secondRecentUser || '',
+      secondRecentUser: data.bike.mostRecentUser || '',
       mostRecentUser: data.formData.userEmail,
     })
   };
@@ -124,7 +124,7 @@ function updateUserStatus(data) {
   // Add to state changes
   const userChanges = [...(data.stateChanges?.users || []), {
     action: data.user.isNewUser ? 'create' : 'update',
-    sheetName: CACHED_SETTINGS.VALUES.SHEETS.USERS_STATUS.NAME,
+    sheetName: CACHED_SETTINGS.VALUES.SHEETS.USER_STATUS.NAME,
     searchKey: 'userEmail',
     searchValue: data.formData.userEmail,
     updatedData: updatedUser
@@ -213,8 +213,8 @@ function generateNotifications(data) {
         range: data.context.range || null // Add range context for error marking
       }
     });
-  } else {
-    // Success notifications
+  } else if (data.transaction && data.user && data.bike) {
+    // Success notifications - only if we have all required data
     let successCommID;
     if (data.transaction.type === 'checkout') {
       successCommID = 'CFM_USR_COT_001';
@@ -274,8 +274,8 @@ function markSheetEntry(data) {
       ...data,
       entryMark: entryMark
     };
-  } else {
-    // Mark successful entries with green background
+  } else if (data.transaction && data.user) {
+    // Mark successful entries with green background - only if we have required data
     const entryMark = {
       range: data.context.range,
       bgColor: '#ccffcc', // Light green for success
@@ -286,6 +286,9 @@ function markSheetEntry(data) {
       ...data,
       entryMark: entryMark
     };
+  } else {
+    // No marking if we don't have sufficient data
+    return data;
   }
 }
 
@@ -333,28 +336,46 @@ function commitStateChanges(result) {
     const batchResults = DB.batchUpdate(allOperations);
     
     // Send notifications
-    if (result.notifications) {
-      result.notifications.forEach(notification => {
-        COMM.handleCommunication(notification.commID, notification.context);
+    if (result.notifications && result.notifications.length > 0) {
+      Logger.log(`Attempting to send ${result.notifications.length} notifications`);
+      result.notifications.forEach((notification, index) => {
+        try {
+          Logger.log(`Processing notification ${index + 1}: ${notification.commID}`);
+          const notificationResults = COMM.handleCommunication(notification.commID, notification.context);
+          Logger.log(`Notification ${index + 1} results:`, JSON.stringify(notificationResults));
+        } catch (error) {
+          Logger.log(`Error processing notification ${index + 1}: ${error.message}`);
+        }
       });
+    } else {
+      Logger.log('No notifications to send');
     }
     
     // Mark sheet entry (both success and error cases)
     if (result.entryMark && result.entryMark.range) {
       try {
+        Logger.log(`Marking entry with color: ${result.entryMark.bgColor}, note: ${result.entryMark.note}`);
         DB.markEntry(result.entryMark.range, result.entryMark.bgColor, result.entryMark.note);
+        Logger.log(`Successfully marked entry`);
       } catch (markError) {
         Logger.log(`Warning: Could not mark entry - ${markError.message}`);
         // Don't fail the entire transaction for marking issues
       }
+    } else {
+      Logger.log(`No entry marking needed - entryMark: ${!!result.entryMark}, range: ${!!result.entryMark?.range}`);
     }
     
-    // Sort sheets (only if we have operations)
-    if (allOperations.length > 0) {
-      const sheetToSort = result.transaction?.type === 'checkout' 
-        ? CACHED_SETTINGS.VALUES.SHEETS.CHECKOUT_LOGS.NAME
-        : CACHED_SETTINGS.VALUES.SHEETS.RETURN_LOGS.NAME;
-      DB.sortByColumn(sheetToSort);
+    // Sort sheets (only if we have operations and transaction exists)
+    if (allOperations.length > 0 && result.transaction?.type) {
+      try {
+        const sheetToSort = result.transaction.type === 'checkout' 
+          ? CACHED_SETTINGS.VALUES.SHEETS.CHECKOUT_LOGS.NAME
+          : CACHED_SETTINGS.VALUES.SHEETS.RETURN_LOGS.NAME;
+        DB.sortByColumn(sheetToSort);
+      } catch (sortError) {
+        Logger.log(`Warning: Could not sort sheet - ${sortError.message}`);
+        // Don't fail the entire transaction for sorting issues
+      }
     }
     
     return {
@@ -383,6 +404,10 @@ function commitStateChanges(result) {
 function prepareBikeOperation(change) {
   if (!change || !change.updatedData) {
     throw new Error('Invalid bike change object');
+  }
+  
+  if (!change.updatedData._rowIndex) {
+    throw new Error('Missing row index for bike update - cannot commit changes');
   }
   
   const bikeRowData = [
@@ -419,6 +444,11 @@ function prepareUserOperation(change) {
     throw new Error('Invalid user change object');
   }
   
+  // Only validate row index for updates, not for new user creation
+  if (change.action !== 'create' && !change.updatedData._rowIndex) {
+    throw new Error('Missing row index for user update - cannot commit changes');
+  }
+  
   const userRowData = [
     change.updatedData.userEmail || '',
     change.updatedData.hasUnreturnedBike ? 'Yes' : 'No',
@@ -436,7 +466,7 @@ function prepareUserOperation(change) {
   
   return {
     type: change.action === 'create' ? 'append' : 'updateByRowIndex',
-    sheetName: change.sheetName || CACHED_SETTINGS.VALUES.SHEETS.USERS_STATUS.NAME,
+    sheetName: change.sheetName || CACHED_SETTINGS.VALUES.SHEETS.USER_STATUS.NAME,
     rowIndex: change.updatedData._rowIndex, // Use the row index from loaded data!
     values: userRowData
   };
