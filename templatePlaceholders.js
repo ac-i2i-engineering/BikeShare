@@ -1,4 +1,4 @@
-const notificationPlaceholdersProofed = {
+const codeToPlaceholders = {
   // --- CONFIRMATION CODES ---
   "CFM_USR_COT_001": {
     "entryNote": [],
@@ -117,3 +117,58 @@ const notificationPlaceholdersProofed = {
     "devNotification": []
   }
 };
+
+const placeholderToCodes = {
+  "bikeHash": [
+    "ERR_USR_COT_003"
+  ],
+  "bikeName": [
+    "CFM_USR_COT_001",
+    "CFM_USR_RET_001",
+    "CFM_USR_RET_002",
+    "CFM_USR_RET_003",
+    "CFM_USR_RET_004",
+    "ERR_USR_COT_001",
+    "ERR_USR_RET_001",
+    "ERR_USR_RET_002",
+    "ERR_USR_RET_007",
+    "ERR_USR_RET_008"
+  ],
+  "confirmBikeName": [
+    "ERR_USR_RET_001"
+  ],
+  "errorMessage": [
+    "ERR_USR_RET_008"
+  ],
+  "friendEmail": [
+    "CFM_USR_RET_002",
+    "CFM_USR_RET_003",
+    "ERR_USR_RET_003",
+    "ERR_USR_RET_008"
+  ],
+  "lastCheckoutDate": [
+    "ERR_USR_COT_002",
+    "ERR_USR_RET_006"
+  ],
+  "lastCheckoutName": [
+    "CFM_USR_RET_004",
+    "ERR_USR_RET_007",
+    "ERR_USR_RET_006"
+  ],
+  "lastReturnDate": [
+    "ERR_USR_RET_006"
+  ],
+  "resetDate": [
+    "CFM_ADMIN_RESET_001"
+  ],
+  "timestamp": [
+    "ERR_USR_RET_008"
+  ],
+  "unreturnedBikeName": [
+    "ERR_USR_COT_002"
+  ],
+  "userEmail": [
+    "CFM_USR_RET_002",
+    "ERR_USR_RET_008"
+  ]
+}

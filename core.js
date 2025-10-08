@@ -207,7 +207,7 @@ function generateNotifications(data) {
     timestamp: data.currentState?.timestamp,
     unreturnedBikeName: data.user?.lastCheckoutName,
     userEmail: data.user?.userEmail ?? data.transaction?.userEmail,
-    range: data.context.range
+    range: data.eventContext.range
   }
   const notifications = [];
   
@@ -261,7 +261,7 @@ function generateNotifications(data) {
  */
 function commitStateChanges(result) {
   try {
-    // Defensive check - ensure we have a valid result object
+    // Ensure we have a valid result object
     if (!result || typeof result !== 'object') {
       throw new Error('Invalid result object provided to commitStateChanges');
     }
@@ -311,41 +311,7 @@ function commitStateChanges(result) {
     }
         
     // Sort only sheets that had new rows appended
-    if (allOperations.length > 0) {
-      const sheetsToSort = new Set();
-      
-      // Only sort sheets where we appended new rows
-      allOperations.forEach(operation => {
-        if (operation.type === 'append' && operation.sheetName) {
-          sheetsToSort.add(operation.sheetName);
-          Logger.log(`Will sort '${operation.sheetName}' - new row appended`);
-        }
-      });
-      
-      // So they always need sorting after transactions
-      if (result.transaction?.type) {
-        const logSheet = result.transaction.type === 'checkout' 
-          ? CACHED_SETTINGS.VALUES.SHEETS.CHECKOUT_LOGS.NAME
-          : CACHED_SETTINGS.VALUES.SHEETS.RETURN_LOGS.NAME;
-        sheetsToSort.add(logSheet);
-        Logger.log(`Will sort '${logSheet}' - transaction log appended`);
-      }
-      
-      // Sort each sheet that had appends
-      if (sheetsToSort.size > 0) {
-        Logger.log(`Sorting ${sheetsToSort.size} sheets with new rows`);
-        sheetsToSort.forEach(sheetName => {
-          try {
-            DB.sortByColumn(sheetName);
-          } catch (sortError) {
-            Logger.log(`Warning: Could not sort sheet ${sheetName} - ${sortError.message}`);
-            // Don't fail the entire transaction for sorting issues
-          }
-        });
-      } else {
-        Logger.log('No sheets need sorting - only updates performed');
-      }
-    }
+    sortUpdatedSheets(result,allOperations)
     
     return {
       ...result,
@@ -448,6 +414,37 @@ function prepareUserOperation(change) {
 }
 
 
+function sortUpdatedSheets(result,allOperations){
+  const sheetsToSort = new Set();
+  // always need sorting after transactions
+  const logSheet = result.eventContext.sheetName
+  sheetsToSort.add(logSheet); 
+  Logger.log(`Will sort '${logSheet}' - transaction log appended`);
+  // add other sheets with new rows
+  if (allOperations.length > 0) {
+    // Only sort sheets where we appended new rows
+    allOperations.forEach(operation => {
+      if (operation.type === 'append' && operation.sheetName) {
+        sheetsToSort.add(operation.sheetName);
+        Logger.log(`Will sort '${operation.sheetName}' - new row appended`);
+      }
+    });
+  }
+  // Sort each sheet that had appends
+  if (sheetsToSort.size > 0) {
+    Logger.log(`Sorting ${sheetsToSort.size} sheets with new rows`);
+    sheetsToSort.forEach(sheetName => {
+      try {
+        DB.sortByColumn(sheetName);
+      } catch (sortError) {
+        Logger.log(`Warning: Could not sort sheet ${sheetName} - ${sortError.message}`);
+        // Don't fail the entire transaction for sorting issues
+      }
+    });
+  } else {
+    Logger.log('No sheets need sorting - only updates performed');
+  }
+}
 
 /**
  * Handle pipeline errors
@@ -456,14 +453,15 @@ function prepareUserOperation(change) {
  * @returns {Object} Error result
  */
 function handlePipelineError(error, triggerEvent) {
-  Logger.log(`Pipeline error: ${error.message}`);
+  Logger.log(`Pipeline error: ${JSON.stringify(error)}`);
   
   // Try to send error notification if possible
   try {
     COMM.handleCommunication('ERR_SYS_001', {
       errorMessage: error.message,
       timestamp: new Date(),
-      triggerData: triggerEvent
+      eventName: triggerEvent.source.getActiveSheet().getName() === CACHED_SETTINGS.VALUES.SHEETS.CHECKOUT_LOGS.NAME ? 'checkout' : 'return',
+      range:triggerEvent.range
     });
   } catch (notificationError) {
     Logger.log(`Failed to send error notification: ${notificationError.message}`);

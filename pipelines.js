@@ -12,18 +12,18 @@ function processFormSubmissionEvent(triggerEvent) {
     lock.waitLock(30000);
     
     // Extract input
-    const context = extractEventContext(triggerEvent);
-    const formData = parseFormResponse(context);
+    const eventContext = extractEventContext(triggerEvent);
+    const formData = parseFormResponse(eventContext);
     
     // Load current state
     const currentState = loadSystemState();
     
     // Process through pipeline based on operation type
-    const pipeline = context.operation === 'checkout' 
+    const pipeline = eventContext.operation === 'checkout' 
       ? checkoutPipeline 
       : returnPipeline;
     
-    const rawData = { formData: formData, currentState:currentState, context:context};
+    const rawData = { formData: formData, currentState:currentState, eventContext:eventContext};
     const result = pipeline(rawData);
     
     // Persist state changes and send notifications
@@ -385,7 +385,11 @@ function validateUserEligible(data) {
 function validateReturnEligible(data) {
   if (data.error) return data; // Skip if already has error
   
-  const user = findUserByEmail(data.currentState.users, data.formData.userEmail) || createNewUser(data.formData.userEmail);
+  //switch emails if it's a friend return
+  const checkedOutEmail = data.formData.isReturningForFriend ? data.formData.friendEmail : data.formData.userEmail
+  
+  //get user data
+  const user = findUserByEmail(data.currentState.users, checkedOutEmail) || createNewUser(checkedOutEmail);
   
   // Validate bike is actually checked out
   if (data.bike.availability !== 'Checked Out') {
@@ -400,7 +404,7 @@ function validateReturnEligible(data) {
   
   // Check if returning for friend (bike not checked out by this user) - case-insensitive comparison
   const normalizedMostRecentUser = (data.bike.mostRecentUser || '').toLowerCase().trim();
-  const normalizedUserEmail = (data.formData.userEmail || '').toLowerCase().trim();
+  const normalizedUserEmail = (checkedOutEmail || '').toLowerCase().trim();
   const isReturningForFriend = normalizedMostRecentUser !== normalizedUserEmail && data.formData.friendEmail !== "";
   
   Logger.log(`🔍 Friend return check: mostRecentUser='${normalizedMostRecentUser}', currentUser='${normalizedUserEmail}', friendEmail='${data.formData.friendEmail}', isReturningForFriend=${isReturningForFriend}`);
@@ -415,7 +419,7 @@ function validateReturnEligible(data) {
     
     if (!isOverdue) {
       // Could implement additional checks here (e.g., friend permissions)
-      Logger.log(`Friend return attempted: ${data.formData.userEmail} returning ${data.bike.bikeName} for ${data.bike.mostRecentUser}`);
+      Logger.log(`Friend return attempted: ${checkedOutEmail} returning ${data.bike.bikeName} for ${data.bike.mostRecentUser}`);
     }
   }
   
