@@ -231,7 +231,7 @@ const DB = {
   },
 
   // Reset database by clearing specified ranges in all configured sheets
-  hardRestDatabase: () => {
+  hardResetDatabase: () => {
     if (!CACHED_SETTINGS.VALUES.ENABLE_FORCED_RESET || !CACHED_SETTINGS.VALUES.DEBUG_MODE) {
       throw new Error("Auto reset is disabled or debug mode is off.");
     }
@@ -244,7 +244,7 @@ const DB = {
         const startRow = 2
         const numRows = lastRow-1
         if(numRows < 1){
-          Logger.log(`couldn't rest ${key} : it's already empty`)
+          Logger.log(`couldn't Reset ${key} : it's already empty`)
           continue;
         }
         try{

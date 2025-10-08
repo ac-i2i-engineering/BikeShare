@@ -25,7 +25,7 @@ function printFormFieldInfo(formId){
 
 function cleanDatabase(){
   // DB.resetDatabase()
-  DB.hardRestDatabase()
+  DB.hardResetDatabase()
 }
 
 function clearCache(){

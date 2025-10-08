@@ -361,39 +361,42 @@ function validateUserEligible(data) {
   
   const user = findUserByEmail(data.currentState.users, data.formData.userEmail) || createNewUser(data.formData.userEmail);
   
+  let modData = {
+    ...data,
+    user: user
+  }
+  
   if (user.hasUnreturnedBike) {
-    return {
-      ...data,
+    modData = {
+      ...modData,
       error: 'ERR_USR_COT_002',
       errorMessage: 'User already has an unreturned bike'
     };
   }
   
-  return {
-    ...data,
-    user: user
-  };
+  return modData
 }
 
 /**
  * Validate user is eligible for return
  * @param {Object} data - Current processing data
- * @param {Array} users - Current users data
  * @returns {Object} Data with validation result
  */
 function validateReturnEligible(data) {
   if (data.error) return data; // Skip if already has error
   
+  const user = findUserByEmail(data.currentState.users, data.formData.userEmail) || createNewUser(data.formData.userEmail);
+  
   // Validate bike is actually checked out
   if (data.bike.availability !== 'Checked Out') {
     return {
       ...data,
+      user:user,
       error: 'ERR_USR_RET_006',
       errorMessage: 'User has no unreturned bike'
     };
   }
   
-  const user = findUserByEmail(data.currentState.users, data.formData.userEmail) || createNewUser(data.formData.userEmail);
   
   // Check if returning for friend (bike not checked out by this user) - case-insensitive comparison
   const normalizedMostRecentUser = (data.bike.mostRecentUser || '').toLowerCase().trim();

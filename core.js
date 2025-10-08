@@ -188,30 +188,34 @@ function calculateUsageHours(data) {
   };
 }
 
-
-
-
-
 /**
  * Generate notifications based on transaction type and result
  * @param {Object} data - Current processing data
  * @returns {Object} Data with notifications to send
  */
 function generateNotifications(data) {
+  const commContext = {
+    bikeHash: data.bike?.bikeHash ?? data.transaction?.bikeHash,
+    bikeName: data.bike?.bikeName ?? data.transaction?.bikeName,
+    confirmBikeName: data.formData?.confirmBikeName,
+    errorMessage: data.errorMessage ?? data.error?.message,
+    friendEmail: data.formData?.friendEmail ?? data.friend?.userEmail,
+    lastCheckoutDate: data.user?.lastCheckoutDate,
+    lastCheckoutName: data.user?.lastCheckoutName,
+    lastReturnDate: data.user?.lastReturnDate,
+    resetDate: data.currentState?.timestamp,
+    timestamp: data.currentState?.timestamp,
+    unreturnedBikeName: data.user?.lastCheckoutName,
+    userEmail: data.user?.userEmail ?? data.transaction?.userEmail,
+    range: data.context.range
+  }
   const notifications = [];
   
   if (data.error) {
-    // Error notifications
     notifications.push({
       type: 'error',
       commID: data.error,
-      context: {
-        userEmail: data.user?.userEmail || (data.formData.userEmail || '').toLowerCase().trim(), // Use normalized email
-        errorMessage: data.errorMessage,
-        bikeHash: data.formData.bikeHash,
-        timestamp: data.currentState.timestamp,
-        range: data.context.range || null // Add range context for error marking
-      }
+      context: commContext
     });
   } else if (data.transaction && data.user && data.bike) {
     // Success notifications - only if we have all required data
@@ -234,14 +238,7 @@ function generateNotifications(data) {
     notifications.push({
       type: 'success',
       commID: successCommID,
-      context: {
-        userEmail: data.user.userEmail,
-        bikeName: data.bike.bikeName,
-        bikeHash: data.bike.bikeHash,
-        timestamp: data.currentState.timestamp,
-        usageHours: data.usageHours || 0,
-        range: data.context.range // Add range for success marking
-      }
+      context: commContext
     });
   }
   
