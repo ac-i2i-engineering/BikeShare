@@ -195,18 +195,20 @@ function calculateUsageHours(data) {
  */
 function generateNotifications(data) {
   const commContext = {
-    bikeHash: data.bike?.bikeHash ?? data.transaction?.bikeHash,
-    bikeName: data.bike?.bikeName ?? data.transaction?.bikeName,
+    bikeHash: data.bike?.bikeHash ?? data.transaction?.bikeHash ?? data.formData?.bikeHash,
+    bikeName: data.bike?.bikeName ?? data.transaction?.bikeName ?? data.formData?.bikeName,
     confirmBikeName: data.formData?.confirmBikeName,
     errorMessage: data.errorMessage ?? data.error?.message,
-    friendEmail: data.formData?.friendEmail ?? data.friend?.userEmail,
+    friendEmail: data.friend?.userEmail ?? data.formData?.friendEmail,
     lastCheckoutDate: data.user?.lastCheckoutDate,
+    bikeLastCheckoutDate: data.bike?.lastCheckoutDate,
     lastCheckoutName: data.user?.lastCheckoutName,
     lastReturnDate: data.user?.lastReturnDate,
     resetDate: data.currentState?.timestamp,
     timestamp: data.currentState?.timestamp,
     unreturnedBikeName: data.user?.lastCheckoutName,
-    userEmail: data.user?.userEmail ?? data.transaction?.userEmail,
+    userEmail: data.user?.userEmail ?? data.transaction?.userEmail ?? data.formData?.userEmail,
+    isReturningForFriend: data.isReturningForFriend,
     range: data.eventContext.range
   }
   const notifications = [];

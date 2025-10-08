@@ -30,7 +30,8 @@ const COMM = {
           context.userEmail,
           subjectResult.result,
           bodyResult.result,
-          commID
+          commID,
+          context.isReturningForFriend ? context.friendEmail : null
         );
         results.push(userResult);
       }
@@ -89,7 +90,7 @@ const COMM = {
   },
 
   // Send user notification with validation
-  notifyUser: (userEmail, subject, body, commID = 'unknown') => {
+  notifyUser: (userEmail, subject, body, commID = 'unknown', friendEmail = null) => {
     let subjectStr = '';
     let bodyStr = '';
     try {
@@ -112,7 +113,9 @@ const COMM = {
         userEmail,
         subjectStr,
         `Hi,\n\n${bodyStr}\n\nThank you,\nBike Share Team`,
-        { from: CACHED_SETTINGS.VALUES.ORG_EMAIL }
+        { from: CACHED_SETTINGS.VALUES.ORG_EMAIL,
+          cc:friendEmail
+         }
       );
       Logger.log(`✅ Email sent successfully to ${userEmail} for ${commID}`);
       return { success: true, recipient: userEmail };

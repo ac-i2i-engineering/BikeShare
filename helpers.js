@@ -24,7 +24,7 @@ function printFormFieldInfo(formId){
 }
 
 function cleanDatabase(){
-  // DB.resetDatabase()
+  DB.resetDatabase()
   DB.hardResetDatabase()
 }
 

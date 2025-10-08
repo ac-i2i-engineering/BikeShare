@@ -74,6 +74,7 @@ function returnPipeline(rawData) {
     validateEmailDomain,
     validateSystemActive,
     validateBikeExists,
+    validateBikeCheckedOut,
     validateReturnEligible,
     
     // Business logic steps
@@ -113,38 +114,6 @@ function extractEventContext(triggerEvent) {
     sheetName: sheetName,
     timestamp: new Date()
   };
-}
-
-/**
- * Parse form response into structured data
- * @param {Array} responses - Raw form response array
- * @returns {Object} Structured form data
- */
-function parseFormResponse(context) {
-  const responses = context.responses
-
-  //parse checkout entry
-  if (context.operation === 'checkout'){
-        return {
-          timestamp: responses[0],
-          userEmail: responses[1],
-          bikeHash: responses[2],
-          conditionConfirmation: responses[3],
-        };
-    }
-
-    //parse return entry
-    return {
-        timestamp: responses[0],
-        userEmail: responses[1],
-        bikeName: responses[2],
-        confirmBikeName: responses[3],
-        assureRodeBike: responses[4],
-        mismatchExplanation: responses[5],
-        returningForFriend: responses[6],
-        friendEmail: responses[7],
-        issuesConcerns: responses[8],
-    }
 }
 
 /**
@@ -191,6 +160,38 @@ function loadAllSheetData() {
       users: DB.getAllData(CACHED_SETTINGS.VALUES.SHEETS.USER_STATUS.NAME)
     };
   }
+}
+
+/**
+ * Parse form response into structured data
+ * @param {Array} responses - Raw form response array
+ * @returns {Object} Structured form data
+ */
+function parseFormResponse(context) {
+  const responses = context.responses
+
+  //parse checkout entry
+  if (context.operation === 'checkout'){
+        return {
+          timestamp: responses[0],
+          userEmail: responses[1],
+          bikeHash: responses[2],
+          conditionConfirmation: responses[3],
+        };
+    }
+
+    //parse return entry
+    return {
+        timestamp: responses[0],
+        userEmail: responses[1],
+        bikeName: responses[2],
+        confirmBikeName: responses[3],
+        assureRodeBike: responses[4] === 'Yes',
+        mismatchExplanation: responses[5],
+        returningForFriend: responses[6] === 'Yes',
+        friendEmail: responses[7],
+        issuesConcerns: responses[8],
+    }
 }
 
 /**
@@ -352,6 +353,24 @@ function validateBikeAvailable(data) {
 }
 
 /**
+ * Validate bike is awaiting for return
+ * @param {Object} data - Current processing data
+ * @returns {Object} Data with validation result
+ */
+function validateBikeCheckedOut(data) {
+  if (data.error) return data; // Skip if already has error
+  
+  if (data.bike.availability !== 'Checked Out') {
+    return {
+      ...data,
+      error: 'ERR_USR_RET_006',
+      errorMessage: `❌Can't return ${data.bike.bikeName}: status is ${data.bike.availability} not "Checked Out"`
+    };
+  }
+  return data;
+}
+
+/**
  * Validate user is eligible for checkout
  * @param {Object} data - Current processing data
  * @returns {Object} Data with user information
@@ -385,58 +404,99 @@ function validateUserEligible(data) {
 function validateReturnEligible(data) {
   if (data.error) return data; // Skip if already has error
   
-  //switch emails if it's a friend return
-  const checkedOutEmail = data.formData.isReturningForFriend ? data.formData.friendEmail : data.formData.userEmail
-  
   //get user data
-  const user = findUserByEmail(data.currentState.users, checkedOutEmail) || createNewUser(checkedOutEmail);
+  const user = findUserByEmail(data.currentState.users, data.formData.userEmail) || createNewUser(data.formData.userEmail);
   
-  // Validate bike is actually checked out
-  if (data.bike.availability !== 'Checked Out') {
-    return {
+  const normalizedBikeMostRecentUser = (data.bike.mostRecentUser || '').toLowerCase().trim();
+  const normalizedUserEmail = (data.formData.userEmail || '').toLowerCase().trim();
+  const normalizedFriendEMail = (data.formData.friendEmail || '').toLowerCase().trim();
+  const isLastBikeUser = normalizedBikeMostRecentUser === normalizedUserEmail
+  const isReturningForFriend = !isLastBikeUser && (normalizedFriendEMail !== "" || data.formData.assureRodeBike);
+  const isDirectReturn = !isReturningForFriend
+
+  Logger.log(`🔍 Friend return check: mostRecentUser='${normalizedBikeMostRecentUser}', currentUser='${normalizedUserEmail}', friendEmail='${data.formData.friendEmail}', isReturningForFriend=${isReturningForFriend}`);
+
+  // friend processing
+  if(isReturningForFriend){
+   if(!normalizedFriendEMail){
+    const msg = `❌${user.userEmail} failed failed to return ${data.bike.bikeName} b/c no friend email provided`
+    return{
       ...data,
       user:user,
-      error: 'ERR_USR_RET_006',
-      errorMessage: 'User has no unreturned bike'
+      error: 'ERR_USR_RET_004',
+      errorMessage: msg
+    }
+   }
+
+   const friend = findUserByEmail(data.currentState.users, data.formData.friendEmail)
+   //if friend has no records for checkout or returns
+   if(!friend){
+    const msg = `❌${user.userEmail} failed failed to return ${data.bike.bikeName} for ${data.formData.friendEmail} records could not be found in User Status`
+    return{
+      ...data,
+      user:user,
+      error: 'ERR_USR_RET_010',
+      errorMessage: msg
+    }
+   }
+
+   //if friend has no unreturned bike 
+   if(normalizedBikeMostRecentUser != friend.userEmail || !friend.hasUnreturnedBike){
+     const msg = `❌${user.userEmail} failed failed to return ${data.bike.bikeName} for ${data.formData.friendEmail} b/c they have no unreturned bike. they last checked out ${friend.lastCheckoutName} returned on ${friend.lastReturnDate}, Else bikeName is diff from lastCheckoutName`
+     Logger.log(msg)
+     return{
+       ...data,
+       user:user,
+       friend: friend,
+       error: 'ERR_USR_RET_003',
+       errorMessage: msg
+      }
+    }
+
+    //if no error found in friend return verifications
+    //switch user to make sure User status is updated well
+    return {
+      ...data,
+      user: friend,
+      friend:user,
+      isReturningForFriend: isReturningForFriend,
+      isDirectReturn: isDirectReturn
+      // isCollectedMismatch: isCollectedMismatch,
     };
   }
   
+  // validate user has unreturned bike
+  if(!user.hasUnreturnedBike){
+    const msg =`❌ return failed b/c ${user.userEmail} last checked out ${user.lastCheckoutName} they returned on ${user.lastReturnDate}`
+    Logger.log(msg)
+    return {
+      ...data,
+      user: user,
+      error:'ERR_USR_RET_006',
+      errorMessage:msg,
+    };
+  }
+
   
-  // Check if returning for friend (bike not checked out by this user) - case-insensitive comparison
-  const normalizedMostRecentUser = (data.bike.mostRecentUser || '').toLowerCase().trim();
-  const normalizedUserEmail = (checkedOutEmail || '').toLowerCase().trim();
-  const isReturningForFriend = normalizedMostRecentUser !== normalizedUserEmail && data.formData.friendEmail !== "";
-  
-  Logger.log(`🔍 Friend return check: mostRecentUser='${normalizedMostRecentUser}', currentUser='${normalizedUserEmail}', friendEmail='${data.formData.friendEmail}', isReturningForFriend=${isReturningForFriend}`);
-  
-  // If returning for friend, validate they have permission or bike is overdue
-  if (isReturningForFriend) {
-    const checkoutTime = new Date(data.bike.lastCheckoutDate);
-    const hoursCheckedOut = (data.currentState.timestamp - checkoutTime) / (1000 * 60 * 60);
-    
-    // Allow friend returns if bike has been out for more than 24 hours (overdue)
-    const isOverdue = hoursCheckedOut > 24;
-    
-    if (!isOverdue) {
-      // Could implement additional checks here (e.g., friend permissions)
-      Logger.log(`Friend return attempted: ${checkedOutEmail} returning ${data.bike.bikeName} for ${data.bike.mostRecentUser}`);
-    }
+  // validate user return mismatch
+  if(!fuzzyMatch(data.bike.bikeName, user.lastCheckoutName)){
+   //switch the bikes to update the status of the right one
+    const msg =`❌ return failed b/c ${user.userEmail} last checked out ${user.lastCheckoutName} on ${user.lastReturnDate}, but the're returning ${data.bike.bikeName}`
+    Logger.log(msg)
+    return {
+      ...data,
+      user: user,
+      error:'ERR_USR_RET_007',
+      errorMessage:msg,
+    };
   }
   
-  // Check for bike name mismatch (user returned different bike than checked out)
-  const actualLastCheckoutName = user.lastCheckoutName;
-  const isCollectedMismatch = actualLastCheckoutName && 
-    !fuzzyMatch(actualLastCheckoutName, data.bike.bikeName) && 
-    data.formData.isDirectReturn !== false;
-
   // Detect if this is a direct return (user returning their own bike directly)
-  const isDirectReturn = data.formData.isDirectReturn !== false;
-
   return {
     ...data,
     user: user,
     isReturningForFriend: isReturningForFriend,
-    isCollectedMismatch: isCollectedMismatch,
+    isCollectedMismatch: false,
     isDirectReturn: isDirectReturn
   };
 }

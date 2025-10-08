@@ -23,7 +23,7 @@ class Settings {
       },
       notificationsConfig: {
         successMessages: "A9:H14",
-        errorMessages: "A22:H34",
+        errorMessages: "A22:H37",
       },
     };
     if (!this.refreshCache(false)) {
