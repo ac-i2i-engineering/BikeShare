@@ -76,7 +76,15 @@ function handleSettingsUpdate(e){
 }
 
 function manageFormsAccessibility(action){
-    // stop accepting responses for return and checkout form
-    const state = action === "resume" ? activateSystem() : shutdownSystem();
-  }
+  // stop accepting responses for return and checkout form
+  const state = action === "resume" ? activateSystem() : shutdownSystem();
+}
 
+/**
+ * Main trigger function for automatic reports
+ * @returns {Object} Result object from runReportPipeline
+ */
+function executeReportGeneration() {
+  Logger.log('⏰ Triggered automatic report generation');
+  return runReportPipeline();
+}

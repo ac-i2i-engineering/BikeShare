@@ -22,8 +22,8 @@ class Settings {
         returnLogs: "A32:C35",
       },
       notificationsConfig: {
-        successMessages: "A9:H14",
-        errorMessages: "A22:H37",
+        successMessages: "A9:H15",
+        errorMessages: "A22:H38",
       },
     };
     if (!this.refreshCache(false)) {
@@ -85,7 +85,7 @@ class Settings {
         Logger.log(`📄 Loading settings from sheet: ${sheetName}`);
         const sheet = this.management_ss.getSheetByName(sheetName);
         if (!sheet) {
-          throw new Error(`Sheet '${sheetName}' not found in management spreadsheet`);
+          throw new Error(`❌Sheet '${sheetName}' not found in management spreadsheet`);
         }
         
         for (const tableName in this.settingRangeMap[sheetName]) {
@@ -201,11 +201,11 @@ class Settings {
         Logger.log(`${sourceEmoji} Settings parsed successfully - Source: ${loadSource.toUpperCase()} (${loadTime}ms)`);
       } catch (parseError) {
         Logger.log(`❌ JSON parse error: ${parseError.message}`);
-        throw new Error(`Settings data corrupted - cannot parse JSON: ${parseError.message}`);
+        throw new Error(`❌Settings data corrupted - cannot parse JSON: ${parseError.message}`);
       }
       
       if (!this.cacheValues || typeof this.cacheValues !== 'object') {
-        throw new Error('Invalid cache values format - not an object');
+        throw new Error('❌Invalid cache values format - not an object');
       }
       
       // Additional validation with detailed reporting
@@ -297,6 +297,7 @@ class Settings {
       ORG_EMAIL: 'ndayishimiyeemile96@gmail.com',
       MANAGEMENT_SS_ID: this.management_ss_ID,
       MAIN_DASHBOARD_SS_ID: '1XE9b58isw2MreAvcNSDiCTIIlL09zFRWMKcCBtTkbbE',
+      ALLOWED_EMAIL_DOMAIN:'amherst.edu',
       SHEETS: {
         BIKES_STATUS: this.cacheValues.bikesStatus || { NAME: 'Bikes Status', RESET_RANGE: 'E2:L' },
         USER_STATUS: this.cacheValues.userStatus || { NAME: 'User Status', RESET_RANGE: 'A2:L' },

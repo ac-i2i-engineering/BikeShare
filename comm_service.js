@@ -9,7 +9,7 @@ const COMM = {
     const comm = COMM.getCommunication(commID);
     if (!comm) {
       Logger.log(`Communication ID ${commID} not found`);
-      throw new Error(`Communication ID ${commID} not found`);
+      throw new Error(`❌Communication ID ${commID} not found`);
     }
 
     Logger.log(`Processing communication ${commID} with context:${JSON.stringify(context)}`);

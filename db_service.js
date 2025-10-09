@@ -1,7 +1,24 @@
 const DB = {
-  // Get spreadsheet instance
-  getSpreadsheet: (id = null) => 
-    id ? SpreadsheetApp.openById(id) : SpreadsheetApp.getActiveSpreadsheet(),
+  // Private variable to cache the spreadsheet instance
+  _cachedSpreadsheet: null,
+
+  /// Get spreadsheet instance (with caching)
+  getSpreadsheet: (id = null) => {
+    if (id) {
+      // If an ID is provided, always fetch a new spreadsheet (no caching for specific IDs)
+      return SpreadsheetApp.openById(id);
+    }
+
+    // Use cached instance if available
+    if (!DB._cachedSpreadsheet) {
+      Logger.log("Fetching active spreadsheet and caching it.");
+      DB._cachedSpreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+    } else {
+      Logger.log("Using cached spreadsheet instance.");
+    }
+
+    return DB._cachedSpreadsheet;
+  },
 
   // Get sheet by name
   getSheet: (sheetName, spreadsheetId = null) => 
@@ -38,7 +55,7 @@ const DB = {
 
       const sheet = DB.getSheet(sheetName, spreadsheetId);
       if (!sheet) {
-        throw new Error(`Sheet '${sheetName}' not found`);
+        throw new Error(`❌Sheet '${sheetName}' not found`);
       }
       
       // More efficient: use getLastRow() instead of getDataRange() - saves an API call
@@ -255,5 +272,43 @@ const DB = {
         }
       }
     }
+  },
+
+  // Append a row to a sheet
+  appendRow: (sheetName, values) => {
+   try {
+     Logger.log(`Appending row to sheet: ${sheetName}`);
+     const sheet = DB.getSheet(sheetName);
+     if (!sheet) {
+       throw new Error(`Sheet '${sheetName}' not found`);
+     }
+
+     // Use the built-in appendRow method
+     sheet.appendRow(values);
+
+     Logger.log(`Successfully appended row to '${sheetName}'`);
+   } catch (error) {
+     Logger.log(`Error appending row to '${sheetName}': ${error.message}`);
+     throw error;
+   }
+  },
+
+  updateRow: (sheetName, rowIndex, values) => {
+  try {
+    Logger.log(`Updating row ${rowIndex} in sheet: ${sheetName}`);
+    const sheet = DB.getSheet(sheetName);
+    if (!sheet) {
+      throw new Error(`Sheet '${sheetName}' not found`);
+    }
+
+    const numCols = values.length;
+    const updateRange = sheet.getRange(rowIndex, 1, 1, numCols);
+    updateRange.setValues([values]);
+
+    Logger.log(`Successfully updated row ${rowIndex} in '${sheetName}'`);
+  } catch (error) {
+    Logger.log(`Error updating row ${rowIndex} in '${sheetName}': ${error.message}`);
+    throw error;
   }
+}
 };
