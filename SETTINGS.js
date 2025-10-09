@@ -10,9 +10,9 @@ class Settings {
       mainConfig: {
         systemButtons: "A7:C14",
         systemTime: "F7:H9",
-        coreConfig: "F14:H16",
-        reportGenerationSettings: "F21:H23",
-        miscellaneous: "A20:C21",
+        coreConfig: "F14:H15",
+        reportGenerationSettings: "F20:H22",
+        miscellaneous: "A20:C20",
       },
       sheetsConfig: {
         bikesStatus: "A10:C13",

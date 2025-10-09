@@ -69,13 +69,28 @@ const saveReport = (newReport, previousReports = null) => {
   if (previousReports && previousReports.length > 1) {
     const periodCol = CACHED_SETTINGS.VALUES.SHEETS.REPORTS.PERIOD_NUM_COLUMN - 1; // Convert to 0-based
     
+    Logger.log(`🔍 Checking for existing report with period ${newReport.period} in ${previousReports.length - 1} existing reports...`);
+    
     for (let i = 1; i < previousReports.length; i++) {
-      if (previousReports[i][periodCol] == newReport.period) {
+      const existingPeriod = previousReports[i][periodCol];
+      const existingPeriodNum = Number(existingPeriod);
+      const newPeriodNum = Number(newReport.period);
+      
+      Logger.log(`   Row ${i + 1}: period = ${existingPeriod} (type: ${typeof existingPeriod}, as number: ${existingPeriodNum})`);
+      
+      // Use numeric comparison to avoid type mismatch issues
+      if (!isNaN(existingPeriodNum) && !isNaN(newPeriodNum) && existingPeriodNum === newPeriodNum) {
         existingRow = { rowIndex: i + 1, rowData: previousReports[i] };
-        Logger.log(`🔍 Found existing report using batch data (row ${i + 1})`);
+        Logger.log(`🔍 Found existing report using batch data (row ${i + 1}) with matching period ${existingPeriod} === ${newReport.period}`);
         break;
       }
     }
+    
+    if (!existingRow) {
+      Logger.log(`🔍 No existing report found for period ${newReport.period}`);
+    }
+  } else {
+    Logger.log(`🔍 No previous reports data available (length: ${previousReports?.length || 0})`);
   }
 
   if (!existingRow){
@@ -99,8 +114,26 @@ const saveReport = (newReport, previousReports = null) => {
  */
 const getPeriodNumber = (timestamp, checkSpan) => {
   const firstRunDate = new Date(CACHED_SETTINGS.VALUES.REPORT_GENERATION.FIRST_GENERATION_DATE);
+  
+  // Validate inputs to prevent NaN
+  if (isNaN(firstRunDate.getTime())) {
+    throw new Error(`❌ Invalid FIRST_GENERATION_DATE: ${CACHED_SETTINGS.VALUES.REPORT_GENERATION.FIRST_GENERATION_DATE}`);
+  }
+  
+  if (!checkSpan || checkSpan <= 0) {
+    throw new Error(`❌ Invalid checkSpan: ${checkSpan}`);
+  }
+  
   const diffInMs = timestamp - firstRunDate;
-  return Math.round(diffInMs / checkSpan);
+  const period = Math.round(diffInMs / checkSpan);
+  
+  Logger.log(`📊 Period calculation: timestamp=${timestamp}, firstRunDate=${firstRunDate}, diffInMs=${diffInMs}, checkSpan=${checkSpan}, period=${period}`);
+  
+  if (isNaN(period)) {
+    throw new Error(`❌ Period calculation resulted in NaN. timestamp=${timestamp}, firstRunDate=${firstRunDate}, checkSpan=${checkSpan}`);
+  }
+  
+  return period;
 };
 
 /**
@@ -259,9 +292,13 @@ const generateReport = (allSheetData) => {
   const timestamp = new Date();
   const frequencyInDays = CACHED_SETTINGS.VALUES.REPORT_GENERATION.DAYS_INTERVAL;
   const checkSpan = frequencyInDays * 24 * 60 * 60 * 1000;
+  
+  Logger.log(`📊 Report generation settings: frequencyInDays=${frequencyInDays}, checkSpan=${checkSpan}`);
+  Logger.log(`📊 FIRST_GENERATION_DATE=${CACHED_SETTINGS.VALUES.REPORT_GENERATION.FIRST_GENERATION_DATE}`);
+  
   const period = getPeriodNumber(timestamp, checkSpan);
   
-  Logger.log(`📅 Report period: ${period} (${frequencyInDays} day interval)`);
+  Logger.log(`📅 Report period: ${period} (type: ${typeof period}) for ${frequencyInDays} day interval`);
   
   const bikes = processBikesData(allSheetData.bikes);
   const users = processUsersData(allSheetData.users);
