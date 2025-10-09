@@ -89,7 +89,7 @@ function createBike(overrides) {
     bikeName: 'Bike Alpha',
     size: 'M',
     maintenanceStatus: 'Good',
-    availability: 'Available',
+    availability: 'available',
     lastCheckoutDate: null,
     lastReturnDate: null,
     currentUsageTimer: 0,
@@ -164,7 +164,7 @@ function testCheckoutPipelineHappyPath() {
 
     assert(!result.error, 'Checkout should succeed');
     assert(result.transaction?.type === 'checkout', 'Transaction type should be checkout');
-    assert(result.bike.availability === 'Checked Out', 'Bike should be marked as checked out');
+    assert(result.bike.availability === 'checked out', 'Bike should be marked as checked out');
     assert(result.user.hasUnreturnedBike === true, 'User should now have an unreturned bike flag');
     assert(result.stateChanges?.bikes?.length === 1, 'Bike state change should be recorded');
     assert(result.stateChanges?.users?.length === 1, 'User state change should be recorded');
@@ -175,7 +175,7 @@ function testCheckoutPipelineHappyPath() {
 function testCheckoutPipelineRejectsUnreturnedBike() {
   withMockedSettings({}, () => {
     const timestamp = new Date('2025-01-01T12:00:00Z');
-    const bike = createBike({ availability: 'Available' });
+    const bike = createBike({ availability: 'available' });
     const user = createUser({
       userEmail: 'someone@amherst.edu',
       hasUnreturnedBike: true,
@@ -238,7 +238,7 @@ function testReturnPipelineUsageHours() {
     const checkoutTime = new Date('2025-01-03T08:00:00Z');
     const timestamp = new Date('2025-01-03T10:00:00Z');
     const bike = createBike({
-      availability: 'Checked Out',
+      availability: 'checked out',
       lastCheckoutDate: checkoutTime,
       mostRecentUser: 'someone@amherst.edu'
     });
@@ -274,7 +274,7 @@ function testReturnPipelineUsageHours() {
 
     assert(!result.error, 'Return should succeed');
     assert(result.transaction?.type === 'return', 'Transaction type should be return');
-    assert(result.bike.availability === 'Available', 'Bike should be made available');
+    assert(result.bike.availability === 'available', 'Bike should be made available');
     assert(result.user.hasUnreturnedBike === false, 'User flag should be cleared');
     const expectedHours = (timestamp - checkoutTime) / (1000 * 60 * 60);
     assert(Math.abs(result.usageHours - expectedHours) < 0.01, 'Usage hours should be calculated accurately');
@@ -289,7 +289,7 @@ function testReturnPipelineFriendFlow() {
     const bike = createBike({
       bikeName: 'Bike Beta',
       bikeHash: 'HASH789',
-      availability: 'Checked Out',
+      availability: 'checked out',
       lastCheckoutDate: checkoutTime,
       mostRecentUser: 'owner@amherst.edu'
     });
@@ -333,7 +333,7 @@ function testReturnPipelineMismatchFlow() {
     const timestamp = new Date('2025-01-06T11:00:00Z');
     const bike = createBike({
       bikeName: 'Bike Gamma',
-      availability: 'Checked Out',
+      availability: 'checked out',
       lastCheckoutDate: checkoutTime,
       mostRecentUser: 'someone@amherst.edu'
     });

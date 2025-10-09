@@ -363,7 +363,7 @@ const generateReport = (allSheetData) => {
   const overdueBikesCount = bikes.filter(bike => isBikeOverdue(bike)).length;
   const readyForCheckoutCount = bikes.filter(bike => bike.availability === 'available').length;
 
-  Logger.log(`📊 Bike status counts: Total=${bikes.length}, InRepair=${bikesInRepairCount}, CheckedOut=${checkedOutBikesCount}, Overdue=${overdueBikesCount}, Available=${readyForCheckoutCount}`);
+  Logger.log(`📊 Bike status counts: Total=${bikes.length}, InRepair=${bikesInRepairCount}, CheckedOut=${checkedOutBikesCount}, Overdue=${overdueBikesCount}, available=${readyForCheckoutCount}`);
   if (checkedOutWithInvalidDates.length > 0) {
     Logger.log(`⚠️ Note: ${checkedOutWithInvalidDates.length} checked-out bikes excluded from overdue calculation due to invalid dates`);
   }

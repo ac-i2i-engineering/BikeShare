@@ -32,22 +32,22 @@ function buildIntegrationTestBikeCatalog() {
     checkoutSecondary: createTestBikeConfig('CHECKOUT_2'),
     checkoutTertiary: createTestBikeConfig('CHECKOUT_3'),
     returnNormal: createTestBikeConfig('RETURN_1', {
-      availability: 'Checked Out',
+      availability: 'checked out',
       mostRecentUser: 'studentTest@amherst.edu',
       lastCheckoutDate: hoursAgo(6)
     }),
     returnMismatch: createTestBikeConfig('RETURN_2', {
-      availability: 'Checked Out',
+      availability: 'checked out',
       mostRecentUser: 'student2@amherst.edu',
       lastCheckoutDate: hoursAgo(8)
     }),
     returnFriend: createTestBikeConfig('RETURN_3', {
-      availability: 'Checked Out',
+      availability: 'checked out',
       mostRecentUser: 'original.user@amherst.edu',
       lastCheckoutDate: hoursAgo(30)
     }),
     returnUncertain: createTestBikeConfig('RETURN_4', {
-      availability: 'Checked Out',
+      availability: 'checked out',
       mostRecentUser: 'confused@amherst.edu',
       lastCheckoutDate: hoursAgo(4)
     })
@@ -60,7 +60,7 @@ function createTestBikeConfig(label, overrides) {
     bikeName: `${prefix}${label}`,
     size: 'M',
     maintenanceStatus: 'Good',
-    availability: 'Available',
+    availability: 'available',
     lastCheckoutDate: '',
     lastReturnDate: '',
     currentUsageTimer: 0,
@@ -342,7 +342,7 @@ function testDataProcessing() {
 
   const mockBikesData = [
     ['BikeName', 'Size', 'Status', 'Availability'],
-    [sampleBike.bikeName, 'M', 'Good', 'Available', '', '', 0, 0, '', '', '', '', sampleBike.bikeHash]
+    [sampleBike.bikeName, 'M', 'Good', 'available', '', '', 0, 0, '', '', '', '', sampleBike.bikeHash]
   ];
 
   const processedBikes = processBikesData(mockBikesData);

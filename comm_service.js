@@ -202,7 +202,7 @@ const COMM = {
       if (value === undefined || value === null || value === '') {
         hasErrors = true;
         missingKeys.push(trimmedKey);
-        Logger.log(`❌ Missing placeholder data for '${trimmedKey}' in ${commID}. Available: ${Object.keys(context).join(', ')}`);
+        Logger.log(`❌ Missing placeholder data for '${trimmedKey}' in ${commID}. available: ${Object.keys(context).join(', ')}`);
         //DEBUG
         Object.entries(context).forEach(([contextKey, contextValue]) => {
           Logger.log(`Context key: '${contextKey}', value: '${contextValue}'`);

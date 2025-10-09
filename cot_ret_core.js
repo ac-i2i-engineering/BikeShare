@@ -64,14 +64,14 @@ function processReturnTransaction(data) {
  */
 function updateBikeStatus(data) {
   if (data.error) return data; // Skip if already has error
-  const newStatus = data.transaction.type === 'checkout' ? 'Checked Out' : "Available"
+  const newStatus = data.transaction.type === 'checkout' ? 'checked out' : "available"
   const updatedBike = {
     ...data.bike,
     availability: newStatus,
-    lastCheckoutDate: newStatus === 'Checked Out' ? data.currentState.timestamp : data.bike.lastCheckoutDate,
-    lastReturnDate: newStatus === 'Available' ? data.currentState.timestamp : data.bike.lastReturnDate,
+    lastCheckoutDate: newStatus === 'checked out' ? data.currentState.timestamp : data.bike.lastCheckoutDate,
+    lastReturnDate: newStatus === 'available' ? data.currentState.timestamp : data.bike.lastReturnDate,
     // Update recent users for checkout - safely handle null/undefined values with normalized email
-    ...(newStatus === 'Checked Out' && {
+    ...(newStatus === 'checked out' && {
       tempRecent: data.bike.thirdRecentUser || '',
       thirdRecentUser: data.bike.secondRecentUser || '',
       secondRecentUser: data.bike.mostRecentUser || '',
@@ -351,7 +351,7 @@ function prepareBikeOperation(change) {
     change.updatedData.bikeName || '',
     change.updatedData.size || '',
     change.updatedData.maintenanceStatus || 'Good',
-    change.updatedData.availability || 'Available',
+    change.updatedData.availability || 'available',
     change.updatedData.lastCheckoutDate || '',
     change.updatedData.lastReturnDate || '',
     change.updatedData.currentUsageTimer || 0,

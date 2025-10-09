@@ -272,7 +272,7 @@ function validateBikeExists(data) {
 function validateBikeAvailable(data) {
   if (data.error) return data; // Skip if already has error
   
-  if (data.bike.availability !== 'Available') {
+  if (data.bike.availability !== 'available') {
     return {
       ...data,
       error: 'ERR_USR_COT_001',
@@ -294,7 +294,7 @@ function validateBikeCheckedOut(data) {
     return {
       ...data,
       error: 'ERR_USR_RET_006',
-      errorMessage: `❌Can't return ${data.bike.bikeName}: status is ${data.bike.availability} not "Checked Out"`
+      errorMessage: `❌Can't return ${data.bike.bikeName}: status is ${data.bike.availability} not "checked out"`
     };
   }
   return data;
@@ -444,7 +444,7 @@ function validateReturnEligible(data) {
  * @returns {Object|null} Bike object or null if not found
  */
 function findBikeByHash(bikes, bikeHash) {
-  return bikes.find(bike => bike.bikeHash === bikeHash) || null;
+  return bikes.find(bike => bike.bikeHash === bikeHash.toLowerCase()) || null;
 }
 
 /**

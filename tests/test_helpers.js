@@ -45,8 +45,8 @@ function resetBikeAvailability() {
     for (let row = 2; row <= lastRow; row++) {
       const availabilityCell = bikesSheet.getRange(row, 4); // Column D
       const availability = availabilityCell.getValue();
-      if (availability !== 'Available') {
-        availabilityCell.setValue('Available');
+      if (availability !== 'available') {
+        availabilityCell.setValue('available');
         if (totalCols >= 5) bikesSheet.getRange(row, 5).setValue('');
         if (totalCols >= 6) bikesSheet.getRange(row, 6).setValue('');
         if (totalCols >= 7) bikesSheet.getRange(row, 7).setValue(0);
@@ -55,11 +55,11 @@ function resetBikeAvailability() {
         if (totalCols >= 11) bikesSheet.getRange(row, 11).setValue('');
         if (totalCols >= 12) bikesSheet.getRange(row, 12).setValue('');
         updatedCount++;
-        Logger.log(`✅ Reset bike row ${row}: availability updated to Available`);
+        Logger.log(`✅ Reset bike row ${row}: availability updated to available`);
       }
     }
 
-    Logger.log(`🚲 Reset ${updatedCount} bikes to Available status`);
+    Logger.log(`🚲 Reset ${updatedCount} bikes to available status`);
   } catch (error) {
     Logger.log(`❌ Failed to reset bike availability: ${error.message}`);
     throw error;
@@ -187,7 +187,7 @@ function upsertTestBikeRow(config) {
     bikeName,
     config.size || 'M',
     config.maintenanceStatus || 'Good',
-    config.availability || 'Available',
+    config.availability || 'available',
     config.lastCheckoutDate || '',
     config.lastReturnDate || '',
     config.currentUsageTimer !== undefined ? config.currentUsageTimer : 0,
