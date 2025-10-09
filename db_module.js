@@ -231,19 +231,57 @@ const DB = {
 
   // Reset database by clearing specified ranges in all configured sheets(rows are not deleted)
   resetDatabase: () => {
+    Logger.log("🔄 Starting database reset (soft reset - clearing content only)");
+    
     if (!CACHED_SETTINGS.VALUES.ENABLE_FORCED_RESET || !CACHED_SETTINGS.VALUES.DEBUG_MODE) {
-      throw new Error("Auto reset is disabled or debug mode is off.");
+      const error = "Auto reset is disabled or debug mode is off.";
+      Logger.log(`❌ Reset failed: ${error}`);
+      throw new Error(error);
     }
     
+    Logger.log(`📋 Processing ${Object.keys(CACHED_SETTINGS.VALUES.SHEETS).length} sheets for reset`);
+    
+    let successCount = 0;
+    let errorCount = 0;
+    
     for (const key in CACHED_SETTINGS.VALUES.SHEETS) {
-      const sheetConfig = CACHED_SETTINGS.VALUES.SHEETS[key];
-      const sheet = DB.getSheet(sheetConfig.NAME);
-      if (sheet) {
+      try {
+        Logger.log(`🧹 Resetting sheet: ${key}`);
+        const sheetConfig = CACHED_SETTINGS.VALUES.SHEETS[key];
+        const sheet = DB.getSheet(sheetConfig.NAME);
+        
+        if (!sheet) {
+          Logger.log(`⚠️ Sheet '${sheetConfig.NAME}' not found for key '${key}'`);
+          errorCount++;
+          continue;
+        }
+        
+        if (!sheetConfig.RESET_RANGE) {
+          Logger.log(`⚠️ No reset range configured for sheet '${key}'`);
+          errorCount++;
+          continue;
+        }
+        
         const range = sheet.getRange(sheetConfig.RESET_RANGE);
         range.clearContent();
         range.setBackground(null);
-        range.setNote('');  
+        range.setNote('');
+        
+        Logger.log(`✅ Successfully reset sheet '${key}' (range: ${sheetConfig.RESET_RANGE})`);
+        successCount++;
+        
+      } catch (error) {
+        Logger.log(`❌ Error resetting sheet '${key}': ${error.message}`);
+        errorCount++;
       }
+    }
+    
+    Logger.log(`🎯 Reset completed - Success: ${successCount}, Errors: ${errorCount}`);
+    
+    if (errorCount > 0) {
+      Logger.log(`⚠️ Reset completed with ${errorCount} errors. Check logs above for details.`);
+    } else {
+      Logger.log("✨ All sheets successfully reset!");
     }
   },
 

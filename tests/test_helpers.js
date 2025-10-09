@@ -118,7 +118,7 @@ function isTestEmail(email) {
   const testPatterns = [
     'test',
     'testuser',
-    'student@amherst.edu',
+    'someone@amherst.edu',
     'student2@amherst.edu',
     'friend@amherst.edu',
     'confused@amherst.edu',

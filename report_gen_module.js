@@ -67,40 +67,59 @@ const saveReport = (newReport, previousReports = null) => {
 
   // Use pre-loaded data if available (no additional API call)
   if (previousReports && previousReports.length > 1) {
-    const periodCol = CACHED_SETTINGS.VALUES.SHEETS.REPORTS.PERIOD_NUM_COLUMN - 1; // Convert to 0-based
+    const periodCol = CACHED_SETTINGS.VALUES.SHEETS.REPORTS.PERIOD_NUM_COLUMN;
+    const newPeriodNum = Number(newReport.period);
     
-    Logger.log(`🔍 Checking for existing report with period ${newReport.period} in ${previousReports.length - 1} existing reports...`);
+    Logger.log(`🔍 Searching for existing report with period ${newReport.period} (type: ${typeof newReport.period}) in ${previousReports.length - 1} existing reports...`);
+    Logger.log(`🔍 Using period column index: ${periodCol}`);
     
-    for (let i = 1; i < previousReports.length; i++) {
-      const existingPeriod = previousReports[i][periodCol];
+    // Skip header row and find matching period using functional approach
+    const dataRows = previousReports.slice(1);
+    const matchingReportIndex = dataRows.findIndex((row, index) => {
+      const existingPeriod = row[periodCol];
       const existingPeriodNum = Number(existingPeriod);
-      const newPeriodNum = Number(newReport.period);
       
-      Logger.log(`   Row ${i + 1}: period = ${existingPeriod} (type: ${typeof existingPeriod}, as number: ${existingPeriodNum})`);
+      Logger.log(`   Row ${index + 2}: period = ${existingPeriod} (type: ${typeof existingPeriod}, as number: ${existingPeriodNum})`);
+      Logger.log(`   Comparing: ${existingPeriodNum} === ${newPeriodNum} ? ${existingPeriodNum === newPeriodNum}`);
       
       // Use numeric comparison to avoid type mismatch issues
-      if (!isNaN(existingPeriodNum) && !isNaN(newPeriodNum) && existingPeriodNum === newPeriodNum) {
-        existingRow = { rowIndex: i + 1, rowData: previousReports[i] };
-        Logger.log(`🔍 Found existing report using batch data (row ${i + 1}) with matching period ${existingPeriod} === ${newReport.period}`);
-        break;
-      }
-    }
+      return !isNaN(existingPeriodNum) && !isNaN(newPeriodNum) && existingPeriodNum === newPeriodNum;
+    });
     
-    if (!existingRow) {
+    if (matchingReportIndex !== -1) {
+      const actualRowIndex = matchingReportIndex + 2; // +2 because we skipped header and arrays are 0-based but sheets are 1-based
+      existingRow = { 
+        rowIndex: actualRowIndex, 
+        rowData: dataRows[matchingReportIndex] 
+      };
+      Logger.log(`🔍 Found existing report at row ${actualRowIndex} with matching period ${newReport.period}`);
+    } else {
       Logger.log(`🔍 No existing report found for period ${newReport.period}`);
     }
   } else {
     Logger.log(`🔍 No previous reports data available (length: ${previousReports?.length || 0})`);
   }
 
-  if (!existingRow){
+  if (!existingRow) {
     Logger.log(`➕ Creating new report entry for period ${newReport.period}`);
-    DB.appendRow(CACHED_SETTINGS.VALUES.SHEETS.REPORTS.NAME, values);
-    Logger.log(`Sorting the Reports sheet..`)
-    DB.sortByColumn(CACHED_SETTINGS.VALUES.SHEETS.REPORTS.NAME)
-  }else{
-    Logger.log(`🔄 Updating existing report for period ${newReport.period}`);
-    DB.updateRow(CACHED_SETTINGS.VALUES.SHEETS.REPORTS.NAME, existingRow.rowIndex, values);
+    try {
+      DB.appendRow(CACHED_SETTINGS.VALUES.SHEETS.REPORTS.NAME, values);
+      Logger.log(`✅ Successfully appended new report`);
+      Logger.log(`Sorting the Reports sheet..`);
+      DB.sortByColumn(CACHED_SETTINGS.VALUES.SHEETS.REPORTS.NAME);
+    } catch (error) {
+      Logger.log(`❌ Error appending new report: ${error.message}`);
+      throw error;
+    }
+  } else {
+    Logger.log(`🔄 Updating existing report for period ${newReport.period} at row ${existingRow.rowIndex}`);
+    try {
+      DB.updateRow(CACHED_SETTINGS.VALUES.SHEETS.REPORTS.NAME, existingRow.rowIndex, values);
+      Logger.log(`✅ Successfully updated existing report at row ${existingRow.rowIndex}`);
+    } catch (error) {
+      Logger.log(`❌ Error updating existing report: ${error.message}`);
+      throw error;
+    }
   }
 
   Logger.log(`✅ successfuly created new report`)
@@ -143,8 +162,22 @@ const getPeriodNumber = (timestamp, checkSpan) => {
  */
 const isBikeOverdue = (bike) => {
   if (bike.availability !== 'checked out') return false;
+  
+  // Validate lastCheckoutDate before calculating
+  if (!bike.lastCheckoutDate || !(bike.lastCheckoutDate instanceof Date) || isNaN(bike.lastCheckoutDate.getTime())) {
+    Logger.log(`⚠️ Bike ${bike.bikeName} is marked as 'checked out' but has invalid lastCheckoutDate: ${bike.lastCheckoutDate}`);
+    return false; // Can't determine if overdue without valid checkout date
+  }
+  
   const maxHours = CACHED_SETTINGS.VALUES.MAX_CHECKOUT_HOURS || 24;
   const hoursElapsed = (new Date() - bike.lastCheckoutDate) / (1000 * 60 * 60);
+  
+  // Additional validation to ensure calculation is valid
+  if (isNaN(hoursElapsed) || hoursElapsed < 0) {
+    Logger.log(`⚠️ Bike ${bike.bikeName} calculated invalid hours elapsed: ${hoursElapsed}`);
+    return false;
+  }
+  
   return hoursElapsed > maxHours;
 };
 
@@ -203,9 +236,9 @@ const calculateAllDeltas = (users, previousReports) => {
   const totalUsageHours = users.reduce((sum, user) => sum + (user.usageHours || 0), 0);
 
   // Calculate previous recorded values from batch-loaded reports data
-  const overdueCol = CACHED_SETTINGS.VALUES.SHEETS.REPORTS.OVERDUE_RETURNS_COLUMN - 1; // Convert to 0-based
-  const mismatchCol = CACHED_SETTINGS.VALUES.SHEETS.REPORTS.RETURN_MISMATCHES_COLUMN - 1;
-  const usageCol = CACHED_SETTINGS.VALUES.SHEETS.REPORTS.TOTAL_USAGE_HOURS_COLUMN - 1;
+  const overdueCol = CACHED_SETTINGS.VALUES.SHEETS.REPORTS.OVERDUE_RETURNS_COLUMN;
+  const mismatchCol = CACHED_SETTINGS.VALUES.SHEETS.REPORTS.RETURN_MISMATCHES_COLUMN;
+  const usageCol = CACHED_SETTINGS.VALUES.SHEETS.REPORTS.TOTAL_USAGE_HOURS_COLUMN;
 
   const prevRecordedOverdueReturns = previousReports.slice(1).reduce((sum, row) => 
     sum + convertSheetValue(row[overdueCol], 'number'), 0);
@@ -305,21 +338,45 @@ const generateReport = (allSheetData) => {
 
   Logger.log(`🚲 Found ${bikes.length} bikes, 👤 ${users.length} users`);
 
+  // Validate bike data consistency before generating report
+  const checkedOutBikes = bikes.filter(bike => bike.availability === 'checked out');
+  const checkedOutWithInvalidDates = checkedOutBikes.filter(bike => 
+    !bike.lastCheckoutDate || !(bike.lastCheckoutDate instanceof Date) || isNaN(bike.lastCheckoutDate.getTime())
+  );
+  
+  if (checkedOutWithInvalidDates.length > 0) {
+    Logger.log(`⚠️ Data inconsistency detected: ${checkedOutWithInvalidDates.length} bikes marked as 'checked out' but have invalid checkout dates:`);
+    checkedOutWithInvalidDates.forEach(bike => {
+      Logger.log(`   - ${bike.bikeName}: lastCheckoutDate = ${bike.lastCheckoutDate}`);
+    });
+  }
+
   // Calculate deltas using batch-loaded reports data
   const deltas = calculateAllDeltas(users, allSheetData.reports);
   
   // Count reported issues using batch-loaded return logs
   const reportedIssues = countReportedIssues(timestamp, checkSpan, allSheetData.returnLogs);
 
+  // Calculate counts with logging
+  const bikesInRepairCount = bikes.filter(bike => bike.maintenanceStatus === 'in repair').length;
+  const checkedOutBikesCount = checkedOutBikes.length;
+  const overdueBikesCount = bikes.filter(bike => isBikeOverdue(bike)).length;
+  const readyForCheckoutCount = bikes.filter(bike => bike.availability === 'available').length;
+
+  Logger.log(`📊 Bike status counts: Total=${bikes.length}, InRepair=${bikesInRepairCount}, CheckedOut=${checkedOutBikesCount}, Overdue=${overdueBikesCount}, Available=${readyForCheckoutCount}`);
+  if (checkedOutWithInvalidDates.length > 0) {
+    Logger.log(`⚠️ Note: ${checkedOutWithInvalidDates.length} checked-out bikes excluded from overdue calculation due to invalid dates`);
+  }
+
   return {
     timestamp: timestamp,
     recordedBy: "Automated",
     period: period,
     totalBikes: bikes.length,
-    bikesInRepair: bikes.filter(bike => bike.maintenanceStatus === 'in repair').length,
-    checkedOutBikes: bikes.filter(bike => bike.availability === 'checked out').length,
-    overdueBikes: bikes.filter(bike => isBikeOverdue(bike)).length,
-    readyForCheckout: bikes.filter(bike => bike.availability === 'available').length,
+    bikesInRepair: bikesInRepairCount,
+    checkedOutBikes: checkedOutBikesCount,
+    overdueBikes: overdueBikesCount,
+    readyForCheckout: readyForCheckoutCount,
     newUsers: countNewUsersForPeriod(users, timestamp, checkSpan),
     lateReturnsCount: deltas.lateReturnsCount,
     returnMismatches: deltas.returnMismatches,

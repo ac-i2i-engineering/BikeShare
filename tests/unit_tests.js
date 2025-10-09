@@ -106,7 +106,7 @@ function createBike(overrides) {
 
 function createUser(overrides) {
   return {
-    userEmail: 'student@amherst.edu',
+    userEmail: 'someone@amherst.edu',
     hasUnreturnedBike: false,
     lastCheckoutName: '',
     lastCheckoutDate: null,
@@ -147,7 +147,7 @@ function testCheckoutPipelineHappyPath() {
     const rawData = {
       formData: {
         timestamp,
-        userEmail: 'student@amherst.edu',
+        userEmail: 'someone@amherst.edu',
         bikeHash: bike.bikeHash,
         conditionConfirmation: 'I consent'
       },
@@ -177,7 +177,7 @@ function testCheckoutPipelineRejectsUnreturnedBike() {
     const timestamp = new Date('2025-01-01T12:00:00Z');
     const bike = createBike({ availability: 'Available' });
     const user = createUser({
-      userEmail: 'student@amherst.edu',
+      userEmail: 'someone@amherst.edu',
       hasUnreturnedBike: true,
       lastCheckoutName: bike.bikeName,
       lastCheckoutDate: new Date('2025-01-01T09:00:00Z')
@@ -240,10 +240,10 @@ function testReturnPipelineUsageHours() {
     const bike = createBike({
       availability: 'Checked Out',
       lastCheckoutDate: checkoutTime,
-      mostRecentUser: 'student@amherst.edu'
+      mostRecentUser: 'someone@amherst.edu'
     });
     const user = createUser({
-      userEmail: 'student@amherst.edu',
+      userEmail: 'someone@amherst.edu',
       hasUnreturnedBike: true,
       lastCheckoutName: bike.bikeName,
       lastCheckoutDate: checkoutTime
@@ -335,10 +335,10 @@ function testReturnPipelineMismatchFlow() {
       bikeName: 'Bike Gamma',
       availability: 'Checked Out',
       lastCheckoutDate: checkoutTime,
-      mostRecentUser: 'student@amherst.edu'
+      mostRecentUser: 'someone@amherst.edu'
     });
     const user = createUser({
-      userEmail: 'student@amherst.edu',
+      userEmail: 'someone@amherst.edu',
       hasUnreturnedBike: true,
       lastCheckoutName: 'Completely Different Bike',
       lastCheckoutDate: checkoutTime
