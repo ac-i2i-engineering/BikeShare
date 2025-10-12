@@ -69,20 +69,91 @@ function installHandleSettingsUpdateTrigger(){
 }
 
 function deleteAllTriggers(){
-  triggers = ScriptApp.getProjectTriggers(); 
+  const triggers = ScriptApp.getProjectTriggers(); 
+  Logger.log(`🗑️ Found ${triggers.length} triggers to delete`);
+  
+  let deletedCount = 0;
+  let errorCount = 0;
+  
   for (let i = 0; i < triggers.length; i++) { 
-    ScriptApp.deleteTrigger(triggers[i]); 
+    try {
+      const trigger = triggers[i];
+      const handlerName = trigger.getHandlerFunction();
+      Logger.log(`   Deleting trigger ${i + 1}: ${handlerName}`);
+      
+      ScriptApp.deleteTrigger(trigger);
+      deletedCount++;
+      
+      // Small delay to prevent potential race conditions
+      Utilities.sleep(100);
+      
+    } catch (error) {
+      Logger.log(`   ❌ Failed to delete trigger ${i + 1}: ${error.message}`);
+      errorCount++;
     }
+  }
+  
+  Logger.log(`✅ Deletion complete: ${deletedCount} deleted, ${errorCount} errors`);
+  
+  // Verify deletion
+  const remainingTriggers = ScriptApp.getProjectTriggers();
+  if (remainingTriggers.length > 0) {
+    Logger.log(`⚠️ WARNING: ${remainingTriggers.length} triggers still remain after deletion`);
+    remainingTriggers.forEach((trigger, index) => {
+      Logger.log(`   Remaining trigger ${index + 1}: ${trigger.getHandlerFunction()}`);
+    });
+  }
 }
 
 function reInstallAllTriggers(){
-  clearCache()
-  deleteAllTriggers();
-  installOnSubmitTrigger();
-  installExecuteReportGenerationTrigger();
-  installHandleSettingsUpdateTrigger()
-  installScheduleSystemShutdownAndActivationTrigger()
-  installUpdateUsageTimersTrigger();
+  Logger.log('🔄 Starting trigger reinstallation process...');
+  
+  try {
+    // Clear cache first
+    Logger.log('🧹 Clearing cache...');
+    clearCache();
+    
+    // Delete all existing triggers
+    Logger.log('🗑️ Deleting all existing triggers...');
+    deleteAllTriggers();
+    
+    // Wait a moment to ensure deletion is complete
+    Utilities.sleep(1000);
+    
+    // Install new triggers one by one with error handling
+    const triggerInstallations = [
+      { name: 'Form Submit Trigger', fn: installOnSubmitTrigger },
+      { name: 'Report Generation Trigger', fn: installExecuteReportGenerationTrigger },
+      { name: 'Settings Update Trigger', fn: installHandleSettingsUpdateTrigger },
+      { name: 'System Activation/Shutdown Triggers', fn: installScheduleSystemShutdownAndActivationTrigger },
+      { name: 'Usage Timer Update Trigger', fn: installUpdateUsageTimersTrigger }
+    ];
+    
+    let successCount = 0;
+    let errorCount = 0;
+    
+    triggerInstallations.forEach(installation => {
+      try {
+        Logger.log(`📝 Installing ${installation.name}...`);
+        installation.fn();
+        successCount++;
+        Logger.log(`   ✅ ${installation.name} installed successfully`);
+      } catch (error) {
+        errorCount++;
+        Logger.log(`   ❌ Failed to install ${installation.name}: ${error.message}`);
+      }
+    });
+    
+    Logger.log(`🎉 Trigger reinstallation complete: ${successCount} installed, ${errorCount} errors`);
+    
+    // Final verification
+    const finalTriggers = ScriptApp.getProjectTriggers();
+    Logger.log(`📊 Final trigger count: ${finalTriggers.length}`);
+    
+  } catch (error) {
+    Logger.log(`❌ Critical error during trigger reinstallation: ${error.message}`);
+    throw error;
+  }
 }
 
 function installUpdateUsageTimersTrigger() {

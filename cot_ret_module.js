@@ -491,7 +491,7 @@ function findUserByEmail(users, email) {
   if (foundUser) {
     Logger.log(`✅ User found: ${normalizedEmail} (original: ${foundUser.userEmail})`);
   } else {
-    Logger.log(`❌ User not found: ${normalizedEmail}`);
+    Logger.log(`⚠️ User not found: ${normalizedEmail}`);
   }
   
   return foundUser;

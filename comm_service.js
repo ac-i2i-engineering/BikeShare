@@ -120,7 +120,7 @@ const COMM = {
       Logger.log(`✅ Email sent successfully to ${userEmail} for ${commID}`);
       return { success: true, recipient: userEmail };
     } catch (error) {
-      Logger.log(`❌ Failed to send email to ${userEmail} for ${commID}: ${error.message}`);
+      Logger.log(`❌ Failed to send email to ${userEmail} from ${CACHED_SETTINGS.VALUES.ORG_EMAIL} for ${commID}: ${error.message}`);
       
       // Notify admin of email failure
       try {
