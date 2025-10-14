@@ -68,12 +68,10 @@ class Settings {
 
   extractNoteFromString(cellRange, sheet, text) {
     const unAllowedNotes = ["", "-", "none"];
-    return !unAllowedNotes.includes(text.trim().toLowerCase())
-      ? {
-          bgColor: sheet.getRange(cellRange).getBackground(),
-          note: text,
-        }
-      : null;
+    return !unAllowedNotes.includes(text.trim().toLowerCase()) ? {
+      bgColor: sheet.getRange(cellRange).getBackground(),
+      note: text,
+    } : null;
   }
 
   setSettingsCache() {
@@ -287,18 +285,8 @@ class Settings {
     return this.cacheValues.systemButtons?.SYSTEM_ACTIVE ?? true;
   }
 
-  canCheckoutWithUnreturnedBike() {
-    return (
-      this.cacheValues.systemButtons?.CAN_CHECKOUT_WITH_UNRETURNED_BIKE ?? false
-    );
-  }
-
   getMaxCheckoutHours() {
     return this.cacheValues.coreConfig?.MAX_CHECKOUT_HOURS ?? 72;
-  }
-
-  getFuzzyMatchingThreshold() {
-    return this.cacheValues.coreConfig?.FUZZY_MATCHING_THRESHOLD ?? 0.3;
   }
 
   getAdminEmail() {
@@ -404,11 +392,10 @@ class Settings {
           },
         },
         REGULATIONS: {
-          CAN_CHECKOUT_WITH_UNRETURNED_BIKE: false,
           NEED_USER_CONFIRM_KEY_ACCESS: false,
           MAX_CHECKOUT_HOURS: this.getMaxCheckoutHours(),
         },
-        FUZZY_MATCHING_THRESHOLD: this.getFuzzyMatchingThreshold(),
+        FUZZY_MATCHING_THRESHOLD: 0.3,
         NOTIFICATION_SETTINGS: {
           ENABLE_USER_NOTIFICATIONS:
             this.cacheValues.systemButtons?.ENABLE_USER_NOTIFICATIONS,
@@ -679,23 +666,28 @@ function parseSettingsUpdate(e) {
           editedParam === "NEXT_SYSTEM_SHUTDOWN_DATE" ||
           editedParam === "NEXT_SYSTEM_ACTIVATION_DATE"
         ) {
-          Logger.log(`🔄 Reinstalling system activation/shutdown triggers for: ${editedParam}`);
-        
+          Logger.log(
+            `🔄 Reinstalling system activation/shutdown triggers for: ${editedParam}`
+          );
+
           // Delete only the system activation/shutdown triggers
           const triggers = ScriptApp.getProjectTriggers();
-          const systemTriggers = triggers.filter(trigger => 
-            ['handleScheduledSystemActivation', 'handleScheduledSystemShutdown'].includes(trigger.getHandlerFunction())
+          const systemTriggers = triggers.filter((trigger) =>
+            [
+              "handleScheduledSystemActivation",
+              "handleScheduledSystemShutdown",
+            ].includes(trigger.getHandlerFunction())
           );
-        
-          systemTriggers.forEach(trigger => {
+
+          systemTriggers.forEach((trigger) => {
             ScriptApp.deleteTrigger(trigger);
             Logger.log(`Deleted trigger: ${trigger.getHandlerFunction()}`);
           });
-        
+
           // Reinstall only the system triggers
           installScheduleSystemShutdownAndActivationTrigger();
-        
-          Logger.log('✅ System activation/shutdown triggers reinstalled');
+
+          Logger.log("✅ System activation/shutdown triggers reinstalled");
         }
       }
     }
