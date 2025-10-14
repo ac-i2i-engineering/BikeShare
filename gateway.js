@@ -44,31 +44,59 @@ function handleOnFormSubmit(e) {
 }
 
 
+/**
+ * Main trigger function for automatic management settings sync
+ */
 function handleSettingsUpdate(e){
   return withLock(() => {
-    runManagementSheetUpdate(e)
+    parseSettingsUpdate(e)
   }, 'settings update');
 }
 
-function manageFormsAccessibility(action){
-  // stop accepting responses for return and checkout form
-  const state = action === "resume" ? activateSystem() : shutdownSystem();
-}
-
 /**
- * Main trigger function for automatic reports
- * @returns {Object} Result object from runReportPipeline
+ * Main trigger function for automatic reports generation
  */
 function executeReportGeneration() {
+  if(!CACHED_SETTINGS.VALUES.REPORT_GENERATION.ENABLE_REPORT_GENERATION){
+    Logger.log("Report Generation currently disabled in management sheets")
+    return
+  }
   Logger.log('⏰ Triggered automatic report generation');
   return withLock(() => {
     return runReportPipeline();
   }, 'report generation');
 }
 
+/**
+ * Main trigger function for automatic time usageTimer update
+ */
 function executeUsageTimerUpdate(){
   Logger.log('⏰ Triggered automatic usage timer update');
   return withLock(() => {
     return runTimerUpdate();
   }, 'usage timer update');
+}
+
+function handleScheduledSystemActivation(e) {
+  return withLock(() => {
+    try{
+      Logger.log('🔓Attempting scheduled system activation');
+      toogleFormAcceptResponses(true)
+      Logger.log('✅System activated successfully');
+    }catch(error){
+      Logger.log(`❌Failed to activate system:${error.errorMessage}`)
+    }
+  }, 'system activation');
+}
+
+function handleScheduledSystemShutdown(e) {
+  return withLock(() => {
+    try{
+      Logger.log('🔒Attempting scheduled system shutdown');
+      toogleFormAcceptResponses(false)
+      Logger.log('✅System shutdown successfully');
+    }catch(error){
+      Logger.log(`❌Failed to activate system:${error.errorMessage}`)
+    }
+  }, 'system shutdown');
 }

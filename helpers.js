@@ -23,9 +23,18 @@ function printFormFieldInfo(formId){
   });
 }
 
-function cleanDatabase(){
-  DB.resetDatabase()
-  DB.hardResetDatabase()
+function cleanDatabase() {
+  try {
+    Logger.log('🧹 Starting database reset...');
+    DB.resetDatabase(CACHED_SETTINGS.VALUES.MAIN_DASHBOARD_SS_ID);
+    Logger.log('✅ Database resetDatabase() completed.');
+    DB.hardResetDatabase(CACHED_SETTINGS.VALUES.MAIN_DASHBOARD_SS_ID);
+    Logger.log('✅ Database hardResetDatabase() completed.');
+    Logger.log('🎉 Database cleaned successfully.');
+  } catch (error) {
+    Logger.log(`❌ Error during database cleaning: ${error.message}`);
+    throw error;
+  }
 }
 
 function clearCache(){
@@ -53,17 +62,18 @@ function installExecuteReportGenerationTrigger(){
 }
 
 function installScheduleSystemShutdownAndActivationTrigger(){
-  const activationDate = CACHED_SETTINGS.VALUES.NEXT_SYSTEM_ACTIVATION_DATE
-  const shutdownDate = CACHED_SETTINGS.VALUES.NEXT_SYSTEM_SHUTDOWN_DATE
+  const activationDate = new Date(CACHED_SETTINGS.VALUES.NEXT_SYSTEM_ACTIVATION_DATE)
+  const shutdownDate = new Date(CACHED_SETTINGS.VALUES.NEXT_SYSTEM_SHUTDOWN_DATE)
   const curDate = new Date()
-  const sheet = SpreadsheetApp.openById(CACHED_SETTINGS.VALUES.MAIN_DASHBOARD_SS_ID)
+  const dashboardSpreadsheet = SpreadsheetApp.openById(CACHED_SETTINGS.VALUES.MAIN_DASHBOARD_SS_ID)
   if(activationDate > curDate){
-    ScriptApp.newTrigger('handleSystemActivation').forSpreadsheet(sheet).timeBased().at(activationDate).create()
+    ScriptApp.newTrigger('handleScheduledSystemActivation').forSpreadsheet(dashboardSpreadsheet).timeBased().at(activationDate).create()
   }
   if(shutdownDate > curDate){
-    ScriptApp.newTrigger('handleSystemShutdown').forSpreadsheet(sheet).timeBased().at(shutdownDate).create()
+    ScriptApp.newTrigger('handleScheduledSystemShutdown').forSpreadsheet(dashboardSpreadsheet).timeBased().at(shutdownDate).create()
   }
 }
+
 function installHandleSettingsUpdateTrigger(){
   ScriptApp.newTrigger('handleSettingsUpdate').forSpreadsheet(CACHED_SETTINGS.management_ss).onChange().create();
 }
@@ -79,7 +89,7 @@ function deleteAllTriggers(){
     try {
       const trigger = triggers[i];
       const handlerName = trigger.getHandlerFunction();
-      Logger.log(`   Deleting trigger ${i + 1}: ${handlerName}`);
+      Logger.log(`Deleting trigger ${i + 1}: ${handlerName}`);
       
       ScriptApp.deleteTrigger(trigger);
       deletedCount++;
@@ -88,7 +98,7 @@ function deleteAllTriggers(){
       Utilities.sleep(100);
       
     } catch (error) {
-      Logger.log(`   ❌ Failed to delete trigger ${i + 1}: ${error.message}`);
+      Logger.log(`❌ Failed to delete trigger ${i + 1}: ${error.message}`);
       errorCount++;
     }
   }
@@ -100,7 +110,7 @@ function deleteAllTriggers(){
   if (remainingTriggers.length > 0) {
     Logger.log(`⚠️ WARNING: ${remainingTriggers.length} triggers still remain after deletion`);
     remainingTriggers.forEach((trigger, index) => {
-      Logger.log(`   Remaining trigger ${index + 1}: ${trigger.getHandlerFunction()}`);
+      Logger.log(`Remaining trigger ${index + 1}: ${trigger.getHandlerFunction()}`);
     });
   }
 }
@@ -137,10 +147,10 @@ function reInstallAllTriggers(){
         Logger.log(`📝 Installing ${installation.name}...`);
         installation.fn();
         successCount++;
-        Logger.log(`   ✅ ${installation.name} installed successfully`);
+        Logger.log(`✅ ${installation.name} installed successfully`);
       } catch (error) {
         errorCount++;
-        Logger.log(`   ❌ Failed to install ${installation.name}: ${error.message}`);
+        Logger.log(`❌ Failed to install ${installation.name}: ${error.message}`);
       }
     });
     
