@@ -5,6 +5,7 @@ node_modules/**
 # Development files
 templates/**
 endUserManuals/**
+old_versions/**
 tasks.txt
 *.md
 
@@ -25,6 +26,7 @@ README.md
 # tests/**
 *.spec.js
 *.test.js
+*fncalProgrammingBasics.js
 
 # Ignore build artifacts
 dist/
