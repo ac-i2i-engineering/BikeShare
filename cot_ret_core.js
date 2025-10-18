@@ -70,12 +70,13 @@ function updateBikeStatus(data) {
     availability: newStatus,
     lastCheckoutDate: newStatus === 'checked out' ? data.currentState.timestamp : data.bike.lastCheckoutDate,
     lastReturnDate: newStatus === 'available' ? data.currentState.timestamp : data.bike.lastReturnDate,
-    // Update recent users for checkout - safely handle null/undefined values with normalized email
+    currentUsageTimer: 0,
+    // Update recent users for checkout
     ...(newStatus === 'checked out' && {
-      tempRecent: data.bike.thirdRecentUser || '',
-      thirdRecentUser: data.bike.secondRecentUser || '',
-      secondRecentUser: data.bike.mostRecentUser || '',
-      mostRecentUser: (data.formData.userEmail || '').toLowerCase().trim(),
+      tempRecent: data.bike.thirdRecentUser,
+      thirdRecentUser: data.bike.secondRecentUser,
+      secondRecentUser: data.bike.mostRecentUser,
+      mostRecentUser: data.formData.userEmail,
     })
   };
   
@@ -126,7 +127,7 @@ function updateUserStatus(data) {
     action: data.user.isNewUser ? 'create' : 'update',
     sheetName: CACHED_SETTINGS.VALUES.SHEETS.USER_STATUS.NAME,
     searchKey: 'userEmail',
-    searchValue: data.user.userEmail, // Use normalized email from user object
+    searchValue: data.user.userEmail,
     updatedData: updatedUser
   }];
   
@@ -173,7 +174,7 @@ function calculateUsageHours(data) {
         : change
     ),
     users: data.stateChanges.users.map(change => 
-      change.searchValue === data.user.userEmail // Use normalized email from user object
+      change.searchValue === data.user.userEmail
         ? { ...change, updatedData: updatedUser }
         : change
     )
@@ -350,7 +351,7 @@ function prepareBikeOperation(change) {
   const bikeRowData = [
     change.updatedData.bikeName || '',
     change.updatedData.size || '',
-    change.updatedData.maintenanceStatus || 'Good',
+    change.updatedData.maintenanceStatus || 'good',
     change.updatedData.availability || 'available',
     change.updatedData.lastCheckoutDate || '',
     change.updatedData.lastReturnDate || '',

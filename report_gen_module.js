@@ -211,7 +211,7 @@ const countReportedIssues = (timestamp, checkSpan, returnLogsData) => {
   });
 
   const count = filtered.filter(log => {
-    const issue = convertSheetValue(log[8], 'string').toLowerCase();
+    const issue = convertSheetValue(log[8], 'string')
     return issue !== "" && !CACHED_SETTINGS.VALUES.IGNORED_REPORT_STMTS_ON_RFORM?.includes(issue);
   }).length;
   

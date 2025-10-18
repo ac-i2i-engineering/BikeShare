@@ -1,4 +1,45 @@
 /**
+ * Convert sheet value to proper type
+ * @param {*} value - Raw value from sheet
+ * @param {string} type - Target type ('string', 'number', 'date', 'boolean')
+ * @returns {*} Converted value
+ */
+function convertSheetValue(value, type) {
+  if (value === null || value === undefined || value === '') {
+    switch (type) {
+      case 'number': return 0;
+      case 'string': return '';
+      case 'date': return null;
+      case 'boolean': return false;
+      default: return value;
+    }
+  }
+
+  switch (type) {
+    case 'number':
+      const num = parseFloat(value);
+      return isNaN(num) ? 0 : num;
+    case 'string':
+      return value.toString().toLowerCase().trim();
+    case 'date':
+      if (value instanceof Date) return value;
+      if (typeof value === 'string' && value.trim() === '') return null;
+      const date = new Date(value)
+      if (isNaN(date.getTime())) {
+        Logger.log(`⚠️ Invalid date value: ${value}`);
+        return null;
+      }
+      return date
+    case 'boolean':
+      if (typeof value === 'boolean') return value;
+      const str = value.toString().toLowerCase().trim();
+      return str === 'yes' || str === 'true' || str === '1';
+    default:
+      return value;
+  }
+}
+
+/**
  * Process bikes data from pre-loaded sheet data
  * @param {Array} bikesData - Raw sheet data
  * @returns {Array} Array of bike objects
@@ -48,42 +89,33 @@ function processUsersData(usersData) {
 }
 
 /**
- * Convert sheet value to proper type
- * @param {*} value - Raw value from sheet
- * @param {string} type - Target type ('string', 'number', 'date', 'boolean')
- * @returns {*} Converted value
+ * Parse form response into structured data
+ * @param {Array} responses - Raw form response array
+ * @returns {Object} Structured form data
  */
-function convertSheetValue(value, type) {
-  if (value === null || value === undefined || value === '') {
-    switch (type) {
-      case 'number': return 0;
-      case 'string': return '';
-      case 'date': return null;
-      case 'boolean': return false;
-      default: return value;
-    }
-  }
+function parseFormResponse(context) {
+  const responses = context.responses
 
-  switch (type) {
-    case 'number':
-      const num = parseFloat(value);
-      return isNaN(num) ? 0 : num;
-    case 'string':
-      return value.toString().toLowerCase().trim();
-    case 'date':
-      if (value instanceof Date) return value;
-      if (typeof value === 'string' && value.trim() === '') return null;
-      const date = new Date(value)
-      if (isNaN(date.getTime())) {
-        Logger.log(`⚠️ Invalid date value: ${value}`);
-        return null;
-      }
-      return date
-    case 'boolean':
-      if (typeof value === 'boolean') return value;
-      const str = value.toString().toLowerCase().trim();
-      return str === 'yes' || str === 'true' || str === '1';
-    default:
-      return value;
-  }
+  //parse checkout entry
+  if (context.operation === 'checkout'){
+        return {
+          timestamp: convertSheetValue(responses[0], 'date'),
+          userEmail: convertSheetValue(responses[1], 'string'),
+          bikeHash: convertSheetValue(responses[2], 'string'),
+          conditionConfirmation: convertSheetValue(responses[3], 'string'),
+        };
+    }
+
+    //parse return entry
+    return {
+        timestamp: convertSheetValue(responses[0], 'date'),
+        userEmail: convertSheetValue(responses[1], 'string'),
+        bikeName: convertSheetValue(responses[2], 'string'),
+        confirmBikeName: convertSheetValue(responses[3], 'string'),
+        assureRodeBike: convertSheetValue(responses[4], 'boolean'),
+        mismatchExplanation: convertSheetValue(responses[5], 'string'),
+        returningForFriend: convertSheetValue(responses[6], 'boolean'),
+        friendEmail: convertSheetValue(responses[7], 'string'),
+        issuesConcerns: convertSheetValue(responses[8], 'string'),
+    }
 }
