@@ -100,3 +100,18 @@ function handleScheduledSystemShutdown(e) {
     }
   }, 'system shutdown');
 }
+
+/**
+ * Handle manual edits to the dashboard (Bikes Status sheet)
+ * Removes notes from maintenance status column when changed from "has issue"
+ */
+function handleManualDashboardChanges(e) {
+  return withLock(() => {
+    try {
+     processManualDashboardActions(e)
+    } catch (error) {
+      Logger.log(`❌ Error handling manual dashboard change: ${error.message}`);
+      Logger.log(error.stack);
+    }
+  }, 'manual dashboard change');
+}

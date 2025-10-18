@@ -97,6 +97,16 @@ function installHandleSettingsUpdateTrigger() {
     .create();
 }
 
+function installHandleManualDashboardChangesTrigger() {
+  const dashboardSpreadsheet = SpreadsheetApp.openById(
+    CACHED_SETTINGS.VALUES.MAIN_DASHBOARD_SS_ID
+  );
+  ScriptApp.newTrigger("handleManualDashboardChanges")
+    .forSpreadsheet(dashboardSpreadsheet)
+    .onEdit()
+    .create();
+}
+
 function deleteAllTriggers() {
   const triggers = ScriptApp.getProjectTriggers();
   Logger.log(`🗑️ Found ${triggers.length} triggers to delete`);
@@ -164,6 +174,10 @@ function reInstallAllTriggers() {
       {
         name: "Settings Update Trigger",
         fn: installHandleSettingsUpdateTrigger,
+      },
+      {
+        name: "Manual Dashboard Changes Trigger",
+        fn: installHandleManualDashboardChangesTrigger,
       },
       {
         name: "System Activation/Shutdown Triggers",
