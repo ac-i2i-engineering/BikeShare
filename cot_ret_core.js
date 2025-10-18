@@ -63,16 +63,29 @@ function processReturnTransaction(data) {
  * @returns {Object} Data with updated bike state
  */
 function updateBikeStatus(data) {
-  if (data.error) return data; // Skip if already has error
-  const newStatus = data.transaction.type === 'checkout' ? 'checked out' : "available"
+  if (data.error) return data;
+
+  const isCheckout = data.transaction.type === 'checkout';
+  const isReturn = data.transaction.type === 'return';
+  
+  // Check for valid issues/concerns on returns
+  const hasValidIssue = 
+    isReturn && 
+    data.formData.issuesConcerns !== "" && 
+    !CACHED_SETTINGS.VALUES.IGNORED_REPORT_STMTS_ON_RFORM?.includes(data.formData.issuesConcerns);
+
+  const issueNote = hasValidIssue ? `Issue reported: ${data.formData.issuesConcerns}` : null;
+  const maintenanceStatus = hasValidIssue ? 'has issue' : data.bike.maintenanceStatus;
+
   const updatedBike = {
     ...data.bike,
-    availability: newStatus,
-    lastCheckoutDate: newStatus === 'checked out' ? data.currentState.timestamp : data.bike.lastCheckoutDate,
-    lastReturnDate: newStatus === 'available' ? data.currentState.timestamp : data.bike.lastReturnDate,
+    maintenanceStatus: maintenanceStatus,
+    availability: isCheckout ? 'checked out' : 'available',
+    lastCheckoutDate: isCheckout ? data.currentState.timestamp : data.bike.lastCheckoutDate,
+    lastReturnDate: isReturn ? data.currentState.timestamp : data.bike.lastReturnDate,
     currentUsageTimer: 0,
     // Update recent users for checkout
-    ...(newStatus === 'checked out' && {
+    ...(isCheckout && {
       tempRecent: data.bike.thirdRecentUser,
       thirdRecentUser: data.bike.secondRecentUser,
       secondRecentUser: data.bike.mostRecentUser,
@@ -86,7 +99,14 @@ function updateBikeStatus(data) {
     sheetName: CACHED_SETTINGS.VALUES.SHEETS.BIKES_STATUS.NAME,
     searchKey: 'bikeHash',
     searchValue: data.bike.bikeHash,
-    updatedData: updatedBike
+    updatedData: updatedBike,
+    // Add note metadata if present
+    ...(issueNote && {
+      notes: [{
+        columnIndex: 2, //(0-indexed)
+        text: issueNote
+      }]
+    })
   }];
   
   return {
@@ -367,8 +387,9 @@ function prepareBikeOperation(change) {
   return {
     type: 'updateByRowIndex',
     sheetName: change.sheetName || CACHED_SETTINGS.VALUES.SHEETS.BIKES_STATUS.NAME,
-    rowIndex: change.updatedData._rowIndex, // Use the row index from loaded data!
-    values: bikeRowData
+    rowIndex: change.updatedData._rowIndex,
+    values: bikeRowData,
+    ...(change.notes && { notes: change.notes })
   };
 }
 
