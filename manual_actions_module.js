@@ -18,11 +18,12 @@ function processManualDashboardActions(e) {
 
   // Column 3 is maintenanceStatus (1-based indexing in Google Sheets)
   const MAINTENANCE_STATUS_COL = 3;
+  const AVAILABILITY_COL = 4;
 
   // Only process if the edited column is maintenanceStatus
-  if (col !== MAINTENANCE_STATUS_COL) {
+  if (col !== MAINTENANCE_STATUS_COL && col !== AVAILABILITY_COL) {
     Logger.log(
-      `Skipping: Changed column ${col} is not maintenance status column (${MAINTENANCE_STATUS_COL})`
+      `Skipping: Changed column ${col} is not maintenance: ${MAINTENANCE_STATUS_COL} or availability: ${AVAILABILITY_COL} status column`
     );
     return;
   }
@@ -33,19 +34,103 @@ function processManualDashboardActions(e) {
     return;
   }
 
-  const oldValue = e.oldValue || "";
-  const newValue = e.value || "";
+  const oldValue = convertSheetValue(e.oldValue, 'string');
+  const newValue = convertSheetValue(e.value, 'string');
 
   Logger.log(`Row ${row}, Col ${col}: "${oldValue}" → "${newValue}"`);
 
-  // If the old value was "has issue", clear the note
-  if (oldValue.toLowerCase().trim() === "has issue") {
+  // If the old value was "has issue", clear the note in bike status
+  if (oldValue === "has issue") {
     Logger.log(
       `Clearing note from row ${row}, column ${col} (was "has issue")`
     );
     range.clearNote();
     Logger.log("✅ Note cleared successfully");
-  } else {
-    Logger.log('No action needed: previous value was not "has issue"');
+  } 
+  //if admin manually changes bike from "checked out" to "available"
+  else if(oldValue === "checked out" && newValue === "available"){
+    updateUserStatus(row)
   }
+  else {
+    Logger.log('No action needed: previous value was not "M_S: has issue" nor "AVL: checked out-> available"');
+  }
+}
+// TODO: Write the logic to update bike status.
+function updateUserStatus(row){
+
+  const rawBikesData = loadAllBikesData()
+  const bikes = processBikesData(rawBikesData)
+  const bike = bikes.find(bike => bike._rowIndex == row) // subtract 2 since header is skipped and rows are 1 based.
+
+  if (!bike) {
+    throw new Error(`Auto update user status on manual bike availability change failed: Bike not found for row ${row}.`);
+  }
+
+  let bikeName = bike.bikeName
+  let recentUserEmail = bike.mostRecentUser
+
+  // find the user with this email in user status 
+  const rawUsersData = loadAllUsersData()
+  const usersData = processUsersData(rawUsersData)
+  const recentUser = usersData.find(user => user.userEmail)
+
+  if(!recentUser){
+    throw new Error(`Auto update user status on manual bike availability change failed: user with '${recentUserEmail}' email not found in records`)
+  }
+
+  if(recentUser.lastCheckoutName !== bikeName){
+    throw new Error(`Auto update user status on manual bike availability change failed:: ${recentUserEmail} last checkout is "${recentUser.lastCheckoutName}" not "${bikeName}"`)
+  }
+
+  //update user status
+  let lastReturnDate = new Date()
+  let numberOfReturns = recentUser.numberOfReturns + 1
+  let elapsedUsageTime = (lastReturnDate - recentUser.lastCheckoutDate) / (1000 * 60 * 60)
+  let usageHours = recentUser.usageHours + elapsedUsageTime
+  //TODO: add overdue return logic
+
+  const updatedUserStatus = {
+    ...recentUser,
+    hasUnreturnedBike: "No",
+    lastReturnDate: lastReturnDate,
+    numberOfReturns: numberOfReturns,
+    usageHours: usageHours
+  };
+
+  // Save updated user status back to sheet
+  try {
+    DB.updateRow(
+      CACHED_SETTINGS.VALUES.SHEETS.USER_STATUS.NAME,
+      recentUser._rowIndex,
+      Object.values(updatedUserStatus).slice(0, -1) // remove _rowIndex property
+    );
+
+
+  } catch (error) {
+    Logger.log(`❌ Failed to update user status for ${recentUser.userEmail} on Manual bike return: ${error.message}`);
+    throw error;
+  }
+
+  // update bike status
+  const updatedBikeStatus = {
+    ...bike,
+    lastReturnDate: lastReturnDate,
+    totalUsageHours: bike. totalUsageHours + elapsedUsageTime,
+    currentUsageTimer: 0,
+    // Optionally update other fields if needed
+  };
+
+  try {
+    DB.updateRow(
+      CACHED_SETTINGS.VALUES.SHEETS.BIKES_STATUS.NAME,
+      bike._rowIndex,
+      Object.values(updatedBikeStatus).slice(0, -1) // remove _rowIndex property
+    );
+    Logger.log(`✅ Bike status updated for ${bike.bikeName} after manual availability change.`);
+  } catch (error) {
+    Logger.log(`❌ Failed to update bike status for ${bike.bikeName} on Manual availability change: ${error.message}`);
+    throw error;
+  }
+
+  Logger.log(`✅ User status updated for ${recentUser.userEmail} after manual bike availability change.`);
 }
