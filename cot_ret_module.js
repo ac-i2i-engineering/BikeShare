@@ -112,37 +112,15 @@ function extractEventContext(triggerEvent) {
  * @returns {Object} Current state object
  */
 function loadSystemState() {
-  // Batch load all required sheet data in minimal API calls
-  const sheetData = loadAllUsersAndBikesData();
-  
+  // Load bikes and users data separately
+  const bikesData = loadAllBikesData();
+  const usersData = loadAllUsersData();
   return {
-    bikes: processBikesData(sheetData.bikes),
-    users: processUsersData(sheetData.users),
+    bikes: processBikesData(bikesData),
+    users: processUsersData(usersData),
     settings: CACHED_SETTINGS.VALUES,
     timestamp: new Date()
   };
-}
-
-/**
- * Load all required sheet data efficiently using minimal API calls
- * @returns {Object} Raw 2D arrays from sheet data (not processed objects yet)
- */
-function loadAllUsersAndBikesData() {
-  try {    
-    // Get both sheets in single context 
-    const bikesData = DB.getAllData(CACHED_SETTINGS.VALUES.SHEETS.BIKES_STATUS.NAME);
-    if (!bikesData) throw new Error('❌ Failed loading Bikes data');
-
-    const usersData = DB.getAllData(CACHED_SETTINGS.VALUES.SHEETS.USER_STATUS.NAME);
-    if (!usersData) throw new Error('❌ Failed loading Users data');
-    
-    return {
-      bikes: bikesData,    
-      users: usersData   
-    };
-  } catch (error) {
-    throw new Error(`❌Batch loading failed: ${error.message}`);
-  }
 }
 
 /**

@@ -119,3 +119,31 @@ function parseFormResponse(context) {
         issuesConcerns: convertSheetValue(responses[8], 'string'),
     }
 }
+
+/**
+ * Load all bikes data from sheet
+ * @returns {Array} Raw 2D array from bikes sheet
+ */
+function loadAllBikesData() {
+  try {
+    const bikesData = DB.getAllData(CACHED_SETTINGS.VALUES.SHEETS.BIKES_STATUS.NAME);
+    if (!bikesData) throw new Error('❌ Failed loading Bikes data');
+    return bikesData;
+  } catch (error) {
+    throw new Error(`❌Loading bikes data failed: ${error.message}`);
+  }
+}
+
+/**
+ * Load all users data from sheet
+ * @returns {Array} Raw 2D array from users sheet
+ */
+function loadAllUsersData() {
+  try {
+    const usersData = DB.getAllData(CACHED_SETTINGS.VALUES.SHEETS.USER_STATUS.NAME);
+    if (!usersData) throw new Error('❌ Failed loading Users data');
+    return usersData;
+  } catch (error) {
+    throw new Error(`❌Loading users data failed: ${error.message}`);
+  }
+}
