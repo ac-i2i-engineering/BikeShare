@@ -27,6 +27,7 @@ function withLock(fn, operationName = 'operation', timeout = 30000) {
 //=====================================================
 // FORM EVENT LISTENER
 //=====================================================
+
 function handleOnFormSubmit(e) {
   return withLock(() => {
     const result = processFormSubmissionEvent(e);
@@ -90,7 +91,11 @@ function handleScheduledSystemActivation(e) {
     }
   }, 'system activation');
 }
-
+/**
+ * Trigger function to automatically shut down the system (close forms).
+ * Scheduled based on dates in the settings.
+ * @param {Object} e - Event object (unused)
+ */
 function handleScheduledSystemShutdown(e) {
   return withLock(() => {
     try{
