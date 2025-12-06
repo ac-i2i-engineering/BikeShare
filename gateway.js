@@ -12,9 +12,9 @@ function withLock(fn, operationName = 'operation', timeout = 30000) {
   const lock = LockService.getScriptLock();
   
   try {
-    lock.waitLock(timeout);
+    lock.waitLock(timeout); // Attempt to acquire the lock. Wait up to 'timeout' ms.
     Logger.log(`🔒 Lock acquired for ${operationName}`);
-    return fn();
+    return fn(); // Execute the protected function
   } catch (error) {
     Logger.log(`❌ Lock error for ${operationName}: ${error.message}`);
     throw error;
@@ -27,13 +27,16 @@ function withLock(fn, operationName = 'operation', timeout = 30000) {
 //=====================================================
 // FORM EVENT LISTENER
 //=====================================================
+
 function handleOnFormSubmit(e) {
   return withLock(() => {
     const result = processFormSubmissionEvent(e);
     
     if (result.success) {
+      // Log success with transaction type and user email
       Logger.log(`Successfully processed ${result.transaction?.type || 'unknown'} for ${result.user?.userEmail || 'unknown user'}`);
     } else {
+      // Log failure with error details
       const txType = result.transaction?.type || result.eventContext?.operation || 'unknown';
       const userEmail = result.user?.userEmail || result.formData?.userEmail || 'unknown user';
       Logger.log(`Failed to process ${txType} for ${userEmail}: ${result.errorMessage || 'Unknown error'}`);
@@ -88,7 +91,11 @@ function handleScheduledSystemActivation(e) {
     }
   }, 'system activation');
 }
-
+/**
+ * Trigger function to automatically shut down the system (close forms).
+ * Scheduled based on dates in the settings.
+ * @param {Object} e - Event object (unused)
+ */
 function handleScheduledSystemShutdown(e) {
   return withLock(() => {
     try{
