@@ -49,14 +49,14 @@ function processManualDashboardActions(e) {
   } 
   //if admin manually changes bike from "checked out" to "available"
   else if(oldValue === "checked out" && newValue === "available"){
-    updateUserStatus(row)
+    updateUserStatusFromManualAction(row)
   }
   else {
     Logger.log('No action needed: previous value was not "M_S: has issue" nor "AVL: checked out-> available"');
   }
 }
 // TODO: Write the logic to update bike status.
-function updateUserStatus(row){
+function updateUserStatusFromManualAction(row){
 
   const rawBikesData = loadAllBikesData()
   const bikes = processBikesData(rawBikesData)
@@ -72,7 +72,7 @@ function updateUserStatus(row){
   // find the user with this email in user status 
   const rawUsersData = loadAllUsersData()
   const usersData = processUsersData(rawUsersData)
-  const recentUser = usersData.find(user => user.userEmail)
+  const recentUser = usersData.find(user => user.userEmail === recentUserEmail)
 
   if(!recentUser){
     throw new Error(`Auto update user status on manual bike availability change failed: user with '${recentUserEmail}' email not found in records`)
