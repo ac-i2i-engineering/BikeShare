@@ -77,7 +77,7 @@ function executeUsageTimerUpdate(){
   }, 'usage timer update');
 }
 
-function handleScheduledSystemActivation(e) {
+function handleScheduledSystemActivation() {
   return withLock(() => {
     try{
       Logger.log('🔓Attempting scheduled system activation');
@@ -89,7 +89,7 @@ function handleScheduledSystemActivation(e) {
   }, 'system activation');
 }
 
-function handleScheduledSystemShutdown(e) {
+function handleScheduledSystemShutdown() {
   return withLock(() => {
     try{
       Logger.log('🔒Attempting scheduled system shutdown');

@@ -7,15 +7,6 @@ function quickTest() {
   console.log(CACHED_SETTINGS.VALUES);
 }
 
-// Simple test runner
-function runTests() {
-  try {
-    runAllTests(); // Calls the test function from pipeline_tests.js
-  } catch (error) {
-    Logger.log(`❌ Test failed: ${error.message}`);
-  }
-}
-
 function printFormFieldInfo(formId) {
   const form = FormApp.openById(formId);
   form.getItems().forEach((item) => {
@@ -268,16 +259,6 @@ function fuzzyMatch(target, comp, isNotFuzzy = false) {
     return distance / maxLen < CACHED_SETTINGS.VALUES.FUZZY_MATCHING_THRESHOLD;
   }
   return false;
-}
-
-function isValidEmailDomain(email, allowedDomain = "amherst.edu") {
-  if (!email || typeof email !== "string") return false;
-
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) return false;
-
-  const domain = email.split("@")[1];
-  return domain.toLowerCase() === allowedDomain.toLowerCase();
 }
 
 /**

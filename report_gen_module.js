@@ -263,23 +263,6 @@ const calculateAllDeltas = (users, previousReports) => {
 };
 
 /**
- * Get return logs within time coverage
- * @param {Date} timestamp - Current timestamp
- * @param {number} checkSpan - Period interval in milliseconds
- * @returns {Array} Filtered return logs within time period
- */
-const getReturnLogsInCoverage = (timestamp, checkSpan) => {
-  const returnLogs = DB.getAllData(CACHED_SETTINGS.VALUES.SHEETS.RETURN_LOGS.NAME);
-  const filtered = returnLogs.slice(1).filter(log => {
-    if (!log[0]) return false;
-    const returnDate = new Date(log[0]);
-    return (timestamp - returnDate) <= checkSpan;
-  });
-  Logger.log(`📋 Found ${filtered.length} return logs in coverage period`);
-  return filtered;
-};
-
-/**
  * Main pipeline function to generate and save reports
  * @returns {Object} Result object with success status and data
  */

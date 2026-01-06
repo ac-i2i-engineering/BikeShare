@@ -37,7 +37,7 @@ const DB = {
         const sheets = CACHED_SETTINGS?.VALUES?.SHEETS;
         if (sheets) {
           // Find sheet config by name (case-insensitive)
-          for (const [key, config] of Object.entries(sheets)) {
+          for (const [, config] of Object.entries(sheets)) {
             if (config?.NAME === sheetName) {
               sheetConfig = config;
               break;

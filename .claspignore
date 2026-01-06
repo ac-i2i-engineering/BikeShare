@@ -1,19 +1,15 @@
 # Ignore node_modules
 node_modules/
 node_modules/**
-
-# Development files
-templates/**
-endUserManuals/**
-old_versions/**
-tasks.txt
-*.md
+.eslintrc.*
+package*.json
+_combined.js
 
 # Ignore git files
 .git/**
 .gitignore
 LICENSE
-README.md
+*.md
 
 # Ignore Mac system files
 .DS_Store
@@ -26,7 +22,6 @@ README.md
 # tests/**
 *.spec.js
 *.test.js
-*fncalProgrammingBasics.js
 
 # Ignore build artifacts
 dist/
