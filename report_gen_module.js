@@ -10,8 +10,10 @@ const loadAllReportData = () => {
   try {    
     // Get all required sheets in single context
     const bikesData = loadAllBikesData()
-
+    if (!bikesData) throw new Error('❌Failed to Load Bikes data');
+    
     const usersData = loadAllUsersData()
+    if (!usersData) throw new Error('❌Failed to Load Users data');
 
     const returnLogsData = DB.getAllData(CACHED_SETTINGS.VALUES.SHEETS.RETURN_LOGS.NAME);
     if (!returnLogsData) throw new Error('❌Failed to Load  Logs data');
