@@ -9,10 +9,10 @@
 const loadAllReportData = () => {
   try {    
     // Get all required sheets in single context
-    const bikesData = DB.getAllData(CACHED_SETTINGS.VALUES.SHEETS.BIKES_STATUS.NAME);
+    const bikesData = loadAllBikesData()
     if (!bikesData) throw new Error('❌Failed to Load Bikes data');
-
-    const usersData = DB.getAllData(CACHED_SETTINGS.VALUES.SHEETS.USER_STATUS.NAME);
+    
+    const usersData = loadAllUsersData()
     if (!usersData) throw new Error('❌Failed to Load Users data');
 
     const returnLogsData = DB.getAllData(CACHED_SETTINGS.VALUES.SHEETS.RETURN_LOGS.NAME);
@@ -211,7 +211,7 @@ const countReportedIssues = (timestamp, checkSpan, returnLogsData) => {
   });
 
   const count = filtered.filter(log => {
-    const issue = convertSheetValue(log[8], 'string').toLowerCase();
+    const issue = convertSheetValue(log[8], 'string')
     return issue !== "" && !CACHED_SETTINGS.VALUES.IGNORED_REPORT_STMTS_ON_RFORM?.includes(issue);
   }).length;
   
@@ -262,23 +262,6 @@ const calculateAllDeltas = (users, previousReports) => {
     returnMismatches,
     totalUsageHours: totalUsageHoursDeltas
   };
-};
-
-/**
- * Get return logs within time coverage
- * @param {Date} timestamp - Current timestamp
- * @param {number} checkSpan - Period interval in milliseconds
- * @returns {Array} Filtered return logs within time period
- */
-const getReturnLogsInCoverage = (timestamp, checkSpan) => {
-  const returnLogs = DB.getAllData(CACHED_SETTINGS.VALUES.SHEETS.RETURN_LOGS.NAME);
-  const filtered = returnLogs.slice(1).filter(log => {
-    if (!log[0]) return false;
-    const returnDate = new Date(log[0]);
-    return (timestamp - returnDate) <= checkSpan;
-  });
-  Logger.log(`📋 Found ${filtered.length} return logs in coverage period`);
-  return filtered;
 };
 
 /**

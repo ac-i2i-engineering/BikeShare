@@ -1,6 +1,9 @@
 # Ignore node_modules
 node_modules/
-*.txt
+.eslintrc.*
+package*.json
+_combined.js
+
 # Ignore clasp's .clasp.json settings file
 .clasp.json
 
@@ -14,6 +17,7 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+*.log
 
 # Ignore build artifacts
 dist/

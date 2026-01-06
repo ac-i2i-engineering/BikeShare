@@ -37,7 +37,7 @@ const DB = {
         const sheets = CACHED_SETTINGS?.VALUES?.SHEETS;
         if (sheets) {
           // Find sheet config by name (case-insensitive)
-          for (const [key, config] of Object.entries(sheets)) {
+          for (const [, config] of Object.entries(sheets)) {
             if (config?.NAME === sheetName) {
               sheetConfig = config;
               break;
@@ -111,7 +111,6 @@ const DB = {
     }
   },
 
-  // TRUE batch operations using AppScript's batch API - NO EXTRA API CALLS!
   batchUpdate: (operations, spreadsheetId = null) => {
     if (!operations || operations.length === 0) return [];
 
@@ -159,17 +158,6 @@ const DB = {
             `Batch updating ${sheetOps.updates.length} rows in sheet: ${sheetName}`
           );
           const numCols = sheetOps.updates[0].values.length;
-
-          // Create proper A1 notation ranges to avoid table header issues (e.g., "A2:D2" not "2:2")
-          const getColumnLetter = (col) => {
-            let result = "";
-            while (col > 0) {
-              col--;
-              result = String.fromCharCode(65 + (col % 26)) + result;
-              col = Math.floor(col / 26);
-            }
-            return result;
-          };
           const columnEnd = getColumnLetter(numCols);
           const ranges = sheetOps.updates.map(
             (update) => `A${update.rowIndex}:${columnEnd}${update.rowIndex}`
@@ -191,6 +179,32 @@ const DB = {
           sheetOps.updates.forEach((update) => {
             results.push({ success: true, operation: update.operation });
           });
+
+          // Handle notes
+          const updatesWithNotes = sheetOps.updates.filter(u => u.operation.notes && u.operation.notes.length > 0);
+          if (updatesWithNotes.length > 0) {
+            const noteRanges = [];
+            const noteTexts = [];
+            
+            updatesWithNotes.forEach(update => {
+              const notes = update.operation.notes;
+              const rowIndex = update.rowIndex;
+              
+              notes.forEach(note => {
+                const columnLetter = getColumnLetter(note.columnIndex + 1); // Convert 0-based to 1-based
+                noteRanges.push(`${columnLetter}${rowIndex}`);
+                noteTexts.push(note.text);
+              });
+            });
+            
+            // Batch set all notes in a single API call
+            const rangeList = sheet.getRangeList(noteRanges);
+            rangeList.getRanges().forEach((range, index) => {
+              range.setNote(noteTexts[index]);
+            });
+            
+            Logger.log(`Set ${noteTexts.length} notes across ${updatesWithNotes.length} rows in ${sheetName}`);
+          }
         }
 
         // Batch all appends for this sheet

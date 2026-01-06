@@ -102,7 +102,7 @@ class Settings {
           if (sheetName === "notificationsConfig") {
             let rowCounter = tableRange.getRow();
             loadedConfigs[tableName] = table.reduce((acc, curItem, index) => {
-              let [col1, col2, col3, col4, col5, col6, col7, col8] = curItem;
+              let [col1, , , , col5, col6, col7, col8] = curItem;
               const currRow = rowCounter + index;
               const cellRange = `E${currRow}`;
               acc[col1] = {
@@ -160,7 +160,6 @@ class Settings {
         `⚙️  Settings refresh started - forceRefresh: ${forceRefresh}`
       );
       let configs = null;
-      let cacheUsed = false;
       let loadSource = "unknown";
 
       if (!forceRefresh) {
@@ -191,7 +190,6 @@ class Settings {
                   Object.keys(testParse).length
                 } config sections`
               );
-              cacheUsed = true;
               loadSource = "cache";
             }
           } else {

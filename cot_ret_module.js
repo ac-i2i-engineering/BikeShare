@@ -112,69 +112,15 @@ function extractEventContext(triggerEvent) {
  * @returns {Object} Current state object
  */
 function loadSystemState() {
-  // Batch load all required sheet data in minimal API calls
-  const sheetData = loadAllUsersAndBikesData();
-  
+  // Load bikes and users data separately
+  const bikesData = loadAllBikesData();
+  const usersData = loadAllUsersData();
   return {
-    bikes: processBikesData(sheetData.bikes),
-    users: processUsersData(sheetData.users),
+    bikes: processBikesData(bikesData),
+    users: processUsersData(usersData),
     settings: CACHED_SETTINGS.VALUES,
     timestamp: new Date()
   };
-}
-
-/**
- * Load all required sheet data efficiently using minimal API calls
- * @returns {Object} Raw 2D arrays from sheet data (not processed objects yet)
- */
-function loadAllUsersAndBikesData() {
-  try {    
-    // Get both sheets in single context 
-    const bikesData = DB.getAllData(CACHED_SETTINGS.VALUES.SHEETS.BIKES_STATUS.NAME);
-    if (!bikesData) throw new Error('❌ Failed loading Bikes data');
-
-    const usersData = DB.getAllData(CACHED_SETTINGS.VALUES.SHEETS.USER_STATUS.NAME);
-    if (!usersData) throw new Error('❌ Failed loading Users data');
-    
-    return {
-      bikes: bikesData,    
-      users: usersData   
-    };
-  } catch (error) {
-    throw new Error(`❌Batch loading failed: ${error.message}`);
-  }
-}
-
-/**
- * Parse form response into structured data
- * @param {Array} responses - Raw form response array
- * @returns {Object} Structured form data
- */
-function parseFormResponse(context) {
-  const responses = context.responses
-
-  //parse checkout entry
-  if (context.operation === 'checkout'){
-        return {
-          timestamp: responses[0],
-          userEmail: responses[1],
-          bikeHash: responses[2],
-          conditionConfirmation: responses[3],
-        };
-    }
-
-    //parse return entry
-    return {
-        timestamp: responses[0],
-        userEmail: responses[1],
-        bikeName: responses[2],
-        confirmBikeName: responses[3],
-        assureRodeBike: responses[4] === 'Yes',
-        mismatchExplanation: responses[5],
-        returningForFriend: responses[6] === 'Yes',
-        friendEmail: responses[7],
-        issuesConcerns: responses[8],
-    }
 }
 
 /**
@@ -336,19 +282,15 @@ function validateReturnEligible(data) {
   
   //get user data
   const user = findUserByEmail(data.currentState.users, data.formData.userEmail) || createNewUser(data.formData.userEmail);
-  
-  const normalizedBikeMostRecentUser = (data.bike.mostRecentUser || '').toLowerCase().trim();
-  const normalizedUserEmail = (data.formData.userEmail || '').toLowerCase().trim();
-  const normalizedFriendEMail = (data.formData.friendEmail || '').toLowerCase().trim();
-  const isLastBikeUser = normalizedBikeMostRecentUser === normalizedUserEmail
-  const isReturningForFriend = !isLastBikeUser && (normalizedFriendEMail !== "" || data.formData.assureRodeBike);
+  const isLastBikeUser = data.bike.mostRecentUser === data.formData.userEmail
+  const isReturningForFriend = !isLastBikeUser && (data.formData.friendEmail !== "" || data.formData.assureRodeBike);
   const isDirectReturn = !isReturningForFriend
 
-  Logger.log(`🔍 Friend return check: mostRecentUser='${normalizedBikeMostRecentUser}', currentUser='${normalizedUserEmail}', friendEmail='${data.formData.friendEmail}', isReturningForFriend=${isReturningForFriend}`);
+  Logger.log(`🔍 Friend return check: mostRecentUser='${data.bike.mostRecentUser}', currentUser='${data.formData.userEmail}', friendEmail='${data.formData.friendEmail}', isReturningForFriend=${isReturningForFriend}`);
 
   // friend processing
   if(isReturningForFriend){
-   if(!normalizedFriendEMail){
+   if(!data.formData.friendEmail){
     const msg = `❌${user.userEmail} failed failed to return ${data.bike.bikeName} b/c no friend email provided`
     Logger.log(msg)
     return{
@@ -373,7 +315,7 @@ function validateReturnEligible(data) {
    }
 
    //if friend has no unreturned bike 
-   if(normalizedBikeMostRecentUser != friend.userEmail || !friend.hasUnreturnedBike){
+   if(data.bike.mostRecentUser !== friend.userEmail || !friend.hasUnreturnedBike){
      const msg = `❌${user.userEmail} failed failed to return ${data.bike.bikeName} for ${data.formData.friendEmail} b/c they have no unreturned bike. they last checked out ${friend.lastCheckoutName} returned on ${friend.lastReturnDate}, Else bikeName is diff from lastCheckoutName`
      Logger.log(msg)
      return{
@@ -444,7 +386,7 @@ function validateReturnEligible(data) {
  * @returns {Object|null} Bike object or null if not found
  */
 function findBikeByHash(bikes, bikeHash) {
-  return bikes.find(bike => bike.bikeHash === bikeHash.toLowerCase()) || null;
+  return bikes.find(bike => bike.bikeHash === bikeHash) || null;
 }
 
 /**
@@ -455,9 +397,7 @@ function findBikeByHash(bikes, bikeHash) {
  */
 function findBikeByName(bikes, bikeName) {
   // First try exact match
-  let bike = bikes.find(bike => 
-    bike.bikeName.toLowerCase().trim() === bikeName.toLowerCase().trim()
-  );
+  let bike = bikes.find(bike => bike.bikeName === bikeName);
   
   // If no exact match, try fuzzy matching
   if (!bike) {

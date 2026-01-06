@@ -80,7 +80,7 @@ function executeUsageTimerUpdate(){
   }, 'usage timer update');
 }
 
-function handleScheduledSystemActivation(e) {
+function handleScheduledSystemActivation() {
   return withLock(() => {
     try{
       Logger.log('🔓Attempting scheduled system activation');
@@ -91,12 +91,8 @@ function handleScheduledSystemActivation(e) {
     }
   }, 'system activation');
 }
-/**
- * Trigger function to automatically shut down the system (close forms).
- * Scheduled based on dates in the settings.
- * @param {Object} e - Event object (unused)
- */
-function handleScheduledSystemShutdown(e) {
+
+function handleScheduledSystemShutdown() {
   return withLock(() => {
     try{
       Logger.log('🔒Attempting scheduled system shutdown');
@@ -106,4 +102,19 @@ function handleScheduledSystemShutdown(e) {
       Logger.log(`❌Failed to activate system:${error.errorMessage}`)
     }
   }, 'system shutdown');
+}
+
+/**
+ * Handle manual edits to the dashboard (Bikes Status sheet)
+ * Removes notes from maintenance status column when changed from "has issue"
+ */
+function handleManualDashboardChanges(e) {
+  return withLock(() => {
+    try {
+     processManualDashboardActions(e)
+    } catch (error) {
+      Logger.log(`❌ Error handling manual dashboard change: ${error.message}`);
+      Logger.log(error.stack);
+    }
+  }, 'manual dashboard change');
 }
