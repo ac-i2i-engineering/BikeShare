@@ -4,9 +4,10 @@
 
 /**
  * Main routine verification function - updates usage timers and checks for overdue bikes
+ * @param {Date} manualTimestamp - Optional timestamp for testing
  * @returns {Object} Verification result with counts and any issues found
  */
-const runTimerUpdate = () => {
+const runTimerUpdate = (manualTimestamp = null) => {
   try {
     Logger.log('🔄 Starting routine bike verification...');
     
@@ -24,7 +25,7 @@ const runTimerUpdate = () => {
       return { success: true, checkedOutBikes: 0, overdueCount: 0 };
     }
 
-    const timestamp = new Date();
+    const timestamp = manualTimestamp || new Date();
     const { updates, overdueCount } = processCheckedOutBikes(checkedOutBikes, timestamp);
     
     if (updates.length > 0) {

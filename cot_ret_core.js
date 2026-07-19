@@ -10,22 +10,22 @@
 function processCheckoutTransaction(data) {
   if (data.error) return data; // Skip if already has error
   const transaction = {
-    type: 'checkout',
+    type: "checkout",
     timestamp: data.currentState.timestamp,
     userEmail: data.user.userEmail,
     bikeHash: data.bike.bikeHash,
     bikeName: data.bike.bikeName,
-    conditionConfirmation: data.formData.conditionConfirmation
+    conditionConfirmation: data.formData.conditionConfirmation,
   };
-  
+
   return {
     ...data,
     transaction: transaction,
     stateChanges: {
       bikes: [],
       users: [],
-      logs: []
-    }
+      logs: [],
+    },
   };
 }
 
@@ -36,24 +36,24 @@ function processCheckoutTransaction(data) {
  */
 function processReturnTransaction(data) {
   if (data.error) return data; // Skip if already has error
-  
+
   const transaction = {
-    type: 'return',
+    type: "return",
     timestamp: data.currentState.timestamp,
     userEmail: data.user.userEmail,
     bikeHash: data.bike.bikeHash,
     bikeName: data.bike.bikeName,
-    isReturningForFriend: data.isReturningForFriend
+    isReturningForFriend: data.isReturningForFriend,
   };
-  
+
   return {
     ...data,
     transaction: transaction,
     stateChanges: {
       bikes: [],
       users: [],
-      logs: []
-    }
+      logs: [],
+    },
   };
 }
 
@@ -65,24 +65,41 @@ function processReturnTransaction(data) {
 function updateBikeStatus(data) {
   if (data.error) return data;
 
-  const isCheckout = data.transaction.type === 'checkout';
-  const isReturn = data.transaction.type === 'return';
-  
-  // Check for valid issues/concerns on returns
-  const hasValidIssue = 
-    isReturn && 
-    data.formData.issuesConcerns !== "" && 
-    !CACHED_SETTINGS.VALUES.IGNORED_REPORT_STMTS_ON_RFORM?.includes(data.formData.issuesConcerns);
+  const isCheckout = data.transaction.type === "checkout";
+  const isReturn = data.transaction.type === "return";
 
-  const issueNote = hasValidIssue ? `Issue reported: ${data.formData.issuesConcerns}` : null;
-  const maintenanceStatus = hasValidIssue ? 'has issue' : data.bike.maintenanceStatus;
+  // Check for valid issues/concerns on returns
+  const hasValidIssue =
+    isReturn &&
+    data.formData.issuesConcerns !== "" &&
+    !CACHED_SETTINGS.VALUES.IGNORED_REPORT_STMTS_ON_RFORM?.includes(
+      data.formData.issuesConcerns,
+    );
+
+  const issueNote = hasValidIssue
+    ? `Issue reported: ${data.formData.issuesConcerns}`
+    : null;
+  const maintenanceStatus = hasValidIssue
+    ? "has issue"
+    : data.bike.maintenanceStatus;
+
+  // Determine availability: if issue reported on return, set to 'out of service' to prevent checkout
+  const availability = isCheckout
+    ? "checked out"
+    : hasValidIssue
+      ? "out of service"
+      : "available";
 
   const updatedBike = {
     ...data.bike,
     maintenanceStatus: maintenanceStatus,
-    availability: isCheckout ? 'checked out' : 'available',
-    lastCheckoutDate: isCheckout ? data.currentState.timestamp : data.bike.lastCheckoutDate,
-    lastReturnDate: isReturn ? data.currentState.timestamp : data.bike.lastReturnDate,
+    availability: availability,
+    lastCheckoutDate: isCheckout
+      ? data.currentState.timestamp
+      : data.bike.lastCheckoutDate,
+    lastReturnDate: isReturn
+      ? data.currentState.timestamp
+      : data.bike.lastReturnDate,
     currentUsageTimer: 0,
     // Update recent users for checkout
     ...(isCheckout && {
@@ -90,32 +107,37 @@ function updateBikeStatus(data) {
       thirdRecentUser: data.bike.secondRecentUser,
       secondRecentUser: data.bike.mostRecentUser,
       mostRecentUser: data.formData.userEmail,
-    })
+    }),
   };
-  
+
   // Add to state changes
-  const bikeChanges = [...(data.stateChanges?.bikes || []), {
-    action: 'update',
-    sheetName: CACHED_SETTINGS.VALUES.SHEETS.BIKES_STATUS.NAME,
-    searchKey: 'bikeHash',
-    searchValue: data.bike.bikeHash,
-    updatedData: updatedBike,
-    // Add note metadata if present
-    ...(issueNote && {
-      notes: [{
-        columnIndex: 2, //(0-indexed)
-        text: issueNote
-      }]
-    })
-  }];
-  
+  const bikeChanges = [
+    ...(data.stateChanges?.bikes || []),
+    {
+      action: "update",
+      sheetName: CACHED_SETTINGS.VALUES.SHEETS.BIKES_STATUS.NAME,
+      searchKey: "bikeHash",
+      searchValue: data.bike.bikeHash,
+      updatedData: updatedBike,
+      // Add note metadata if present
+      ...(issueNote && {
+        notes: [
+          {
+            columnIndex: 2, //(0-indexed)
+            text: issueNote,
+          },
+        ],
+      }),
+    },
+  ];
+
   return {
     ...data,
     bike: updatedBike,
     stateChanges: {
       ...data.stateChanges,
-      bikes: bikeChanges
-    }
+      bikes: bikeChanges,
+    },
   };
 }
 
@@ -126,38 +148,51 @@ function updateBikeStatus(data) {
  */
 function updateUserStatus(data) {
   if (data.error) return data; // Skip if already has error
-  
-  const isCheckout = data.transaction.type === 'checkout';
-  const isReturn = data.transaction.type === 'return';
-  
+
+  const isCheckout = data.transaction.type === "checkout";
+  const isReturn = data.transaction.type === "return";
+
   const updatedUser = {
     ...data.user,
     hasUnreturnedBike: isCheckout ? true : false,
-    lastCheckoutName: isCheckout ? data.bike.bikeName : data.user.lastCheckoutName,
-    lastCheckoutDate: isCheckout ? data.currentState.timestamp : data.user.lastCheckoutDate,
+    lastCheckoutName: isCheckout
+      ? data.bike.bikeName
+      : data.user.lastCheckoutName,
+    lastCheckoutDate: isCheckout
+      ? data.currentState.timestamp
+      : data.user.lastCheckoutDate,
     lastReturnName: isReturn ? data.bike.bikeName : data.user.lastReturnName,
-    lastReturnDate: isReturn ? data.currentState.timestamp : data.user.lastReturnDate,
-    numberOfCheckouts: isCheckout ? (data.user.numberOfCheckouts + 1) : data.user.numberOfCheckouts,
-    numberOfReturns: isReturn ? (data.user.numberOfReturns + 1) : data.user.numberOfReturns,
-    firstUsageDate: data.user.firstUsageDate || data.currentState.timestamp
+    lastReturnDate: isReturn
+      ? data.currentState.timestamp
+      : data.user.lastReturnDate,
+    numberOfCheckouts: isCheckout
+      ? data.user.numberOfCheckouts + 1
+      : data.user.numberOfCheckouts,
+    numberOfReturns: isReturn
+      ? data.user.numberOfReturns + 1
+      : data.user.numberOfReturns,
+    firstUsageDate: data.user.firstUsageDate || data.currentState.timestamp,
   };
-  
+
   // Add to state changes
-  const userChanges = [...(data.stateChanges?.users || []), {
-    action: data.user.isNewUser ? 'create' : 'update',
-    sheetName: CACHED_SETTINGS.VALUES.SHEETS.USER_STATUS.NAME,
-    searchKey: 'userEmail',
-    searchValue: data.user.userEmail,
-    updatedData: updatedUser
-  }];
-  
+  const userChanges = [
+    ...(data.stateChanges?.users || []),
+    {
+      action: data.user.isNewUser ? "create" : "update",
+      sheetName: CACHED_SETTINGS.VALUES.SHEETS.USER_STATUS.NAME,
+      searchKey: "userEmail",
+      searchValue: data.user.userEmail,
+      updatedData: updatedUser,
+    },
+  ];
+
   return {
     ...data,
     user: updatedUser,
     stateChanges: {
       ...data.stateChanges,
-      users: userChanges
-    }
+      users: userChanges,
+    },
   };
 }
 
@@ -167,45 +202,46 @@ function updateUserStatus(data) {
  * @returns {Object} Data with usage calculation
  */
 function calculateUsageHours(data) {
-  if (data.error || data.transaction.type !== 'return') return data;
-  
+  if (data.error || data.transaction.type !== "return") return data;
+
   const checkoutTime = new Date(data.bike.lastCheckoutDate);
-  const usageHours = (data.currentState.timestamp - checkoutTime) / (1000 * 60 * 60); // Convert to hours
-  
+  const usageHours =
+    (data.currentState.timestamp - checkoutTime) / (1000 * 60 * 60); // Convert to hours
+
   // Update bike with usage hours
   const updatedBike = {
     ...data.bike,
     currentUsageTimer: 0, // Reset current timer
-    totalUsageHours: (data.bike.totalUsageHours || 0) + usageHours
+    totalUsageHours: (data.bike.totalUsageHours || 0) + usageHours,
   };
-  
+
   // Update user with usage hours
   const updatedUser = {
     ...data.user,
-    usageHours: (data.user.usageHours || 0) + usageHours
+    usageHours: (data.user.usageHours || 0) + usageHours,
   };
-  
+
   // Update state changes
   const updatedStateChanges = {
     ...data.stateChanges,
-    bikes: data.stateChanges.bikes.map(change => 
-      change.searchValue === data.bike.bikeHash 
+    bikes: data.stateChanges.bikes.map((change) =>
+      change.searchValue === data.bike.bikeHash
         ? { ...change, updatedData: updatedBike }
-        : change
+        : change,
     ),
-    users: data.stateChanges.users.map(change => 
+    users: data.stateChanges.users.map((change) =>
       change.searchValue === data.user.userEmail
         ? { ...change, updatedData: updatedUser }
-        : change
-    )
+        : change,
+    ),
   };
-  
+
   return {
     ...data,
     bike: updatedBike,
     user: updatedUser,
     usageHours: usageHours,
-    stateChanges: updatedStateChanges
+    stateChanges: updatedStateChanges,
   };
 }
 
@@ -216,8 +252,14 @@ function calculateUsageHours(data) {
  */
 function generateNotifications(data) {
   const commContext = {
-    bikeHash: data.bike?.bikeHash ?? data.transaction?.bikeHash ?? data.formData?.bikeHash,
-    bikeName: data.bike?.bikeName ?? data.transaction?.bikeName ?? data.formData?.bikeName,
+    bikeHash:
+      data.bike?.bikeHash ??
+      data.transaction?.bikeHash ??
+      data.formData?.bikeHash,
+    bikeName:
+      data.bike?.bikeName ??
+      data.transaction?.bikeName ??
+      data.formData?.bikeName,
     confirmBikeName: data.formData?.confirmBikeName,
     errorMessage: data.errorMessage ?? data.error?.message,
     friendEmail: data.friend?.userEmail ?? data.formData?.friendEmail,
@@ -228,50 +270,47 @@ function generateNotifications(data) {
     resetDate: data.currentState?.timestamp,
     timestamp: data.currentState?.timestamp,
     unreturnedBikeName: data.user?.lastCheckoutName,
-    userEmail: data.user?.userEmail ?? data.transaction?.userEmail ?? data.formData?.userEmail,
+    userEmail:
+      data.user?.userEmail ??
+      data.transaction?.userEmail ??
+      data.formData?.userEmail,
     isReturningForFriend: data.isReturningForFriend,
-    range: data.eventContext.range
-  }
+    range: data.eventContext.range,
+  };
   const notifications = [];
-  
+
   if (data.error) {
     notifications.push({
-      type: 'error',
+      type: "error",
       commID: data.error,
-      context: commContext
+      context: commContext,
     });
   } else if (data.transaction && data.user && data.bike) {
     // Success notifications - only if we have all required data
     let successCommID;
-    if (data.transaction.type === 'checkout') {
-      successCommID = 'CFM_USR_COT_001';
+    if (data.transaction.type === "checkout") {
+      successCommID = "CFM_USR_COT_001";
     } else {
       // Return success codes based on scenario
       if (data.isReturningForFriend) {
-        successCommID = 'CFM_USR_RET_003'; // returning for friend
-      } else if (data.isCollectedMismatch) {
-        successCommID = 'CFM_USR_RET_004'; // mismatch return
-      } else if (data.isDirectReturn === false) {
-        successCommID = 'CFM_USR_RET_002'; // indirect return
+        successCommID = "CFM_USR_RET_003"; // returning for friend
       } else {
-        successCommID = 'CFM_USR_RET_001'; // normal return
+        successCommID = "CFM_USR_RET_001"; // normal return
       }
     }
-      
+
     notifications.push({
-      type: 'success',
+      type: "success",
       commID: successCommID,
-      context: commContext
+      context: commContext,
     });
   }
-  
+
   return {
     ...data,
-    notifications: notifications
+    notifications: notifications,
   };
 }
-
-
 
 // =============================================================================
 // STATE PERSISTENCE FUNCTIONS (Side Effects)
@@ -285,71 +324,90 @@ function generateNotifications(data) {
 function commitStateChanges(result) {
   try {
     // Ensure we have a valid result object
-    if (!result || typeof result !== 'object') {
-      throw new Error('Invalid result object provided to commitStateChanges');
+    if (!result || typeof result !== "object") {
+      throw new Error("Invalid result object provided to commitStateChanges");
     }
-    
+
     // Prepare all database operations for batch processing
     const allOperations = [];
-    
+
     // Add bike changes to batch
-    if (result.stateChanges?.bikes && Array.isArray(result.stateChanges.bikes)) {
-      result.stateChanges.bikes.forEach(change => {
+    if (
+      result.stateChanges?.bikes &&
+      Array.isArray(result.stateChanges.bikes)
+    ) {
+      result.stateChanges.bikes.forEach((change) => {
         if (change && change.updatedData) {
           allOperations.push(prepareBikeOperation(change));
         }
       });
     }
-    
-    // Add user changes to batch  
-    if (result.stateChanges?.users && Array.isArray(result.stateChanges.users)) {
-      result.stateChanges.users.forEach(change => {
+
+    // Add user changes to batch
+    if (
+      result.stateChanges?.users &&
+      Array.isArray(result.stateChanges.users)
+    ) {
+      result.stateChanges.users.forEach((change) => {
         if (change && change.updatedData) {
           allOperations.push(prepareUserOperation(change));
         }
       });
     }
-        
+
     // Execute all operations in batch for better performance
     Logger.log(`Prepared ${allOperations.length} operations for batch update:`);
     allOperations.forEach((op, index) => {
-      Logger.log(`Operation ${index + 1}: type=${op.type}, sheet=${op.sheetName}, rowIndex=${op.rowIndex || 'N/A'}, values=${op.values.length} columns`);
+      Logger.log(
+        `Operation ${index + 1}: type=${op.type}, sheet=${op.sheetName}, rowIndex=${op.rowIndex || "N/A"}, values=${op.values.length} columns`,
+      );
     });
     const batchResults = DB.batchUpdate(allOperations);
-    
+
     // Send notifications
     if (result.notifications && result.notifications.length > 0) {
-      Logger.log(`Attempting to send ${result.notifications.length} notifications`);
+      Logger.log(
+        `Attempting to send ${result.notifications.length} notifications`,
+      );
       result.notifications.forEach((notification, index) => {
         try {
-          Logger.log(`Processing notification ${index + 1}: ${notification.commID}`);
-          const notificationResults = COMM.handleCommunication(notification.commID, notification.context);
-          Logger.log(`Notification ${index + 1} results:`, JSON.stringify(notificationResults));
+          Logger.log(
+            `Processing notification ${index + 1}: ${notification.commID}`,
+          );
+          const notificationResults = COMM.handleCommunication(
+            notification.commID,
+            notification.context,
+          );
+          Logger.log(
+            `Notification ${index + 1} results:`,
+            JSON.stringify(notificationResults),
+          );
         } catch (error) {
-          Logger.log(`Error processing notification ${index + 1}: ${error.message}`);
+          Logger.log(
+            `Error processing notification ${index + 1}: ${error.message}`,
+          );
         }
       });
     } else {
-      Logger.log('No notifications to send');
+      Logger.log("No notifications to send");
     }
-        
+
     // Sort only sheets that had new rows appended
-    sortUpdatedSheets(result,allOperations)
-    
+    sortUpdatedSheets(result, allOperations);
+
     return {
       ...result,
       success: true,
-      persistenceStatus: 'committed',
-      batchResults: batchResults
+      persistenceStatus: "committed",
+      batchResults: batchResults,
     };
-    
   } catch (error) {
     Logger.log(`Error committing state changes: ${error.message}`);
     return {
       ...result,
       success: false,
-      persistenceStatus: 'failed',
-      persistenceError: error.message
+      persistenceStatus: "failed",
+      persistenceError: error.message,
     };
   }
 }
@@ -361,35 +419,38 @@ function commitStateChanges(result) {
  */
 function prepareBikeOperation(change) {
   if (!change || !change.updatedData) {
-    throw new Error('Invalid bike change object');
+    throw new Error("Invalid bike change object");
   }
-  
+
   if (!change.updatedData._rowIndex) {
-    throw new Error('Missing row index for bike update - cannot commit changes');
+    throw new Error(
+      "Missing row index for bike update - cannot commit changes",
+    );
   }
-  
+
   const bikeRowData = [
-    change.updatedData.bikeName || '',
-    change.updatedData.size || '',
-    change.updatedData.maintenanceStatus || 'good',
-    change.updatedData.availability || 'available',
-    change.updatedData.lastCheckoutDate || '',
-    change.updatedData.lastReturnDate || '',
+    change.updatedData.bikeName || "",
+    change.updatedData.size || "",
+    change.updatedData.maintenanceStatus || "good",
+    change.updatedData.availability || "available",
+    change.updatedData.lastCheckoutDate || "",
+    change.updatedData.lastReturnDate || "",
     change.updatedData.currentUsageTimer || 0,
     change.updatedData.totalUsageHours || 0,
-    change.updatedData.mostRecentUser || '',
-    change.updatedData.secondRecentUser || '',
-    change.updatedData.thirdRecentUser || '',
-    change.updatedData.tempRecent || '',
-    change.updatedData.bikeHash || ''
+    change.updatedData.mostRecentUser || "",
+    change.updatedData.secondRecentUser || "",
+    change.updatedData.thirdRecentUser || "",
+    change.updatedData.tempRecent || "",
+    change.updatedData.bikeHash || "",
   ];
-  
+
   return {
-    type: 'updateByRowIndex',
-    sheetName: change.sheetName || CACHED_SETTINGS.VALUES.SHEETS.BIKES_STATUS.NAME,
+    type: "updateByRowIndex",
+    sheetName:
+      change.sheetName || CACHED_SETTINGS.VALUES.SHEETS.BIKES_STATUS.NAME,
     rowIndex: change.updatedData._rowIndex,
     values: bikeRowData,
-    ...(change.notes && { notes: change.notes })
+    ...(change.notes && { notes: change.notes }),
   };
 }
 
@@ -400,55 +461,57 @@ function prepareBikeOperation(change) {
  */
 function prepareUserOperation(change) {
   if (!change || !change.updatedData) {
-    throw new Error('Invalid user change object');
+    throw new Error("Invalid user change object");
   }
-  
+
   // Only validate row index for updates, not for new user creation
-  if (change.action !== 'create' && !change.updatedData._rowIndex) {
-    throw new Error('Missing row index for user update - cannot commit changes');
+  if (change.action !== "create" && !change.updatedData._rowIndex) {
+    throw new Error(
+      "Missing row index for user update - cannot commit changes",
+    );
   }
-  
+
   const userRowData = [
-    change.updatedData.userEmail || '',
-    change.updatedData.hasUnreturnedBike ? 'Yes' : 'No',
-    change.updatedData.lastCheckoutName || '',
-    change.updatedData.lastCheckoutDate || '',
-    change.updatedData.lastReturnName || '',
-    change.updatedData.lastReturnDate || '',
+    change.updatedData.userEmail || "",
+    change.updatedData.hasUnreturnedBike ? "Yes" : "No",
+    change.updatedData.lastCheckoutName || "",
+    change.updatedData.lastCheckoutDate || "",
+    change.updatedData.lastReturnName || "",
+    change.updatedData.lastReturnDate || "",
     change.updatedData.numberOfCheckouts || 0,
     change.updatedData.numberOfReturns || 0,
     change.updatedData.numberOfMismatches || 0,
     change.updatedData.usageHours || 0,
     change.updatedData.overdueReturns || 0,
-    change.updatedData.firstUsageDate || ''
+    change.updatedData.firstUsageDate || "",
   ];
-  
+
   const operation = {
-    type: change.action === 'create' ? 'append' : 'updateByRowIndex',
-    sheetName: change.sheetName || CACHED_SETTINGS.VALUES.SHEETS.USER_STATUS.NAME,
-    values: userRowData
+    type: change.action === "create" ? "append" : "updateByRowIndex",
+    sheetName:
+      change.sheetName || CACHED_SETTINGS.VALUES.SHEETS.USER_STATUS.NAME,
+    values: userRowData,
   };
-  
+
   // Only add rowIndex for update operations, not for append operations
-  if (change.action !== 'create') {
+  if (change.action !== "create") {
     operation.rowIndex = change.updatedData._rowIndex;
   }
-  
+
   return operation;
 }
 
-
-function sortUpdatedSheets(result,allOperations){
+function sortUpdatedSheets(result, allOperations) {
   const sheetsToSort = new Set();
   // always need sorting after transactions
-  const logSheet = result.eventContext.sheetName
-  sheetsToSort.add(logSheet); 
+  const logSheet = result.eventContext.sheetName;
+  sheetsToSort.add(logSheet);
   Logger.log(`Will sort '${logSheet}' - transaction log appended`);
   // add other sheets with new rows
   if (allOperations.length > 0) {
     // Only sort sheets where we appended new rows
-    allOperations.forEach(operation => {
-      if (operation.type === 'append' && operation.sheetName) {
+    allOperations.forEach((operation) => {
+      if (operation.type === "append" && operation.sheetName) {
         sheetsToSort.add(operation.sheetName);
         Logger.log(`Will sort '${operation.sheetName}' - new row appended`);
       }
@@ -457,16 +520,18 @@ function sortUpdatedSheets(result,allOperations){
   // Sort each sheet that had appends
   if (sheetsToSort.size > 0) {
     Logger.log(`Sorting ${sheetsToSort.size} sheets with new rows`);
-    sheetsToSort.forEach(sheetName => {
+    sheetsToSort.forEach((sheetName) => {
       try {
         DB.sortByColumn(sheetName);
       } catch (sortError) {
-        Logger.log(`Warning: Could not sort sheet ${sheetName} - ${sortError.message}`);
+        Logger.log(
+          `Warning: Could not sort sheet ${sheetName} - ${sortError.message}`,
+        );
         // Don't fail the entire transaction for sorting issues
       }
     });
   } else {
-    Logger.log('No sheets need sorting - only updates performed');
+    Logger.log("No sheets need sorting - only updates performed");
   }
 }
 
@@ -478,23 +543,29 @@ function sortUpdatedSheets(result,allOperations){
  */
 function handlePipelineError(error, triggerEvent) {
   Logger.log(`Pipeline error: ${JSON.stringify(error)}`);
-  
+
   // Try to send error notification if possible
   try {
-    COMM.handleCommunication('ERR_SYS_001', {
+    COMM.handleCommunication("ERR_SYS_001", {
       errorMessage: error.message,
       timestamp: new Date(),
-      eventName: triggerEvent.source.getActiveSheet().getName() === CACHED_SETTINGS.VALUES.SHEETS.CHECKOUT_LOGS.NAME ? 'checkout' : 'return',
-      range:triggerEvent.range
+      eventName:
+        triggerEvent.source.getActiveSheet().getName() ===
+        CACHED_SETTINGS.VALUES.SHEETS.CHECKOUT_LOGS.NAME
+          ? "checkout"
+          : "return",
+      range: triggerEvent.range,
     });
   } catch (notificationError) {
-    Logger.log(`Failed to send error notification: ${notificationError.message}`);
+    Logger.log(
+      `Failed to send error notification: ${notificationError.message}`,
+    );
   }
-  
+
   return {
     success: false,
-    error: 'ERR_SYS_001',
+    error: "ERR_SYS_001",
     errorMessage: error.message,
-    timestamp: new Date()
+    timestamp: new Date(),
   };
 }

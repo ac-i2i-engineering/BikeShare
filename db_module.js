@@ -1,18 +1,33 @@
 const DB = {
   // Private variable to cache the spreadsheet instance
   _cachedSpreadsheet: null,
+  _cachedSpreadsheetId: null,
 
   /// Get spreadsheet instance (with caching)
+  // Defaults to MAIN_DASHBOARD_SS_ID for cross-spreadsheet compatibility
   getSpreadsheet: (id = null) => {
-    if (id) {
-      // If an ID is provided, always fetch a new spreadsheet (no caching for specific IDs)
-      return SpreadsheetApp.openById(id);
+    // Determine the target spreadsheet ID
+    const targetId = id || CACHED_SETTINGS?.VALUES?.MAIN_DASHBOARD_SS_ID;
+    
+    if (targetId) {
+      // Check if we have this specific spreadsheet cached
+      if (DB._cachedSpreadsheet && DB._cachedSpreadsheetId === targetId) {
+        Logger.log("Using cached spreadsheet instance.");
+        return DB._cachedSpreadsheet;
+      }
+      
+      // Fetch and cache the spreadsheet
+      Logger.log(`Fetching spreadsheet by ID and caching it.`);
+      DB._cachedSpreadsheet = SpreadsheetApp.openById(targetId);
+      DB._cachedSpreadsheetId = targetId;
+      return DB._cachedSpreadsheet;
     }
 
-    // Use cached instance if available
+    // Fallback to active spreadsheet (legacy behavior, should rarely be needed)
     if (!DB._cachedSpreadsheet) {
-      Logger.log("Fetching active spreadsheet and caching it.");
+      Logger.log("Fetching active spreadsheet and caching it (fallback).");
       DB._cachedSpreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+      DB._cachedSpreadsheetId = null;
     } else {
       Logger.log("Using cached spreadsheet instance.");
     }
@@ -452,10 +467,10 @@ const DB = {
   },
 
   // Append a row to a sheet
-  appendRow: (sheetName, values) => {
+  appendRow: (sheetName, values, spreadsheetId = null) => {
     try {
       Logger.log(`Appending row to sheet: ${sheetName}`);
-      const sheet = DB.getSheet(sheetName);
+      const sheet = DB.getSheet(sheetName, spreadsheetId);
       if (!sheet) {
         throw new Error(`Sheet '${sheetName}' not found`);
       }
@@ -470,10 +485,10 @@ const DB = {
     }
   },
 
-  updateRow: (sheetName, rowIndex, values) => {
+  updateRow: (sheetName, rowIndex, values, spreadsheetId = null) => {
     try {
       Logger.log(`Updating row ${rowIndex} in sheet: ${sheetName}`);
-      const sheet = DB.getSheet(sheetName);
+      const sheet = DB.getSheet(sheetName, spreadsheetId);
       if (!sheet) {
         throw new Error(`Sheet '${sheetName}' not found`);
       }

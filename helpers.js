@@ -4,7 +4,7 @@
 
 function quickTest() {
   CACHED_SETTINGS.refreshCache();
-  console.log(CACHED_SETTINGS.VALUES);
+  console.log(CACHED_SETTINGS.VALUES.SYSTEM_ACTIVE);
 }
 
 function printFormFieldInfo(formId) {
@@ -54,27 +54,36 @@ function installExecuteReportGenerationTrigger() {
     .create();
 }
 
-function installScheduleSystemShutdownAndActivationTrigger() {
-  const activationDate = new Date(
-    CACHED_SETTINGS.VALUES.NEXT_SYSTEM_ACTIVATION_DATE
-  );
-  const shutdownDate = new Date(
-    CACHED_SETTINGS.VALUES.NEXT_SYSTEM_SHUTDOWN_DATE
-  );
-  const curDate = new Date();
-  const dashboardSpreadsheet = SpreadsheetApp.openById(
-    CACHED_SETTINGS.VALUES.MAIN_DASHBOARD_SS_ID
-  );
-  if (activationDate > curDate) {
+function installScheduleSystemShutdownAndActivationTrigger(
+  activationValue = null,
+  shutdownValue = null,
+  changedParam = null
+) {
+  const activationRaw =
+    activationValue !== null
+      ? activationValue
+      : CACHED_SETTINGS.VALUES.NEXT_SYSTEM_ACTIVATION_DATE;
+  const shutdownRaw =
+    shutdownValue !== null
+      ? shutdownValue
+      : CACHED_SETTINGS.VALUES.NEXT_SYSTEM_SHUTDOWN_DATE;
+
+  const activationDate = activationRaw instanceof Date ? activationRaw : new Date(activationRaw);
+  const shutdownDate = shutdownRaw instanceof Date ? shutdownRaw : new Date(shutdownRaw);
+  const now = new Date();
+
+  const doActivation = !changedParam || changedParam === "NEXT_SYSTEM_ACTIVATION_DATE";
+  const doShutdown = !changedParam || changedParam === "NEXT_SYSTEM_SHUTDOWN_DATE";
+
+  if (doActivation && !isNaN(activationDate) && activationDate > now) {
     ScriptApp.newTrigger("handleScheduledSystemActivation")
-      .forSpreadsheet(dashboardSpreadsheet)
       .timeBased()
       .at(activationDate)
       .create();
   }
-  if (shutdownDate > curDate) {
+
+  if (doShutdown && !isNaN(shutdownDate) && shutdownDate > now) {
     ScriptApp.newTrigger("handleScheduledSystemShutdown")
-      .forSpreadsheet(dashboardSpreadsheet)
       .timeBased()
       .at(shutdownDate)
       .create();
@@ -213,7 +222,7 @@ function reInstallAllTriggers() {
 }
 
 function installUpdateUsageTimersTrigger() {
-  const intervalMinutes = 5;
+  const intervalMinutes = 10;
   ScriptApp.newTrigger("executeUsageTimerUpdate")
     .timeBased()
     .everyMinutes(intervalMinutes)

@@ -16,10 +16,10 @@ const loadAllReportData = () => {
     if (!usersData) throw new Error('❌Failed to Load Users data');
 
     const returnLogsData = DB.getAllData(CACHED_SETTINGS.VALUES.SHEETS.RETURN_LOGS.NAME);
-    if (!returnLogsData) throw new Error('❌Failed to Load  Logs data');
+    if (!returnLogsData) throw new Error('❌Failed to Load Logs data');
 
     const reportsData = DB.getAllData(CACHED_SETTINGS.VALUES.SHEETS.REPORTS.NAME);
-    if (!reportsData) throw new Error('❌Failed to Load ports data');
+    if (!reportsData) throw new Error('❌Failed to Load Reports data');
     
     Logger.log(`📦 Batch loaded data: Bikes (${bikesData.length} rows), Users (${usersData.length} rows), Return Logs (${returnLogsData.length} rows), Reports (${reportsData.length} rows)`);
     
@@ -35,124 +35,44 @@ const loadAllReportData = () => {
 };
 
 /**
- * Save report data to spreadsheet using batch-loaded data for checking
+ * Save report data to spreadsheet (append-only)
  * @param {Object} newReport - Report data to save
- * @param {Array} previousReports - Pre-loaded reports data (optional)
  */
-const saveReport = (newReport, previousReports = null) => {
+const saveReport = (newReport) => {
   if(!newReport){
     throw new Error("❌ Can't save null newReport")
   }
 
-  Logger.log(`💾 Saving report for period ${newReport.period}...`);
+  Logger.log(`💾 Saving report for timestamp ${newReport.timestamp}...`);
+  
+  const reportsSheetName = CACHED_SETTINGS.VALUES.SHEETS.REPORTS.NAME;
   
   const values = [
     newReport.timestamp,
-    newReport.recordedBy,
-    newReport.period,
     newReport.totalBikes,
     newReport.bikesInRepair,
     newReport.checkedOutBikes,
     newReport.overdueBikes,
     newReport.readyForCheckout,
     newReport.newUsers,
-    newReport.lateReturnsCount,
     newReport.returnMismatches,
     newReport.reportedIssues,
     newReport.totalUsageHours,
     newReport.adminNotes
   ];
 
-  let existingRow = null;
-
-  // Use pre-loaded data if available (no additional API call)
-  if (previousReports && previousReports.length > 1) {
-    const periodCol = CACHED_SETTINGS.VALUES.SHEETS.REPORTS.PERIOD_NUM_COLUMN;
-    const newPeriodNum = Number(newReport.period);
-    
-    Logger.log(`🔍 Searching for existing report with period ${newReport.period} (type: ${typeof newReport.period}) in ${previousReports.length - 1} existing reports...`);
-    Logger.log(`🔍 Using period column index: ${periodCol}`);
-    
-    // Skip header row and find matching period using functional approach
-    const dataRows = previousReports.slice(1);
-    const matchingReportIndex = dataRows.findIndex((row, index) => {
-      const existingPeriod = row[periodCol];
-      const existingPeriodNum = Number(existingPeriod);
-      
-      Logger.log(`   Row ${index + 2}: period = ${existingPeriod} (type: ${typeof existingPeriod}, as number: ${existingPeriodNum})`);
-      Logger.log(`   Comparing: ${existingPeriodNum} === ${newPeriodNum} ? ${existingPeriodNum === newPeriodNum}`);
-      
-      // Use numeric comparison to avoid type mismatch issues
-      return !isNaN(existingPeriodNum) && !isNaN(newPeriodNum) && existingPeriodNum === newPeriodNum;
-    });
-    
-    if (matchingReportIndex !== -1) {
-      const actualRowIndex = matchingReportIndex + 2; // +2 because we skipped header and arrays are 0-based but sheets are 1-based
-      existingRow = { 
-        rowIndex: actualRowIndex, 
-        rowData: dataRows[matchingReportIndex] 
-      };
-      Logger.log(`🔍 Found existing report at row ${actualRowIndex} with matching period ${newReport.period}`);
-    } else {
-      Logger.log(`🔍 No existing report found for period ${newReport.period}`);
-    }
-  } else {
-    Logger.log(`🔍 No previous reports data available (length: ${previousReports?.length || 0})`);
-  }
-
-  if (!existingRow) {
-    Logger.log(`➕ Creating new report entry for period ${newReport.period}`);
-    try {
-      DB.appendRow(CACHED_SETTINGS.VALUES.SHEETS.REPORTS.NAME, values);
-      Logger.log(`✅ Successfully appended new report`);
-      Logger.log(`Sorting the Reports sheet..`);
-      DB.sortByColumn(CACHED_SETTINGS.VALUES.SHEETS.REPORTS.NAME);
-    } catch (error) {
-      Logger.log(`❌ Error appending new report: ${error.message}`);
-      throw error;
-    }
-  } else {
-    Logger.log(`🔄 Updating existing report for period ${newReport.period} at row ${existingRow.rowIndex}`);
-    try {
-      DB.updateRow(CACHED_SETTINGS.VALUES.SHEETS.REPORTS.NAME, existingRow.rowIndex, values);
-      Logger.log(`✅ Successfully updated existing report at row ${existingRow.rowIndex}`);
-    } catch (error) {
-      Logger.log(`❌ Error updating existing report: ${error.message}`);
-      throw error;
-    }
+  Logger.log(`➕ Appending new report entry`);
+  try {
+    DB.appendRow(reportsSheetName, values);
+    Logger.log(`✅ Successfully appended new report`);
+    Logger.log(`Sorting the Reports sheet..`);
+    DB.sortByColumn(reportsSheetName);
+  } catch (error) {
+    Logger.log(`❌ Error appending new report: ${error.message}`);
+    throw error;
   }
 
   Logger.log(`✅ successfuly created new report`)
-};
-
-/**
- * Calculate period number based on first run date
- * @param {Date} timestamp - Current timestamp
- * @param {number} checkSpan - Period interval in milliseconds
- * @returns {number} Period number
- */
-const getPeriodNumber = (timestamp, checkSpan) => {
-  const firstRunDate = new Date(CACHED_SETTINGS.VALUES.REPORT_GENERATION.FIRST_GENERATION_DATE);
-  
-  // Validate inputs to prevent NaN
-  if (isNaN(firstRunDate.getTime())) {
-    throw new Error(`❌ Invalid FIRST_GENERATION_DATE: ${CACHED_SETTINGS.VALUES.REPORT_GENERATION.FIRST_GENERATION_DATE}`);
-  }
-  
-  if (!checkSpan || checkSpan <= 0) {
-    throw new Error(`❌ Invalid checkSpan: ${checkSpan}`);
-  }
-  
-  const diffInMs = timestamp - firstRunDate;
-  const period = Math.round(diffInMs / checkSpan);
-  
-  Logger.log(`📊 Period calculation: timestamp=${timestamp}, firstRunDate=${firstRunDate}, diffInMs=${diffInMs}, checkSpan=${checkSpan}, period=${period}`);
-  
-  if (isNaN(period)) {
-    throw new Error(`❌ Period calculation resulted in NaN. timestamp=${timestamp}, firstRunDate=${firstRunDate}, checkSpan=${checkSpan}`);
-  }
-  
-  return period;
 };
 
 /**
@@ -160,17 +80,17 @@ const getPeriodNumber = (timestamp, checkSpan) => {
  * @param {Object} bike - Bike object to check
  * @returns {boolean} True if bike is overdue
  */
-const isBikeOverdue = (bike) => {
+const isBikeOverdue = (bike,timestamp) => {
   if (bike.availability !== 'checked out') return false;
   
   // Validate lastCheckoutDate before calculating
-  if (!bike.lastCheckoutDate || !(bike.lastCheckoutDate instanceof Date) || isNaN(bike.lastCheckoutDate.getTime())) {
+  if (!bike.lastCheckoutDate) {
     Logger.log(`⚠️ Bike ${bike.bikeName} is marked as 'checked out' but has invalid lastCheckoutDate: ${bike.lastCheckoutDate}`);
     return false; // Can't determine if overdue without valid checkout date
   }
   
-  const maxHours = CACHED_SETTINGS.VALUES.MAX_CHECKOUT_HOURS || 24;
-  const hoursElapsed = (new Date() - bike.lastCheckoutDate) / (1000 * 60 * 60);
+  const maxHours = CACHED_SETTINGS.VALUES.MAX_CHECKOUT_HOURS;
+  const hoursElapsed = (timestamp - bike.lastCheckoutDate) / (1000 * 60 * 60);
   
   // Additional validation to ensure calculation is valid
   if (isNaN(hoursElapsed) || hoursElapsed < 0) {
@@ -220,28 +140,24 @@ const countReportedIssues = (timestamp, checkSpan, returnLogsData) => {
 };
 
 /**
- * Calculate all period deltas using batch-loaded reports data
+ * Calculate report deltas using batch-loaded reports data
  * @param {Array} users - Array of user objects
  * @param {Array} previousReports - Existing reports data (required)
- * @returns {Object} Object with all delta calculations
+ * @returns {Object} Object with delta calculations
  */
 const calculateAllDeltas = (users, previousReports) => {
   if (!previousReports || previousReports.length === 0) {
     throw new Error('Reports data is required for delta calculations');
   }
 
-  // Get current totals from users 
-  const totalOverdueReturns = users.reduce((count, user) => count + (user.overdueReturns || 0), 0);
+  // Get current totals from users
   const currentPeriodMismatches = users.reduce((count, user) => count + (user.numberOfMismatches || 0), 0);
   const totalUsageHours = users.reduce((sum, user) => sum + (user.usageHours || 0), 0);
 
   // Calculate previous recorded values from batch-loaded reports data
-  const overdueCol = CACHED_SETTINGS.VALUES.SHEETS.REPORTS.OVERDUE_RETURNS_COLUMN;
   const mismatchCol = CACHED_SETTINGS.VALUES.SHEETS.REPORTS.RETURN_MISMATCHES_COLUMN;
   const usageCol = CACHED_SETTINGS.VALUES.SHEETS.REPORTS.TOTAL_USAGE_HOURS_COLUMN;
 
-  const prevRecordedOverdueReturns = previousReports.slice(1).reduce((sum, row) => 
-    sum + convertSheetValue(row[overdueCol], 'number'), 0);
   const prevRecordedMismatches = previousReports.slice(1).reduce((sum, row) => 
     sum + convertSheetValue(row[mismatchCol], 'number'), 0);
   const prevRecordedUsageHours = previousReports.slice(1).reduce((sum, row) => 
@@ -249,16 +165,13 @@ const calculateAllDeltas = (users, previousReports) => {
   
   Logger.log('📊 Calculated previous values from batch data');
 
-  const lateReturnsCount = Math.max(0, totalOverdueReturns - prevRecordedOverdueReturns);
   const returnMismatches = Math.max(0, currentPeriodMismatches - prevRecordedMismatches);
   const totalUsageHoursDeltas = Math.max(0, totalUsageHours - prevRecordedUsageHours);
 
-  Logger.log(`🚨 Overdue returns delta: ${lateReturnsCount} (total: ${totalOverdueReturns}, prev: ${prevRecordedOverdueReturns})`);
   Logger.log(`🔄 Return mismatches delta: ${returnMismatches} (total: ${currentPeriodMismatches}, prev: ${prevRecordedMismatches})`);
   Logger.log(`⏱️ Usage hours delta: ${totalUsageHoursDeltas} (total: ${totalUsageHours}, prev: ${prevRecordedUsageHours})`);
 
   return {
-    lateReturnsCount,
     returnMismatches,
     totalUsageHours: totalUsageHoursDeltas
   };
@@ -266,15 +179,16 @@ const calculateAllDeltas = (users, previousReports) => {
 
 /**
  * Main pipeline function to generate and save reports
+ * @param {Date} manualTimestamp - Optional timestamp for testing
  * @returns {Object} Result object with success status and data
  */
-const runReportPipeline = () => {
+const runReportPipeline = (manualTimestamp = null) => {
   try {
     Logger.log('📊 Starting report generation...');
     
     const allSheetData = loadAllReportData();
-    const reportData = generateReport(allSheetData);
-    saveReport(reportData, allSheetData.reports);
+    const reportData = generateReport(allSheetData, manualTimestamp);
+    saveReport(reportData);
     
     // Send notification if communication system is available
     try {
@@ -283,16 +197,20 @@ const runReportPipeline = () => {
       Logger.log(`❌ Failed to send confirmation notification: ${JSON.stringify(commError)}`);
     }
     
-    Logger.log(`✅ Report generated for period ${reportData.period}`);
-    return { success: true, period: reportData.period, data: reportData };
+    Logger.log(`✅ Report generated for timestamp ${reportData.timestamp}`);
+    return { success: true, timestamp: reportData.timestamp, data: reportData };
 
   } catch (error) {
     Logger.log(`❌ Report generation failed: ${error.message}`);
     // Send error notification if communication system is available
-    COMM.handleCommunication('ERR_RPT_001', {
-      timestamp: new Date(),
-      errorMessage: error.message
-    });
+    try {
+      COMM.handleCommunication('ERR_RPT_001', {
+        timestamp: new Date(),
+        errorMessage: error.message
+      });
+    } catch (notifyError) {
+      Logger.log(`❌ Failed to send report error notification: ${notifyError.message}`);
+    }
     
     return { success: false, error: error.message };
   }
@@ -301,20 +219,16 @@ const runReportPipeline = () => {
 /**
  * Generate report using pre-loaded batch data
  * @param {Object} allSheetData - All pre-loaded sheet data
+ * @param {Date} manualTimestamp - Optional timestamp
  * @returns {Object} Report data with all metrics
  */
-const generateReport = (allSheetData) => {
+const generateReport = (allSheetData, manualTimestamp = null) => {
   Logger.log('🔍 Processing batch-loaded data...');
-  const timestamp = new Date();
+  const timestamp = manualTimestamp || new Date();
   const frequencyInDays = CACHED_SETTINGS.VALUES.REPORT_GENERATION.DAYS_INTERVAL;
   const checkSpan = frequencyInDays * 24 * 60 * 60 * 1000;
   
   Logger.log(`📊 Report generation settings: frequencyInDays=${frequencyInDays}, checkSpan=${checkSpan}`);
-  Logger.log(`📊 FIRST_GENERATION_DATE=${CACHED_SETTINGS.VALUES.REPORT_GENERATION.FIRST_GENERATION_DATE}`);
-  
-  const period = getPeriodNumber(timestamp, checkSpan);
-  
-  Logger.log(`📅 Report period: ${period} (type: ${typeof period}) for ${frequencyInDays} day interval`);
   
   const bikes = processBikesData(allSheetData.bikes);
   const users = processUsersData(allSheetData.users);
@@ -343,7 +257,7 @@ const generateReport = (allSheetData) => {
   // Calculate counts with logging
   const bikesInRepairCount = bikes.filter(bike => bike.maintenanceStatus === 'in repair').length;
   const checkedOutBikesCount = checkedOutBikes.length;
-  const overdueBikesCount = bikes.filter(bike => isBikeOverdue(bike)).length;
+  const overdueBikesCount = bikes.filter(bike => isBikeOverdue(bike,timestamp)).length;
   const readyForCheckoutCount = bikes.filter(bike => bike.availability === 'available').length;
 
   Logger.log(`📊 Bike status counts: Total=${bikes.length}, InRepair=${bikesInRepairCount}, CheckedOut=${checkedOutBikesCount}, Overdue=${overdueBikesCount}, available=${readyForCheckoutCount}`);
@@ -353,15 +267,12 @@ const generateReport = (allSheetData) => {
 
   return {
     timestamp: timestamp,
-    recordedBy: "Automated",
-    period: period,
     totalBikes: bikes.length,
     bikesInRepair: bikesInRepairCount,
     checkedOutBikes: checkedOutBikesCount,
     overdueBikes: overdueBikesCount,
     readyForCheckout: readyForCheckoutCount,
     newUsers: countNewUsersForPeriod(users, timestamp, checkSpan),
-    lateReturnsCount: deltas.lateReturnsCount,
     returnMismatches: deltas.returnMismatches,
     reportedIssues: reportedIssues,
     totalUsageHours: deltas.totalUsageHours,

@@ -1,6 +1,6 @@
 class Settings {
   constructor() {
-    this.management_ss_ID = "1Ux1Lt9KNXVNrE0KP6C-Wbf5xmeos5Yf-ybmAfRtEvmQ";
+    this.management_ss_ID = "1IMvK9c8jWMqHCIoF4_yCQIrnreLB7VyqvgQSrASOimU";
     this.management_ss = SpreadsheetApp.openById(this.management_ss_ID);
     this.cacheName = "configCache";
     this.cacheExpirationSeconds = 21600; // 6 hours (max for ScriptCache)
@@ -8,11 +8,11 @@ class Settings {
     this.VALUES = {};
     this.settingRangeMap = {
       mainConfig: {
-        systemButtons: "A7:C13",
+        systemButtons: "A7:C14",
         systemTime: "F7:H9",
         coreConfig: "F14:H15",
         reportGenerationSettings: "F20:H22",
-        miscellaneous: "A19:C19",
+        miscellaneous: "A20:C20",
       },
       sheetsConfig: {
         bikesStatus: "A10:C13",
@@ -22,8 +22,8 @@ class Settings {
         returnLogs: "A32:C35",
       },
       notificationsConfig: {
-        successMessages: "A9:H15",
-        errorMessages: "A22:H38",
+        successMessages: "A9:H13",
+        errorMessages: "A21:H33",
       },
     };
     if (!this.refreshCache(false)) {
@@ -288,7 +288,7 @@ class Settings {
   }
 
   getAdminEmail() {
-    return this.cacheValues.coreConfig?.ADMIN_EMAIL ?? "studentEmail@gmail.com";
+    return this.cacheValues.coreConfig?.ADMIN_EMAIL ?? "bikeshare@amherst.edu";
   }
 
   isAutoResetEnabled() {
@@ -337,9 +337,9 @@ class Settings {
         NEXT_SYSTEM_ACTIVATION_DATE:
           this.cacheValues.systemTime?.NEXT_SYSTEM_ACTIVATION_DATE || null,
         ADMIN_EMAIL: this.getAdminEmail(),
-        ORG_EMAIL: "ndayishimiyeemile96@gmail.com",
+        ORG_EMAIL: "bikeshare@amherst.edu",
         MANAGEMENT_SS_ID: this.management_ss_ID,
-        MAIN_DASHBOARD_SS_ID: "1XE9b58isw2MreAvcNSDiCTIIlL09zFRWMKcCBtTkbbE",
+        MAIN_DASHBOARD_SS_ID: "1H_Tb-Ql71W1QEkucGiRByGkVDVI3B3RpTqljRonBecg",
         ALLOWED_EMAIL_DOMAIN: "amherst.edu",
         SHEETS: {
           BIKES_STATUS: this.cacheValues.bikesStatus || {
@@ -363,15 +363,14 @@ class Settings {
           },
           REPORTS: {
             ...this.cacheValues.reportSheet,
-            OVERDUE_RETURNS_COLUMN: 6,
-            RETURN_MISMATCHES_COLUMN: 10,
-            TOTAL_USAGE_HOURS_COLUMN: 12,
-            PERIOD_NUM_COLUMN: 2,
+            OVERDUE_BIKES_COLUMN: 4,
+            RETURN_MISMATCHES_COLUMN: 7,
+            TOTAL_USAGE_HOURS_COLUMN: 9,
           },
         },
         FORMS: {
-          CHECKOUT_FORM_ID: "1ThxJFJLjtQkvzXuX7ZPa2vEYWzIokWK89GUbW507zpM",
-          RETURN_FORM_ID: "1VFAY-49Qx2Ob5OdVZkI2rH9xbaT0DRF63q6fWZh-Pbc",
+          CHECKOUT_FORM_ID: "1zSuyVnXF4zDuJNr3eHA5SjloBxARTY3F0KH_XB5-oRs",
+          RETURN_FORM_ID: "14Ue4nG8eTqP2OSpGsiVzOJ1TUq8oKVTqbwCaYDSQzh4",
           CHECKOUT_FIELD_IDS: {
             EMAIL: 1337405542,
             BIKE_HASH: 697424273,
@@ -636,19 +635,29 @@ function parseSettingsUpdate(e) {
           ).setValue(curDate);
         }
 
+        //process quick report generation
+        if (editedParam === "GENERATE_QUICK_REPORT" && newValue === "ON") {
+          Logger.log("📊 Quick report generation triggered via settings button");
+          try {
+            const reportResult = runReportPipeline();
+            if (reportResult.success) {
+              curCell.setNote(`Last instant report generated on ${curDate}`);
+              Logger.log(`✅ Quick report generated successfully at ${reportResult.timestamp}`);
+            } else {
+              curCell.setNote(`Quick Report generation failed on ${curDate}: ${reportResult.error}`);
+              Logger.log(`❌ Quick report generation failed: ${reportResult.error}`);
+            }
+          } catch (error) {
+            curCell.setNote(`Quick Report generation error on ${curDate}: ${error.message}`);
+            Logger.log(`❌ Quick report generation error: ${error.message}`);
+          }
+          curCell.setValue("OFF");
+        }
+
         //process system operations pause or resume by disabling/enabling all forms
         if (editedParam === "SYSTEM_ACTIVE") {
           const isAcceptingResponses = newValue === "ON";
-          toogleFormAcceptResponses(isAcceptingResponses);
-          curCell.setNote(
-            `System ${
-              isAcceptingResponses ? "activated on " : "deactivated"
-            } on ${curDate}`
-          );
-          CACHED_SETTINGS.getCellByKeyName(
-            "ENABLE_REPORT_GENERATION",
-            "systemButtons"
-          ).setValue(newValue);
+          setSystemActivationState(isAcceptingResponses);
         }
         CACHED_SETTINGS.getCellByKeyName(
           "FIRST_GENERATION_DATE",
@@ -660,33 +669,20 @@ function parseSettingsUpdate(e) {
       if (editedCol == 8) {
         const editedParam = editedSheet.getRange(editedRow, 6).getValue();
         //NEXT_SYSTEM_SHUTDOWN_DATE or NEXT_SYSTEM_ACTIVATION_DATE
-        if (
-          editedParam === "NEXT_SYSTEM_SHUTDOWN_DATE" ||
-          editedParam === "NEXT_SYSTEM_ACTIVATION_DATE"
-        ) {
-          Logger.log(
-            `🔄 Reinstalling system activation/shutdown triggers for: ${editedParam}`
-          );
+        const handlerToDelete =
+        editedParam === "NEXT_SYSTEM_ACTIVATION_DATE"
+            ? "handleScheduledSystemActivation"
+            : "handleScheduledSystemShutdown";
 
-          // Delete only the system activation/shutdown triggers
-          const triggers = ScriptApp.getProjectTriggers();
-          const systemTriggers = triggers.filter((trigger) =>
-            [
-              "handleScheduledSystemActivation",
-              "handleScheduledSystemShutdown",
-            ].includes(trigger.getHandlerFunction())
-          );
+        ScriptApp.getProjectTriggers()
+          .filter((t) => t.getHandlerFunction() === handlerToDelete)
+          .forEach((t) => ScriptApp.deleteTrigger(t));
 
-          systemTriggers.forEach((trigger) => {
-            ScriptApp.deleteTrigger(trigger);
-            Logger.log(`Deleted trigger: ${trigger.getHandlerFunction()}`);
-          });
-
-          // Reinstall only the system triggers
-          installScheduleSystemShutdownAndActivationTrigger();
-
-          Logger.log("✅ System activation/shutdown triggers reinstalled");
-        }
+        installScheduleSystemShutdownAndActivationTrigger(
+          editedParam === "NEXT_SYSTEM_ACTIVATION_DATE" ? newValue : null,
+          editedParam === "NEXT_SYSTEM_SHUTDOWN_DATE" ? newValue : null,
+          editedParam
+        );
       }
     }
 
@@ -731,19 +727,68 @@ function toogleFormAcceptResponses(isAcceptingResponses) {
     } responses.`
   );
   try {
-    FormApp.openById(
+    let c_form = FormApp.openById(
       CACHED_SETTINGS.VALUES.FORMS.CHECKOUT_FORM_ID
-    ).setAcceptingResponses(isAcceptingResponses);
+    )
+    c_form.setAcceptingResponses(isAcceptingResponses);
     Logger.log("✅Checkout form response state updated successfully.");
   } catch (err) {
     Logger.log(`❌Error updating Checkout form: ${err.message}`);
   }
   try {
-    FormApp.openById(
+    let r_form = FormApp.openById(
       CACHED_SETTINGS.VALUES.FORMS.RETURN_FORM_ID
-    ).setAcceptingResponses(isAcceptingResponses);
+    )
+    r_form.setAcceptingResponses(isAcceptingResponses);
     Logger.log("✅Return form response state updated successfully.");
   } catch (err) {
     Logger.log(`❌Error updating Return form: ${err.message}`);
+  }
+}
+
+
+/**
+ * Core logic for system activation/deactivation
+ * Toggles form acceptance state and updates related settings
+ * @param {boolean} isActive - true for activation, false for shutdown
+ */
+function setSystemActivationState(isActive) {
+  const curDate = new Date();
+  const statusText = isActive ? "activated" : "deactivated";
+  
+  try {
+    Logger.log(`🔄 Setting system ${statusText}...`);
+    
+    // Toggle form responses
+    toogleFormAcceptResponses(isActive);
+    
+    // Update SYSTEM_ACTIVE in settings
+    const systemActiveCell = CACHED_SETTINGS.getCellByKeyName(
+      "SYSTEM_ACTIVE",
+      "systemButtons"
+    );
+    if (systemActiveCell) {
+      const newValue = isActive ? "ON" : "OFF";
+      systemActiveCell.setValue(newValue);
+      systemActiveCell.setNote(`System ${statusText} on ${curDate}`);
+      Logger.log(`✅ SYSTEM_ACTIVE updated to ${newValue}`);
+    }
+    
+    // Update ENABLE_REPORT_GENERATION to match
+    const reportGenCell = CACHED_SETTINGS.getCellByKeyName(
+      "ENABLE_REPORT_GENERATION",
+      "systemButtons"
+    );
+    if (reportGenCell) {
+      const reportGenValue = isActive ? "ON" : "OFF";
+      reportGenCell.setValue(reportGenValue);
+      Logger.log(`✅ ENABLE_REPORT_GENERATION updated to ${reportGenValue}`);
+    }
+    
+    Logger.log(`✅ System ${statusText} successfully`);
+    return true;
+  } catch (error) {
+    Logger.log(`❌ Failed to set system ${statusText}: ${error.message}`);
+    throw error;
   }
 }

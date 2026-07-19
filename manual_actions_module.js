@@ -39,20 +39,43 @@ function processManualDashboardActions(e) {
 
   Logger.log(`Row ${row}, Col ${col}: "${oldValue}" → "${newValue}"`);
 
-  // If the old value was "has issue", clear the note in bike status
-  if (oldValue === "has issue") {
-    Logger.log(
-      `Clearing note from row ${row}, column ${col} (was "has issue")`
-    );
+  // Descriptive conditions
+  const isMaintenanceChange = col === MAINTENANCE_STATUS_COL;
+  const isAvailabilityChange = col === AVAILABILITY_COL;
+  const isBikeNowUnserviceable = newValue === "has issue" || newValue === "in repair";
+  const wasMarkedWithIssue = oldValue === "has issue";
+  const isManualReturn = oldValue === "checked out" && newValue === "available";
+
+  let actionTaken = false;
+
+  // Auto-set availability to "out of service" when maintenance status indicates bike is unserviceable
+  if (isMaintenanceChange && isBikeNowUnserviceable) {
+    const availabilityRange = sheet.getRange(row, AVAILABILITY_COL);
+    const currentAvailability = availabilityRange.getValue();
+    if (currentAvailability === "available") {
+      availabilityRange.setValue("out of service");
+      Logger.log(`✅ Availability set to "out of service" for row ${row} (maintenance: ${newValue})`);
+      actionTaken = true;
+    } else {
+      Logger.log(`⚠️ Availability not changed (currently "${currentAvailability}") - bike may need manual handling after return`);
+    }
+  }
+
+  // Clear issue note when maintenance status changes from "has issue"
+  if (wasMarkedWithIssue) {
+    Logger.log(`Clearing note from row ${row}, column ${col} (was "has issue")`);
     range.clearNote();
     Logger.log("✅ Note cleared successfully");
+    actionTaken = true;
   } 
-  //if admin manually changes bike from "checked out" to "available"
-  else if(oldValue === "checked out" && newValue === "available"){
-    updateUserStatusFromManualAction(row)
+  // Handle manual return: admin changes availability from "checked out" to "available"
+  else if (isAvailabilityChange && isManualReturn) {
+    updateUserStatusFromManualAction(row);
+    actionTaken = true;
   }
-  else {
-    Logger.log('No action needed: previous value was not "M_S: has issue" nor "AVL: checked out-> available"');
+  
+  if (!actionTaken) {
+    Logger.log('No action needed for this edit');
   }
 }
 // TODO: Write the logic to update bike status.

@@ -82,25 +82,15 @@ function executeUsageTimerUpdate(){
 
 function handleScheduledSystemActivation() {
   return withLock(() => {
-    try{
-      Logger.log('🔓Attempting scheduled system activation');
-      toogleFormAcceptResponses(true)
-      Logger.log('✅System activated successfully');
-    }catch(error){
-      Logger.log(`❌Failed to activate system:${error.errorMessage}`)
-    }
+    Logger.log('🔓Attempting scheduled system activation');
+    setSystemActivationState(true);
   }, 'system activation');
 }
 
 function handleScheduledSystemShutdown() {
   return withLock(() => {
-    try{
-      Logger.log('🔒Attempting scheduled system shutdown');
-      toogleFormAcceptResponses(false)
-      Logger.log('✅System shutdown successfully');
-    }catch(error){
-      Logger.log(`❌Failed to activate system:${error.errorMessage}`)
-    }
+    Logger.log('🔒Attempting scheduled system shutdown');
+    setSystemActivationState(false);
   }, 'system shutdown');
 }
 

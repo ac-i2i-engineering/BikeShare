@@ -8,23 +8,25 @@ function processFormSubmissionEvent(triggerEvent) {
     // Extract input
     const eventContext = extractEventContext(triggerEvent);
     const formData = parseFormResponse(eventContext);
-    
+
     // Load current state
     const currentState = loadSystemState();
-    
+
     // Process through pipeline based on operation type
-    const pipeline = eventContext.operation === 'checkout' 
-      ? checkoutPipeline 
-      : returnPipeline;
-    
-    const rawData = { formData: formData, currentState:currentState, eventContext:eventContext};
+    const pipeline =
+      eventContext.operation === "checkout" ? checkoutPipeline : returnPipeline;
+
+    const rawData = {
+      formData: formData,
+      currentState: currentState,
+      eventContext: eventContext,
+    };
     const result = pipeline(rawData);
-    
+
     // Persist state changes and send notifications
     const finalResult = commitStateChanges(result);
-    
+
     return finalResult;
-    
   } catch (error) {
     return handlePipelineError(error, triggerEvent);
   }
@@ -43,14 +45,14 @@ function checkoutPipeline(rawData) {
     validateBikeExists,
     validateBikeAvailable,
     validateUserEligible,
-    
+
     // Business logic steps
     processCheckoutTransaction,
     updateBikeStatus,
     updateUserStatus,
-    
+
     // Communication steps
-    generateNotifications
+    generateNotifications,
   )(rawData);
 }
 
@@ -65,20 +67,19 @@ function returnPipeline(rawData) {
     validateEmailDomain,
     validateSystemActive,
     validateBikeExists,
-    validateBikeCheckedOut,
     validateReturnEligible,
-    
+    validateBikeCheckedOut,
+
     // Business logic steps
     processReturnTransaction,
     updateBikeStatus,
     updateUserStatus,
     calculateUsageHours,
-    
+
     // Communication steps
-    generateNotifications
+    generateNotifications,
   )(rawData);
 }
-
 
 // =============================================================================
 // UTILITY FUNCTIONS
@@ -89,7 +90,10 @@ function returnPipeline(rawData) {
  * @param {...Function} functions - Functions to compose
  * @returns {Function} Composed function
  */
-const pipe = (...functions) => rawData => functions.reduce((accData, fn) => fn(accData), rawData);
+const pipe =
+  (...functions) =>
+  (rawData) =>
+    functions.reduce((accData, fn) => fn(accData), rawData);
 
 /**
  * Extract context from Google Apps Script trigger event
@@ -99,11 +103,14 @@ const pipe = (...functions) => rawData => functions.reduce((accData, fn) => fn(a
 function extractEventContext(triggerEvent) {
   const sheetName = triggerEvent.source.getActiveSheet().getName();
   return {
-    operation: sheetName === CACHED_SETTINGS.VALUES.SHEETS.CHECKOUT_LOGS.NAME ? 'checkout' : 'return',
+    operation:
+      sheetName === CACHED_SETTINGS.VALUES.SHEETS.CHECKOUT_LOGS.NAME
+        ? "checkout"
+        : "return",
     responses: triggerEvent.values,
     range: triggerEvent.range,
     sheetName: sheetName,
-    timestamp: new Date()
+    timestamp: new Date(),
   };
 }
 
@@ -119,7 +126,7 @@ function loadSystemState() {
     bikes: processBikesData(bikesData),
     users: processUsersData(usersData),
     settings: CACHED_SETTINGS.VALUES,
-    timestamp: new Date()
+    timestamp: new Date(),
   };
 }
 
@@ -130,33 +137,34 @@ function loadSystemState() {
  */
 function validateEmailDomain(data) {
   if (data.error) return data; // Skip if already has error
-  
-  const email = data.formData.userEmail
-  if (!email || typeof email !== 'string') {
+
+  const email = data.formData.userEmail;
+  if (!email || typeof email !== "string") {
     return {
       ...data,
-      error: 'ERR_USR_EMAIL_001',
-      errorMessage: 'Invalid email format'
+      error: "ERR_USR_EMAIL_001",
+      errorMessage: "Invalid email format",
     };
   }
-  
+
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
     return {
       ...data,
-      error: 'ERR_USR_EMAIL_001',
-      errorMessage: 'Invalid email format'
+      error: "ERR_USR_EMAIL_001",
+      errorMessage: "Invalid email format",
     };
   }
-  
-  const domain = email.split('@')[1];
-  const allowedDomain = CACHED_SETTINGS.VALUES.ALLOWED_EMAIL_DOMAIN || 'amherst.edu'; // Define the allowed domain
+
+  const domain = email.split("@")[1];
+  const allowedDomain =
+    CACHED_SETTINGS.VALUES.ALLOWED_EMAIL_DOMAIN || "amherst.edu"; // Define the allowed domain
   const isValid = domain.toLowerCase() === allowedDomain.toLowerCase();
   if (!isValid) {
     return {
       ...data,
-      error: 'ERR_USR_EMAIL_001',
-      errorMessage: 'Only amherst.edu email addresses are allowed'
+      error: "ERR_USR_EMAIL_001",
+      errorMessage: "Only amherst.edu email addresses are allowed",
     };
   }
   return data;
@@ -169,11 +177,13 @@ function validateEmailDomain(data) {
  * @returns {Object} Data with validation result
  */
 function validateSystemActive(data) {
+  if (data.error) return data; // Preserve first error in pipeline
+
   if (!data.currentState.settings.SYSTEM_ACTIVE) {
     return {
       ...data,
-      error: 'ERR_OPR_COR_001',
-      errorMessage: 'System is currently out of service'
+      error: "ERR_OPR_COR_001",
+      errorMessage: "System is currently out of service",
     };
   }
   return data;
@@ -185,28 +195,32 @@ function validateSystemActive(data) {
  * @returns {Object} Data with bike information
  */
 function validateBikeExists(data) {
+  if (data.error) return data; // Preserve first error in pipeline
+
   let bike;
-  
+
   // For checkout operations, find by hash
   if (data.formData.bikeHash) {
     bike = findBikeByHash(data.currentState.bikes, data.formData.bikeHash);
-  } 
+  }
   // For return operations, find by name (with fuzzy matching)
   else if (data.formData.bikeName) {
     bike = findBikeByName(data.currentState.bikes, data.formData.bikeName);
   }
-  
+
   if (!bike) {
-    const errorCode = data.formData.bikeHash ? 'ERR_USR_COT_003' : 'ERR_USR_RET_002';
+    const errorCode = data.formData.bikeHash
+      ? "ERR_USR_COT_003"
+      : "ERR_USR_RET_002";
     return {
       ...data,
       error: errorCode,
-      errorMessage: 'Bike not found'
+      errorMessage: "Bike not found",
     };
   }
   return {
     ...data,
-    bike: bike
+    bike: bike,
   };
 }
 
@@ -217,12 +231,15 @@ function validateBikeExists(data) {
  */
 function validateBikeAvailable(data) {
   if (data.error) return data; // Skip if already has error
-  
-  if (data.bike.availability !== 'available') {
+
+  if (
+    data.bike.availability !== "available" ||
+    data.bike.maintenanceStatus !== "good"
+  ) {
     return {
       ...data,
-      error: 'ERR_USR_COT_001',
-      errorMessage: 'Bike is not ready for checkout'
+      error: "ERR_USR_COT_001",
+      errorMessage: "Bike is not ready for checkout",
     };
   }
   return data;
@@ -235,12 +252,12 @@ function validateBikeAvailable(data) {
  */
 function validateBikeCheckedOut(data) {
   if (data.error) return data; // Skip if already has error
-  
-  if (data.bike.availability !== 'checked out') {
+
+  if (data.bike.availability !== "checked out") {
     return {
       ...data,
-      error: 'ERR_USR_RET_006',
-      errorMessage: `❌Can't return ${data.bike.bikeName}: status is ${data.bike.availability} not "checked out"`
+      error: "ERR_USR_RET_006",
+      errorMessage: `❌Can't return ${data.bike.bikeName}: status is ${data.bike.availability} not "checked out"`,
     };
   }
   return data;
@@ -253,23 +270,25 @@ function validateBikeCheckedOut(data) {
  */
 function validateUserEligible(data) {
   if (data.error) return data; // Skip if already has error
-  
-  const user = findUserByEmail(data.currentState.users, data.formData.userEmail) || createNewUser(data.formData.userEmail);
-  
+
+  const user =
+    findUserByEmail(data.currentState.users, data.formData.userEmail) ||
+    createNewUser(data.formData.userEmail);
+
   let modData = {
     ...data,
-    user: user
-  }
-  
+    user: user,
+  };
+
   if (user.hasUnreturnedBike) {
     modData = {
       ...modData,
-      error: 'ERR_USR_COT_002',
-      errorMessage: 'User already has an unreturned bike'
+      error: "ERR_USR_COT_002",
+      errorMessage: "User already has an unreturned bike",
     };
   }
-  
-  return modData
+
+  return modData;
 }
 
 /**
@@ -279,52 +298,65 @@ function validateUserEligible(data) {
  */
 function validateReturnEligible(data) {
   if (data.error) return data; // Skip if already has error
-  
-  //get user data
-  const user = findUserByEmail(data.currentState.users, data.formData.userEmail) || createNewUser(data.formData.userEmail);
-  const isLastBikeUser = data.bike.mostRecentUser === data.formData.userEmail
-  const isReturningForFriend = !isLastBikeUser && (data.formData.friendEmail !== "" || data.formData.assureRodeBike);
-  const isDirectReturn = !isReturningForFriend
 
-  Logger.log(`🔍 Friend return check: mostRecentUser='${data.bike.mostRecentUser}', currentUser='${data.formData.userEmail}', friendEmail='${data.formData.friendEmail}', isReturningForFriend=${isReturningForFriend}`);
+  //get user data
+  const user =
+    findUserByEmail(data.currentState.users, data.formData.userEmail) ||
+    createNewUser(data.formData.userEmail);
+  const isReturningForFriend = !!data.formData.returningForFriend;
+  const friendEmailInput =
+    typeof data.formData.friendEmail === "string"
+      ? data.formData.friendEmail.trim()
+      : "";
+  const isDirectReturn = !isReturningForFriend;
+
+  Logger.log(
+    `🔍 Friend return check: mostRecentUser='${data.bike.mostRecentUser}', currentUser='${data.formData.userEmail}', friendEmail='${friendEmailInput}', isReturningForFriend=${isReturningForFriend}`,
+  );
 
   // friend processing
-  if(isReturningForFriend){
-   if(!data.formData.friendEmail){
-    const msg = `❌${user.userEmail} failed failed to return ${data.bike.bikeName} b/c no friend email provided`
-    Logger.log(msg)
-    return{
-      ...data,
-      user:user,
-      error: 'ERR_USR_RET_004',
-      errorMessage: msg
-    }
-   }
+  if (isReturningForFriend) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const hasValidFriendEmail = emailRegex.test(friendEmailInput);
 
-   const friend = findUserByEmail(data.currentState.users, data.formData.friendEmail)
-   //if friend has no records for checkout or returns
-   if(!friend){
-    const msg = `❌${user.userEmail} failed failed to return ${data.bike.bikeName} for ${data.formData.friendEmail} records could not be found in User Status`
-    Logger.log(msg)
-    return{
-      ...data,
-      user:user,
-      error: 'ERR_USR_RET_010',
-      errorMessage: msg
+    if (!hasValidFriendEmail) {
+      const msg = `❌${user.userEmail} failed to return ${data.bike.bikeName} because friend email is invalid: ${friendEmailInput}`;
+      Logger.log(msg);
+      return {
+        ...data,
+        user: user,
+        error: "ERR_USR_RET_004",
+        errorMessage: msg,
+      };
     }
-   }
 
-   //if friend has no unreturned bike 
-   if(data.bike.mostRecentUser !== friend.userEmail || !friend.hasUnreturnedBike){
-     const msg = `❌${user.userEmail} failed failed to return ${data.bike.bikeName} for ${data.formData.friendEmail} b/c they have no unreturned bike. they last checked out ${friend.lastCheckoutName} returned on ${friend.lastReturnDate}, Else bikeName is diff from lastCheckoutName`
-     Logger.log(msg)
-     return{
-       ...data,
-       user:user,
-       friend: friend,
-       error: 'ERR_USR_RET_003',
-       errorMessage: msg
-      }
+    const friend = findUserByEmail(data.currentState.users, friendEmailInput);
+    //if friend has no records for checkout or returns
+    if (!friend) {
+      const msg = `❌${user.userEmail} failed failed to return ${data.bike.bikeName} for ${friendEmailInput} records could not be found in User Status`;
+      Logger.log(msg);
+      return {
+        ...data,
+        user: user,
+        error: "ERR_USR_RET_008",
+        errorMessage: msg,
+      };
+    }
+
+    //if friend has no unreturned bike
+    if (
+      data.bike.mostRecentUser !== friend.userEmail ||
+      !friend.hasUnreturnedBike
+    ) {
+      const msg = `❌${user.userEmail} failed failed to return ${data.bike.bikeName} for ${friendEmailInput} b/c they have no unreturned bike. they last checked out ${friend.lastCheckoutName} returned on ${friend.lastReturnDate}, Else bikeName is diff from lastCheckoutName`;
+      Logger.log(msg);
+      return {
+        ...data,
+        user: user,
+        friend: friend,
+        error: "ERR_USR_RET_003",
+        errorMessage: msg,
+      };
     }
 
     //if no error found in friend return verifications
@@ -332,46 +364,42 @@ function validateReturnEligible(data) {
     return {
       ...data,
       user: friend,
-      friend:user,
+      friend: user,
       isReturningForFriend: isReturningForFriend,
-      isDirectReturn: isDirectReturn
-      // isCollectedMismatch: isCollectedMismatch,
-    };
-  }
-  
-  // validate user has unreturned bike
-  if(!user.hasUnreturnedBike){
-    const msg =`❌ return failed b/c ${user.userEmail} last checked out ${user.lastCheckoutName} they returned on ${user.lastReturnDate}`
-    Logger.log(msg)
-    return {
-      ...data,
-      user: user,
-      error:'ERR_USR_RET_006',
-      errorMessage:msg,
+      isDirectReturn: isDirectReturn,
     };
   }
 
-  
-  // validate user return mismatch
-  if(!fuzzyMatch(data.bike.bikeName, user.lastCheckoutName)){
-   //switch the bikes to update the status of the right one
-    const msg =`❌ return failed b/c ${user.userEmail} last checked out ${user.lastCheckoutName} on ${user.lastReturnDate}, but the're returning ${data.bike.bikeName}`
-    Logger.log(msg)
+  // validate user has unreturned bike
+  if (!user.hasUnreturnedBike) {
+    const msg = `❌ return failed b/c ${user.userEmail} last checked out ${user.lastCheckoutName} they returned on ${user.lastReturnDate}`;
+    Logger.log(msg);
     return {
       ...data,
       user: user,
-      error:'ERR_USR_RET_007',
-      errorMessage:msg,
+      error: "ERR_USR_RET_006",
+      errorMessage: msg,
     };
   }
-  
+
+  // validate user return mismatch
+  if (!fuzzyMatch(data.bike.bikeName, user.lastCheckoutName)) {
+    const msg = `❌ return failed b/c ${user.userEmail} last checked out ${user.lastCheckoutName} on ${user.lastReturnDate}, but the're returning ${data.bike.bikeName}`;
+    Logger.log(msg);
+    return {
+      ...data,
+      user: user,
+      error: "ERR_USR_RET_007",
+      errorMessage: msg,
+    };
+  }
+
   // Detect if this is a direct return (user returning their own bike directly)
   return {
     ...data,
     user: user,
     isReturningForFriend: isReturningForFriend,
-    isCollectedMismatch: false,
-    isDirectReturn: isDirectReturn
+    isDirectReturn: isDirectReturn,
   };
 }
 
@@ -386,7 +414,7 @@ function validateReturnEligible(data) {
  * @returns {Object|null} Bike object or null if not found
  */
 function findBikeByHash(bikes, bikeHash) {
-  return bikes.find(bike => bike.bikeHash === bikeHash) || null;
+  return bikes.find((bike) => bike.bikeHash === bikeHash) || null;
 }
 
 /**
@@ -397,13 +425,13 @@ function findBikeByHash(bikes, bikeHash) {
  */
 function findBikeByName(bikes, bikeName) {
   // First try exact match
-  let bike = bikes.find(bike => bike.bikeName === bikeName);
-  
+  let bike = bikes.find((bike) => bike.bikeName === bikeName);
+
   // If no exact match, try fuzzy matching
   if (!bike) {
-    bike = bikes.find(bike => fuzzyMatch(bike.bikeName, bikeName));
+    bike = bikes.find((bike) => fuzzyMatch(bike.bikeName, bikeName));
   }
-  
+
   return bike || null;
 }
 
@@ -414,26 +442,31 @@ function findBikeByName(bikes, bikeName) {
  * @returns {Object|null} User object or null if not found
  */
 function findUserByEmail(users, email) {
-  if (!email || typeof email !== 'string') {
+  if (!email || typeof email !== "string") {
     Logger.log(`⚠️ findUserByEmail: Invalid email provided: ${email}`);
     return null;
   }
-  
+
   const normalizedEmail = email.toLowerCase().trim();
-  const foundUser = users.find(user => {
-    if (!user.userEmail || typeof user.userEmail !== 'string') {
-      Logger.log(`⚠️ findUserByEmail: Invalid user email in database: ${user.userEmail}`);
-      return false;
-    }
-    return user.userEmail.toLowerCase().trim() === normalizedEmail;
-  }) || null;
-  
+  const foundUser =
+    users.find((user) => {
+      if (!user.userEmail || typeof user.userEmail !== "string") {
+        Logger.log(
+          `⚠️ findUserByEmail: Invalid user email in database: ${user.userEmail}`,
+        );
+        return false;
+      }
+      return user.userEmail.toLowerCase().trim() === normalizedEmail;
+    }) || null;
+
   if (foundUser) {
-    Logger.log(`✅ User found: ${normalizedEmail} (original: ${foundUser.userEmail})`);
+    Logger.log(
+      `✅ User found: ${normalizedEmail} (original: ${foundUser.userEmail})`,
+    );
   } else {
     Logger.log(`⚠️ User not found: ${normalizedEmail}`);
   }
-  
+
   return foundUser;
 }
 
@@ -443,15 +476,17 @@ function findUserByEmail(users, email) {
  * @returns {Object} New user object
  */
 function createNewUser(email) {
-  const normalizedEmail = (email || '').toLowerCase().trim();
-  Logger.log(`🆕 Creating new user with normalized email: ${normalizedEmail} (original: ${email})`);
-  
+  const normalizedEmail = (email || "").toLowerCase().trim();
+  Logger.log(
+    `🆕 Creating new user with normalized email: ${normalizedEmail} (original: ${email})`,
+  );
+
   return {
     userEmail: normalizedEmail,
     hasUnreturnedBike: false,
-    lastCheckoutName: '',
+    lastCheckoutName: "",
     lastCheckoutDate: null,
-    lastReturnName: '',
+    lastReturnName: "",
     lastReturnDate: null,
     numberOfCheckouts: 0,
     numberOfReturns: 0,
@@ -459,6 +494,6 @@ function createNewUser(email) {
     usageHours: 0,
     overdueReturns: 0,
     firstUsageDate: null,
-    isNewUser: true
+    isNewUser: true,
   };
 }
